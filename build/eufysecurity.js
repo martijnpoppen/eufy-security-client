@@ -462,6 +462,10 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         station.on("device pin verified", (deviceSN, successfull) => this.onStationDevicePinVerified(deviceSN, successfull));
                         station.on("sd info ex", (station, sdStatus, sdCapacity, sdCapacityAvailable) => this.onStationSdInfoEx(station, sdStatus, sdCapacity, sdCapacityAvailable));
                         station.on("image download", (station, file, image) => this.onStationImageDownload(station, file, image));
+                        station.on("database query latest", (station, returnCode, data) => this.onStationDatabaseQueryLatest(station, returnCode, data));
+                        station.on("database query local", (station, returnCode, data) => this.onStationDatabaseQueryLocal(station, returnCode, data));
+                        station.on("database count by date", (station, returnCode, data) => this.onStationDatabaseCountByDate(station, returnCode, data));
+                        station.on("database delete", (station, returnCode, failedIds) => this.onStationDatabaseDelete(station, returnCode, failedIds));
                         this.addStation(station);
                         station.initialize();
                     }
@@ -2157,6 +2161,36 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         }).catch((error) => {
             this.log.error(`onStationImageDownload - Set first picture error`, error);
         });
+    }
+    onStationDatabaseQueryLatest(station, returnCode, data) {
+        if (returnCode === types_2.DatabaseReturnCode.SUCCESSFUL) {
+            for (const element of data) {
+                if ((element.device_sn !== "" && !station.isStation()) || (station.isStation() && element.device_sn !== station.getSerial())) {
+                    this.getDevice(element.device_sn).then((device) => {
+                        const raw = device.getRawDevice();
+                        if ("crop_local_path" in element) {
+                            raw.cover_path = element.crop_local_path;
+                        }
+                        else if ("crop_cloud_path" in element) {
+                            raw.cover_path = element.crop_cloud_path;
+                        }
+                        device.update(raw);
+                    }).catch((error) => {
+                        this.log.error("onStationDatabaseQueryLatest Error:", error);
+                    });
+                }
+            }
+        }
+        this.emit("station database query latest", station, returnCode, data);
+    }
+    onStationDatabaseQueryLocal(station, returnCode, data) {
+        this.emit("station database query local", station, returnCode, data);
+    }
+    onStationDatabaseCountByDate(station, returnCode, data) {
+        this.emit("station database count by date", station, returnCode, data);
+    }
+    onStationDatabaseDelete(station, returnCode, failedIds) {
+        this.emit("station database delete", station, returnCode, failedIds);
     }
 }
 exports.EufySecurity = EufySecurity;

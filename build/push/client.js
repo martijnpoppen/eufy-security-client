@@ -22,11 +22,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PushClient = void 0;
-const Long = __importStar(require("long"));
+const long_1 = __importDefault(require("long"));
 const path = __importStar(require("path"));
-const protobuf_typescript_1 = require("protobuf-typescript");
+const protobufjs_1 = require("protobufjs");
 const tls = __importStar(require("tls"));
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const ts_log_1 = require("ts-log");
@@ -50,7 +53,7 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         this.auth = auth;
     }
     static async init(auth, log = ts_log_1.dummyLogger) {
-        this.proto = await (0, protobuf_typescript_1.load)(path.join(__dirname, "./proto/mcs.proto"));
+        this.proto = await (0, protobufjs_1.load)(path.join(__dirname, "./proto/mcs.proto"));
         const pushClientParser = await parser_1.PushClientParser.init(log);
         return new PushClient(pushClientParser, auth, log);
     }
@@ -94,7 +97,7 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         const androidId = this.auth.androidId;
         const securityToken = this.auth.securityToken;
         const LoginRequestType = PushClient.proto.lookupType("mcs_proto.LoginRequest");
-        const hexAndroidId = Long.fromString(androidId).toString(16);
+        const hexAndroidId = long_1.default.fromString(androidId).toString(16);
         const loginRequest = {
             adaptiveHeartbeat: false,
             authService: 2,

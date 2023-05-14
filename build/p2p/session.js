@@ -1,10 +1,14 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.P2PClientProtocol = void 0;
 const dgram_1 = require("dgram");
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const stream_1 = require("stream");
 const sweet_collections_1 = require("sweet-collections");
+const date_and_time_1 = __importDefault(require("date-and-time"));
 const utils_1 = require("./utils");
 const types_1 = require("./types");
 const types_2 = require("../http/types");
@@ -1286,14 +1290,16 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                             }
                         }
                         this.currentMessageState[message.dataType].p2pStreamFirstVideoDataReceived = true;
-                        this.currentMessageState[message.dataType].waitForAudioData = setTimeout(() => {
-                            this.currentMessageState[message.dataType].waitForAudioData = undefined;
-                            this.currentMessageState[message.dataType].p2pStreamMetadata.audioCodec = types_1.AudioCodec.NONE;
-                            this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived = true;
-                            if (this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived && this.currentMessageState[message.dataType].p2pStreamFirstVideoDataReceived) {
-                                this.emitStreamStartEvent(message.dataType);
-                            }
-                        }, this.AUDIO_CODEC_ANALYZE_TIMEOUT);
+                        if (!this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived) {
+                            this.currentMessageState[message.dataType].waitForAudioData = setTimeout(() => {
+                                this.currentMessageState[message.dataType].waitForAudioData = undefined;
+                                this.currentMessageState[message.dataType].p2pStreamMetadata.audioCodec = types_1.AudioCodec.NONE;
+                                this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived = true;
+                                if (this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived && this.currentMessageState[message.dataType].p2pStreamFirstVideoDataReceived && this.currentMessageState[message.dataType].p2pStreamNotStarted) {
+                                    this.emitStreamStartEvent(message.dataType);
+                                }
+                            }, this.AUDIO_CODEC_ANALYZE_TIMEOUT);
+                        }
                     }
                     if (this.currentMessageState[message.dataType].p2pStreamNotStarted) {
                         if (this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived && this.currentMessageState[message.dataType].p2pStreamFirstVideoDataReceived) {
@@ -1342,10 +1348,10 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                     audioMetaData.audioTimestamp = message.data.slice(8, 14).readUIntLE(0, 6);
                     const audio_data = Buffer.from(message.data.slice(16));
                     this.log.debug(`Station ${this.rawStation.station_sn} - CMD_AUDIO_FRAME`, { dataSize: message.data.length, metadata: audioMetaData, audioDataSize: audio_data.length });
+                    if (this.currentMessageState[message.dataType].waitForAudioData !== undefined) {
+                        clearTimeout(this.currentMessageState[message.dataType].waitForAudioData);
+                    }
                     if (!this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived) {
-                        if (this.currentMessageState[message.dataType].waitForAudioData !== undefined) {
-                            clearTimeout(this.currentMessageState[message.dataType].waitForAudioData);
-                        }
                         this.currentMessageState[message.dataType].p2pStreamFirstAudioDataReceived = true;
                         this.currentMessageState[message.dataType].p2pStreamMetadata.audioCodec = audioMetaData.audioType === 0 ? types_1.AudioCodec.AAC : audioMetaData.audioType === 1 ? types_1.AudioCodec.AAC_LC : audioMetaData.audioType === 7 ? types_1.AudioCodec.AAC_ELD : types_1.AudioCodec.UNKNOWN;
                     }
@@ -1706,6 +1712,148 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                     }
                     catch (error) {
                         this.log.error(`Station ${this.rawStation.station_sn} - CMD_GET_TFCARD_STATUS - Error:`, { error: error, payload: message.data.toString("hex") });
+                    }
+                    break;
+                case types_1.CommandType.CMD_DATABASE:
+                    try {
+                        this.log.debug(`Station ${this.rawStation.station_sn} - CMD_DATABASE :`, { payload: message.data.toString() });
+                        const databaseResponse = (0, utils_3.parseJSON)(message.data.toString("utf-8"), this.log);
+                        switch (databaseResponse.cmd) {
+                            case types_1.CommandType.CMD_DATABASE_QUERY_LATEST_INFO:
+                                {
+                                    let data = [];
+                                    if (databaseResponse.data !== undefined && databaseResponse.data !== "[]")
+                                        data = databaseResponse.data;
+                                    const result = [];
+                                    for (const record of data) {
+                                        if (record.payload.crop_hb3_path !== "") {
+                                            result.push({
+                                                device_sn: record.device_sn,
+                                                event_count: record.payload.event_count,
+                                                crop_local_path: record.payload.crop_hb3_path
+                                            });
+                                        }
+                                        else {
+                                            result.push({
+                                                device_sn: record.device_sn,
+                                                event_count: record.payload.event_count,
+                                                crop_cloud_path: record.payload.crop_cloud_path
+                                            });
+                                        }
+                                    }
+                                    this.emit("database query latest", databaseResponse.mIntRet, result);
+                                    break;
+                                }
+                            case types_1.CommandType.CMD_DATABASE_COUNT_BY_DATE: {
+                                let data = [];
+                                if (databaseResponse.data !== undefined && databaseResponse.data !== "[]")
+                                    data = databaseResponse.data;
+                                const result = [];
+                                for (const record of data) {
+                                    result.push({
+                                        day: date_and_time_1.default.parse(record.days, "YYYYMMDD"),
+                                        count: record.count
+                                    });
+                                }
+                                this.emit("database count by date", databaseResponse.mIntRet, result);
+                                break;
+                            }
+                            case types_1.CommandType.CMD_DATABASE_QUERY_LOCAL: {
+                                let data = [];
+                                if (databaseResponse.data !== undefined && databaseResponse.data !== "[]")
+                                    data = databaseResponse.data;
+                                const result = new sweet_collections_1.SortedMap((a, b) => a - b);
+                                for (const record of data) {
+                                    for (const tableRecord of record.payload) {
+                                        let tmpRecord = result.get(tableRecord.record_id);
+                                        if (tmpRecord === undefined) {
+                                            tmpRecord = {
+                                                record_id: tableRecord.record_id,
+                                                device_sn: tableRecord.device_sn,
+                                                station_sn: tableRecord.station_sn,
+                                            };
+                                        }
+                                        if (record.table_name === "history_record_info") {
+                                            tmpRecord.history = {
+                                                device_type: tableRecord.device_type,
+                                                account: tableRecord.account,
+                                                start_time: date_and_time_1.default.parse(tableRecord.start_time, "YYYY-MM-DD HH:mm:ss"),
+                                                end_time: date_and_time_1.default.parse(tableRecord.end_time, "YYYY-MM-DD HH:mm:ss"),
+                                                frame_num: tableRecord.frame_num,
+                                                storage_type: tableRecord.storage_type,
+                                                storage_cloud: tableRecord.storage_cloud,
+                                                cipher_id: tableRecord.cipher_id,
+                                                vision: tableRecord.vision,
+                                                video_type: tableRecord.video_type,
+                                                has_lock: tableRecord.has_lock,
+                                                automation_id: tableRecord.automation_id,
+                                                trigger_type: tableRecord.trigger_type,
+                                                push_mode: tableRecord.push_mode,
+                                                mic_status: tableRecord.mic_status,
+                                                res_change: tableRecord.res_change,
+                                                res_best_width: tableRecord.res_best_width,
+                                                res_best_height: tableRecord.res_best_height,
+                                                self_learning: tableRecord.self_learning,
+                                                storage_path: tableRecord.storage_path,
+                                                thumb_path: tableRecord.thumb_path,
+                                                write_status: tableRecord.write_status,
+                                                cloud_path: tableRecord.cloud_path,
+                                                folder_size: tableRecord.folder_size,
+                                                storage_status: tableRecord.storage_status,
+                                                storage_label: tableRecord.storage_label,
+                                                time_zone: tableRecord.time_zone,
+                                                mp4_cloud: tableRecord.mp4_cloud,
+                                                snapshot_cloud: tableRecord.snapshot_cloud,
+                                                table_version: tableRecord.table_version,
+                                            };
+                                        }
+                                        else if (record.table_name === "record_crop_picture_info") {
+                                            if (tmpRecord.picture === undefined) {
+                                                tmpRecord.picture = [];
+                                            }
+                                            tmpRecord.picture.push({
+                                                picture_id: tableRecord.picture_id,
+                                                detection_type: tableRecord.detection_type,
+                                                person_id: tableRecord.person_id,
+                                                crop_path: tableRecord.crop_path,
+                                                event_time: date_and_time_1.default.parse(tableRecord.event_time, "YYYY-MM-DD HH:mm:ss"),
+                                                person_recog_flag: tableRecord.person_recog_flag,
+                                                crop_pic_quality: tableRecord.crop_pic_quality,
+                                                pic_marking_flag: tableRecord.pic_marking_flag,
+                                                group_id: tableRecord.group_id,
+                                                crop_id: tableRecord.crop_id,
+                                                start_time: date_and_time_1.default.parse(tableRecord.start_time, "YYYY-MM-DD HH:mm:ss"),
+                                                storage_type: tableRecord.storage_type,
+                                                storage_status: tableRecord.storage_status,
+                                                storage_label: tableRecord.storage_label,
+                                                table_version: tableRecord.table_version,
+                                                update_time: tableRecord.update_time,
+                                            });
+                                        }
+                                        else {
+                                            this.log.debug(`Station ${this.rawStation.station_sn} - Not implemented - CMD_DATABASE_QUERY_LOCAL - table_name: ${record.table_name}`);
+                                        }
+                                        result.set(tableRecord.record_id, tmpRecord);
+                                    }
+                                }
+                                this.emit("database query local", databaseResponse.mIntRet, Array.from(result.values()));
+                                break;
+                            }
+                            case types_1.CommandType.CMD_DATABASE_DELETE: {
+                                const data = databaseResponse.data;
+                                let failed_delete = [];
+                                if (databaseResponse.data !== undefined && data.failed_delete !== "[]")
+                                    failed_delete = data.failed_delete;
+                                this.emit("database delete", databaseResponse.mIntRet, failed_delete);
+                                break;
+                            }
+                            default:
+                                this.log.debug(`Station ${this.rawStation.station_sn} - Not implemented - CMD_DATABASE message`, { commandIdName: types_1.CommandType[message.commandId], commandId: message.commandId, channel: message.channel, databaseResponse: databaseResponse });
+                                break;
+                        }
+                    }
+                    catch (error) {
+                        this.log.error(`Station ${this.rawStation.station_sn} - CMD_DATABASE - Error:`, { error: error, payload: message.data.toString() });
                     }
                     break;
                 default:

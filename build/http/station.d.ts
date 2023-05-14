@@ -3,7 +3,7 @@ import { HTTPApi } from "./api";
 import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
-import { P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4 } from "../p2p/types";
+import { FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4 } from "../p2p/types";
 import { Device } from "./device";
 import { PushMessage } from "../push/models";
 export declare class Station extends TypedEmitter<StationEvents> {
@@ -294,4 +294,12 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onImageDownload;
     downloadImage(cover_path: string): Promise<void>;
     private onTFCardStatus;
+    databaseQueryLatestInfo(): Promise<void>;
+    databaseQueryLocal(serialNumbers: Array<string>, startDate: Date, endDate: Date, eventType?: FilterEventType, detectionType?: FilterDetectType, storageType?: FilterStorageType): Promise<void>;
+    databaseDelete(ids: Array<number>): Promise<void>;
+    databaseCountByDate(startDate: Date, endDate: Date): Promise<void>;
+    private onDatabaseQueryLatest;
+    private onDatabaseQueryLocal;
+    private onDatabaseCountByDate;
+    private onDatabaseDelete;
 }

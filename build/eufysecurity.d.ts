@@ -161,4 +161,8 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onStationDevicePinVerified;
     private onStationSdInfoEx;
     private onStationImageDownload;
+    private onStationDatabaseQueryLatest;
+    private onStationDatabaseQueryLocal;
+    private onStationDatabaseCountByDate;
+    private onStationDatabaseDelete;
 }

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
+exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
 exports.RequestMessageType = {
     STUN: Buffer.from([0xF1, 0x00]),
     LOOKUP: Buffer.from([0xF1, 0x20]),
@@ -513,7 +513,7 @@ var CommandType;
     CommandType[CommandType["CELLULAR_SIGNAL_STRENGTH"] = 7006] = "CELLULAR_SIGNAL_STRENGTH";
     CommandType[CommandType["CMD_DATABASE_COUNT"] = 10005] = "CMD_DATABASE_COUNT";
     CommandType[CommandType["CMD_DATABASE_COUNT_BY_DEVICE"] = 10012] = "CMD_DATABASE_COUNT_BY_DEVICE";
-    CommandType[CommandType["CMD_DATABASE_COUNT_by_DATE"] = 10008] = "CMD_DATABASE_COUNT_by_DATE";
+    CommandType[CommandType["CMD_DATABASE_COUNT_BY_DATE"] = 10008] = "CMD_DATABASE_COUNT_BY_DATE";
     CommandType[CommandType["CMD_DATABASE_DELETE"] = 10001] = "CMD_DATABASE_DELETE";
     CommandType[CommandType["CMD_DATABASE_DOWNLOAD"] = 8001] = "CMD_DATABASE_DOWNLOAD";
     CommandType[CommandType["CMD_DATABASE_IMAGE"] = 1308] = "CMD_DATABASE_IMAGE";
@@ -524,6 +524,9 @@ var CommandType;
     CommandType[CommandType["CMD_DATABASE_QUERY_LATEST_INFO"] = 10013] = "CMD_DATABASE_QUERY_LATEST_INFO";
     CommandType[CommandType["CMD_DATABASE_SYNC"] = 10003] = "CMD_DATABASE_SYNC";
     CommandType[CommandType["CMD_DATABASE_UPDATE"] = 10002] = "CMD_DATABASE_UPDATE";
+    CommandType[CommandType["CMD_DATABASE"] = 1306] = "CMD_DATABASE";
+    CommandType[CommandType["CMD_SYNC_QUERY_RECENT_PACKAGE_INFO"] = 10018] = "CMD_SYNC_QUERY_RECENT_PACKAGE_INFO";
+    CommandType[CommandType["CMD_DATABASE_QUERY_LOCAL"] = 10017] = "CMD_DATABASE_QUERY_LOCAL";
 })(CommandType = exports.CommandType || (exports.CommandType = {}));
 var MessageType;
 (function (MessageType) {
@@ -968,4 +971,51 @@ var SmartSafeBatteryStatusEvent;
     SmartSafeBatteryStatusEvent[SmartSafeBatteryStatusEvent["NOT_CHARGING"] = 0] = "NOT_CHARGING";
     SmartSafeBatteryStatusEvent[SmartSafeBatteryStatusEvent["CHARGING"] = 1] = "CHARGING";
 })(SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryStatusEvent || (exports.SmartSafeBatteryStatusEvent = {}));
+var DatabaseReturnCode;
+(function (DatabaseReturnCode) {
+    DatabaseReturnCode[DatabaseReturnCode["ERROR_DB_NOT_READY"] = -1100] = "ERROR_DB_NOT_READY";
+    DatabaseReturnCode[DatabaseReturnCode["SUCCESSFUL"] = 0] = "SUCCESSFUL";
+})(DatabaseReturnCode = exports.DatabaseReturnCode || (exports.DatabaseReturnCode = {}));
+var P2PStorageType;
+(function (P2PStorageType) {
+    P2PStorageType[P2PStorageType["NONE"] = 0] = "NONE";
+    P2PStorageType[P2PStorageType["EMMC"] = 1] = "EMMC";
+    P2PStorageType[P2PStorageType["HD"] = 2] = "HD";
+    P2PStorageType[P2PStorageType["SDCARD"] = 3] = "SDCARD";
+    P2PStorageType[P2PStorageType["SENSOR"] = 4] = "SENSOR";
+    P2PStorageType[P2PStorageType["ALARM"] = 5] = "ALARM";
+})(P2PStorageType = exports.P2PStorageType || (exports.P2PStorageType = {}));
+var FilterStorageType;
+(function (FilterStorageType) {
+    FilterStorageType[FilterStorageType["NONE"] = 0] = "NONE";
+    FilterStorageType[FilterStorageType["LOCAL"] = 1] = "LOCAL";
+    FilterStorageType[FilterStorageType["CLOUD"] = 2] = "CLOUD";
+})(FilterStorageType = exports.FilterStorageType || (exports.FilterStorageType = {}));
+var FilterEventType;
+(function (FilterEventType) {
+    FilterEventType[FilterEventType["ALL"] = 0] = "ALL";
+    FilterEventType[FilterEventType["VIDEO"] = 1] = "VIDEO";
+    FilterEventType[FilterEventType["ALERT"] = 2] = "ALERT";
+})(FilterEventType = exports.FilterEventType || (exports.FilterEventType = {}));
+var FeatureTag;
+(function (FeatureTag) {
+    FeatureTag[FeatureTag["USER"] = 0] = "USER";
+    FeatureTag[FeatureTag["STRANGER"] = 1] = "STRANGER";
+    FeatureTag[FeatureTag["SELF_LEARNING_NO_CONFIRM"] = 2] = "SELF_LEARNING_NO_CONFIRM";
+    FeatureTag[FeatureTag["SELF_LEARNING_CONFIRM"] = 3] = "SELF_LEARNING_CONFIRM";
+    FeatureTag[FeatureTag["SELF_LEARNING_ERROR_CONFIRM"] = 4] = "SELF_LEARNING_ERROR_CONFIRM";
+})(FeatureTag = exports.FeatureTag || (exports.FeatureTag = {}));
+var FilterDetectType;
+(function (FilterDetectType) {
+    FilterDetectType[FilterDetectType["NOT_SUPPORT"] = 0] = "NOT_SUPPORT";
+    FilterDetectType[FilterDetectType["PERSON_FACE"] = 1] = "PERSON_FACE";
+    FilterDetectType[FilterDetectType["PERSON_BODY"] = 2] = "PERSON_BODY";
+    FilterDetectType[FilterDetectType["VEHICLE"] = 4] = "VEHICLE";
+    FilterDetectType[FilterDetectType["PET"] = 8] = "PET";
+    FilterDetectType[FilterDetectType["SOUND"] = 128] = "SOUND";
+    FilterDetectType[FilterDetectType["CRYING"] = 256] = "CRYING";
+    FilterDetectType[FilterDetectType["PACKAGE"] = 512] = "PACKAGE";
+    FilterDetectType[FilterDetectType["PACKAGE_PICK_UP"] = 512] = "PACKAGE_PICK_UP";
+    FilterDetectType[FilterDetectType["PACKAGE_DELIVERED"] = 1024] = "PACKAGE_DELIVERED";
+})(FilterDetectType = exports.FilterDetectType || (exports.FilterDetectType = {}));
 //# sourceMappingURL=types.js.map

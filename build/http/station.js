@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Station = void 0;
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
+const date_and_time_1 = __importDefault(require("date-and-time"));
 const types_1 = require("./types");
 const parameter_1 = require("./parameter");
 const utils_1 = require("./utils");
@@ -62,6 +66,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.p2pSession.on("sd info ex", (sdStatus, sdCapacity, sdCapacityAvailable) => this.onSdInfoEx(sdStatus, sdCapacity, sdCapacityAvailable));
         this.p2pSession.on("image download", (file, image) => this.onImageDownload(file, image));
         this.p2pSession.on("tfcard status", (channel, status) => this.onTFCardStatus(channel, status));
+        this.p2pSession.on("database query latest", (returnCode, data) => this.onDatabaseQueryLatest(returnCode, data));
+        this.p2pSession.on("database query local", (returnCode, data) => this.onDatabaseQueryLocal(returnCode, data));
+        this.p2pSession.on("database count by date", (returnCode, data) => this.onDatabaseCountByDate(returnCode, data));
+        this.p2pSession.on("database delete", (returnCode, failedIds) => this.onDatabaseDelete(returnCode, failedIds));
     }
     initializeState() {
         this.update(this.rawStation);
@@ -804,6 +812,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.terminating = false;
         this.resetCurrentDelay();
         this.log.info(`Connected to station ${this.getSerial()} on host ${address.host} and port ${address.port}`);
+        if (this.hasCommand(types_1.CommandName.StationDatabaseQueryLatestInfo)) {
+            this.databaseQueryLatestInfo();
+        }
         this.emit("connect", this);
     }
     onDisconnect() {
@@ -6830,6 +6841,158 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     onTFCardStatus(channel, status) {
         this.updateRawProperty(types_2.CommandType.CMD_GET_TFCARD_STATUS, status.toString());
+    }
+    async databaseQueryLatestInfo() {
+        const commandData = {
+            name: types_1.CommandName.StationDatabaseQueryLatestInfo,
+        };
+        if (!this.hasCommand(commandData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+        }
+        this.log.debug(`Sending database query latest info command to station ${this.getSerial()}`);
+        await this.p2pSession.sendCommandWithStringPayload({
+            commandType: types_2.CommandType.CMD_SET_PAYLOAD,
+            value: JSON.stringify({
+                "account_id": this.rawStation.member.admin_user_id,
+                "cmd": types_2.CommandType.CMD_DATABASE,
+                "mChannel": 0,
+                "mValue3": 0,
+                "payload": {
+                    "cmd": types_2.CommandType.CMD_DATABASE_QUERY_LATEST_INFO,
+                    "table": "history_record_info",
+                    "transaction": `${new Date().getTime()}`
+                }
+            }),
+            channel: 0
+        }, {
+            command: commandData
+        });
+    }
+    async databaseQueryLocal(serialNumbers, startDate, endDate, eventType = 0, detectionType = 0, storageType = 0) {
+        const commandData = {
+            name: types_1.CommandName.StationDatabaseQueryLocal,
+            value: {
+                serialNumbers: serialNumbers,
+                eventType: eventType,
+                detectionType: detectionType
+            }
+        };
+        if (!this.hasCommand(commandData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+        }
+        this.log.debug(`Sending database query local command to station ${this.getSerial()}`, { serialNumbers: serialNumbers, startDate: startDate, endDate: endDate, eventType: eventType, detectionType: detectionType, storageType: storageType });
+        const devices = [];
+        for (const serial of serialNumbers) {
+            devices.push({ device_sn: serial });
+        }
+        await this.p2pSession.sendCommandWithStringPayload({
+            commandType: types_2.CommandType.CMD_SET_PAYLOAD,
+            value: JSON.stringify({
+                "account_id": this.rawStation.member.admin_user_id,
+                "cmd": types_2.CommandType.CMD_DATABASE,
+                "mChannel": 0,
+                "mValue3": 0,
+                "payload": {
+                    "cmd": types_2.CommandType.CMD_DATABASE_QUERY_LOCAL,
+                    "payload": {
+                        "count": 20,
+                        "detection_type": detectionType,
+                        "device_info": devices,
+                        "end_date": date_and_time_1.default.format(endDate, "YYYYMMDD"),
+                        "event_type": eventType,
+                        "flag": 0,
+                        "res_unzip": 1,
+                        "start_date": date_and_time_1.default.format(startDate, "YYYYMMDD"),
+                        "start_time": `${date_and_time_1.default.format(endDate, "YYYYMMDD")}000000`,
+                        "storage_cloud": storageType === types_2.FilterStorageType.NONE || (storageType !== types_2.FilterStorageType.LOCAL && storageType !== types_2.FilterStorageType.CLOUD) ? -1 : storageType,
+                        "ai_type": 0
+                    },
+                    "table": "history_record_info",
+                    "transaction": `${new Date().getTime()}`
+                }
+            }),
+            channel: 0
+        }, {
+            command: commandData
+        });
+    }
+    async databaseDelete(ids) {
+        const commandData = {
+            name: types_1.CommandName.StationDatabaseDelete,
+            value: ids
+        };
+        if (!this.hasCommand(commandData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+        }
+        this.log.debug(`Sending database delete command to station ${this.getSerial()}`, { ids: ids });
+        const lids = [];
+        for (const id of ids) {
+            lids.push({ "id": id });
+        }
+        await this.p2pSession.sendCommandWithStringPayload({
+            commandType: types_2.CommandType.CMD_SET_PAYLOAD,
+            value: JSON.stringify({
+                "account_id": this.rawStation.member.admin_user_id,
+                "cmd": types_2.CommandType.CMD_DATABASE,
+                "mChannel": 0,
+                "mValue3": 0,
+                "payload": {
+                    "cmd": types_2.CommandType.CMD_DATABASE_DELETE,
+                    "payload": lids,
+                    "table": "history_record_info",
+                    "transaction": `${new Date().getTime()}`
+                }
+            }),
+            channel: 0
+        }, {
+            command: commandData
+        });
+    }
+    async databaseCountByDate(startDate, endDate) {
+        const commandData = {
+            name: types_1.CommandName.StationDatabaseCountByDate,
+            value: {
+                startDate: startDate,
+                endDate: endDate
+            }
+        };
+        if (!this.hasCommand(commandData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+        }
+        this.log.debug(`Sending database count by date command to station ${this.getSerial()}`, { startDate: startDate, endDate: endDate });
+        await this.p2pSession.sendCommandWithStringPayload({
+            commandType: types_2.CommandType.CMD_SET_PAYLOAD,
+            value: JSON.stringify({
+                "account_id": this.rawStation.member.admin_user_id,
+                "cmd": types_2.CommandType.CMD_DATABASE,
+                "mChannel": 0,
+                "mValue3": 0,
+                "payload": {
+                    "cmd": types_2.CommandType.CMD_DATABASE_COUNT_BY_DATE,
+                    "payload": {
+                        "end_date": date_and_time_1.default.format(endDate, "YYYYMMDD"),
+                        "start_date": date_and_time_1.default.format(startDate, "YYYYMMDD"),
+                    },
+                    "table": "history_record_info",
+                    "transaction": `${new Date().getTime()}`
+                }
+            }),
+            channel: 0
+        }, {
+            command: commandData
+        });
+    }
+    onDatabaseQueryLatest(returnCode, data) {
+        this.emit("database query latest", this, returnCode, data);
+    }
+    onDatabaseQueryLocal(returnCode, data) {
+        this.emit("database query local", this, returnCode, data);
+    }
+    onDatabaseCountByDate(returnCode, data) {
+        this.emit("database count by date", this, returnCode, data);
+    }
+    onDatabaseDelete(returnCode, failedIds) {
+        this.emit("database delete", this, returnCode, failedIds);
     }
 }
 Station.CHANNEL = 255;

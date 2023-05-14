@@ -350,7 +350,8 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
             catch (error) {
                 this.log.error(`Type ${types_1.DeviceType[normalized_message.type]} CusPush - push_time - Error:`, error);
             }
-            if ((normalized_message.station_sn.startsWith("T8030") && !device_1.Device.isSensor(normalized_message.type)) || normalized_message.type === types_1.DeviceType.HB3) {
+            const excludeDevices = device_1.Device.isBatteryDoorbell(normalized_message.type) && device_1.Device.isWiredDoorbellDual(normalized_message.type) && device_1.Device.isSensor(normalized_message.type);
+            if ((normalized_message.station_sn.startsWith("T8030") && !excludeDevices) || normalized_message.type === types_1.DeviceType.HB3) {
                 const push_data = message.payload.payload;
                 normalized_message.name = push_data.name ? push_data.name : "";
                 normalized_message.channel = push_data.channel !== undefined ? push_data.channel : 0;
