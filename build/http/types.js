@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DeviceNightvisionProperty = exports.DeviceAutoNightvisionWiredDoorbellProperty = exports.DeviceAutoNightvisionProperty = exports.DeviceAntitheftDetectionProperty = exports.DeviceBatteryIsChargingKeypadProperty = exports.DeviceBatteryTempProperty = exports.DeviceBatteryLowSensorProperty = exports.DeviceBatteryLowKeypadProperty = exports.DeviceBatteryLowMotionSensorProperty = exports.DeviceBatteryLockProperty = exports.DeviceBatteryProperty = exports.GenericDeviceProperties = exports.BaseDeviceProperties = exports.GenericTypeProperty = exports.GenericSWVersionProperty = exports.GenericHWVersionProperty = exports.DeviceSerialNumberProperty = exports.DeviceModelProperty = exports.DeviceNameProperty = exports.PropertyName = exports.DeviceEvent = exports.TriggerType = exports.MicStatus = exports.RecordType = exports.MediaType = exports.VideoType = exports.IndoorMiniDetectionTypes = exports.IndoorDetectionTypes = exports.HB3DetectionTypes = exports.UserPasswordType = exports.UserType = exports.DualCamStreamMode = exports.VideoTypeStoreToNAS = exports.MotionDetectionMode = exports.SignalLevel = exports.TimeFormat = exports.GuardModeSecuritySettingsAction = exports.NotificationSwitchMode = exports.AlarmTone = exports.NotificationType = exports.FloodlightMotionTriggeredDistance = exports.PublicKeyType = exports.PowerSource = exports.StorageType = exports.VerfyCodeTypes = exports.ResponseErrorCode = exports.GuardMode = exports.AlarmMode = exports.ParamType = exports.DeviceType = void 0;
-exports.DeviceBasicLockStatusProperty = exports.DeviceMotionSensorPIREventProperty = exports.DeviceSensorChangeTimeProperty = exports.DeviceSensorOpenProperty = exports.DeviceRingingProperty = exports.DeviceCryingDetectedProperty = exports.DeviceSoundDetectedProperty = exports.DevicePetDetectedProperty = exports.DevicePersonDetectedProperty = exports.DeviceMotionDetectedProperty = exports.DeviceLockedSmartSafeProperty = exports.DeviceLockedProperty = exports.DeviceBatteryUsageLastWeekProperty = exports.DeviceLastChargingFalseEventsProperty = exports.DeviceLastChargingRecordedEventsProperty = exports.DeviceLastChargingTotalEventsProperty = exports.DeviceLastChargingDaysProperty = exports.DeviceStateLockProperty = exports.DeviceStateProperty = exports.DeviceWatermarkBatteryDoorbellCamera1Property = exports.DeviceWatermarkSoloWiredDoorbellProperty = exports.DeviceWatermarkIndoorFloodProperty = exports.DeviceWatermarkProperty = exports.DeviceRTSPStreamUrlProperty = exports.DeviceRTSPStreamProperty = exports.DevicePetDetectionProperty = exports.DeviceSoundDetectionProperty = exports.DeviceMotionDetectionDoorbellProperty = exports.DeviceMotionDetectionIndoorSoloFloodProperty = exports.DeviceMotionDetectionProperty = exports.DeviceStatusLedT8200XProperty = exports.DeviceStatusLedDoorbellProperty = exports.DeviceStatusLedBatteryDoorbellProperty = exports.DeviceStatusLedIndoorFloodProperty = exports.DeviceStatusLedProperty = exports.DeviceEnabledSoloProperty = exports.DeviceEnabledStandaloneProperty = exports.DeviceEnabledProperty = exports.DeviceWifiRSSISmartSafeProperty = exports.DeviceWifiRSSIKeypadProperty = exports.DeviceWifiRSSIEntrySensorProperty = exports.DeviceWifiRSSILockProperty = exports.DeviceCellularICCIDProperty = exports.DeviceCellularIMEIProperty = exports.DeviceCellularBandProperty = exports.DeviceCellularSignalProperty = exports.DeviceCellularSignalLevelProperty = exports.DeviceCellularRSSIProperty = exports.DeviceWifiSignalLevelProperty = exports.DeviceWifiRSSIProperty = void 0;
-exports.DeviceRingtoneVolumeWiredDoorbellProperty = exports.DeviceRingtoneVolumeBatteryDoorbellProperty = exports.DeviceSpeakerVolumeFloodlightT8420Property = exports.DeviceSpeakerVolumeWiredDoorbellProperty = exports.DeviceSpeakerVolumeIndoorFloodDoorbellProperty = exports.DeviceSpeakerVolumeCamera3Property = exports.DeviceSpeakerVolumeSoloProperty = exports.DeviceSpeakerVolumeProperty = exports.DeviceMotionTrackingProperty = exports.DeviceAudioRecordingFloodlightT8420Property = exports.DeviceAudioRecordingWiredDoorbellProperty = exports.DeviceAudioRecordingStarlight4gLTEProperty = exports.DeviceAudioRecordingIndoorSoloFloodlightProperty = exports.DeviceAudioRecordingProperty = exports.DeviceSpeakerProperty = exports.DeviceMicrophoneProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredTimerProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredDistanceProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredProperty = exports.DeviceFloodlightLightSettingsBrightnessScheduleProperty = exports.DeviceFloodlightLightSettingsBrightnessMotionProperty = exports.DeviceCameraLightSettingsBrightnessManualProperty = exports.DeviceLightSettingsBrightnessManualCamera3Property = exports.DeviceFloodlightLightSettingsBrightnessManualProperty = exports.DeviceFloodlightLightSettingsEnableProperty = exports.DeviceFloodlightLightProperty = exports.DeviceMotionZoneProperty = exports.DeviceHiddenMotionDetectionModeWiredDoorbellProperty = exports.DeviceHiddenMotionDetectionSensitivityWiredDoorbellProperty = exports.DeviceMotionDetectionSensitivityFloodlightT8420Property = exports.DeviceMotionDetectionSensitivitySoloProperty = exports.DeviceMotionDetectionSensitivityWiredDoorbellProperty = exports.DeviceMotionDetectionSensitivityBatteryDoorbellProperty = exports.DeviceMotionDetectionSensitivityIndoorProperty = exports.DeviceMotionDetectionSensitivityCamera1Property = exports.DeviceMotionDetectionSensitivityCamera2Property = exports.DeviceMotionDetectionTypeIndoorMiniProperty = exports.DeviceMotionDetectionTypeIndoorProperty = exports.DeviceMotionDetectionTypeFloodlightProperty = exports.DeviceMotionDetectionTypeFloodlightT8423Property = exports.DeviceMotionDetectionCamera1Property = exports.DeviceMotionDetectionTypeT8200XProperty = exports.DeviceMotionDetectionTypeProperty = exports.DeviceMotionHB3DetectionTypeAllOhterMotionsProperty = exports.DeviceMotionHB3DetectionTypeVehicleProperty = exports.DeviceMotionHB3DetectionTypePetProperty = exports.DeviceMotionHB3DetectionTypeHumanRecognitionProperty = exports.DeviceMotionHB3DetectionTypeHumanProperty = exports.DevicePictureUrlProperty = exports.DeviceAdvancedLockStatusProperty = void 0;
-exports.DeviceChirpToneEntrySensorProperty = exports.DeviceChirpVolumeEntrySensorProperty = exports.DeviceNotificationMotionWiredDoorbellProperty = exports.DeviceNotificationRadarDetectorProperty = exports.DeviceNotificationMotionProperty = exports.DeviceNotificationRingWiredDoorbellProperty = exports.DeviceNotificationRingProperty = exports.DeviceNotificationCryingProperty = exports.DeviceNotificationAllSoundProperty = exports.DeviceNotificationAllOtherMotionProperty = exports.DeviceNotificationPetProperty = exports.DeviceNotificationPersonProperty = exports.DeviceSoundDetectionSensitivityProperty = exports.DeviceSoundDetectionTypeProperty = exports.DeviceImageMirroredProperty = exports.DeviceRotationSpeedProperty = exports.DeviceNotificationTypeWiredDoorbellProperty = exports.DeviceNotificationTypeBatteryDoorbellProperty = exports.DeviceNotificationTypeIndoorFloodlightProperty = exports.DeviceNotificationTypeProperty = exports.DeviceChimeHomebaseRingtoneTypeBatteryDoorbellProperty = exports.DeviceChimeHomebaseRingtoneVolumeBatteryDoorbellProperty = exports.DeviceChimeHomebaseBatteryDoorbellProperty = exports.DeviceChimeIndoorT8200XProperty = exports.DeviceChimeIndoorWiredDoorbellProperty = exports.DeviceChimeIndoorBatteryDoorbellProperty = exports.DeviceWDRProperty = exports.DeviceVideoRecordingQualityCamera3Property = exports.DeviceVideoRecordingQualityCamera2CProProperty = exports.DeviceVideoRecordingQualityT8200XProperty = exports.DeviceVideoRecordingQualityProperty = exports.DeviceVideoRecordingQualityWiredDoorbellProperty = exports.DeviceVideoRecordingQualityIndoorProperty = exports.DeviceVideoStreamingQualityCamera3Property = exports.DeviceVideoStreamingQualitySoloProperty = exports.DeviceVideoStreamingQualityCameraProperty = exports.DeviceVideoStreamingQualityBatteryDoorbellProperty = exports.DeviceVideoStreamingQualityProperty = exports.DeviceRecordingEndClipMotionStopsProperty = exports.DeviceRecordingRetriggerIntervalFloodlightProperty = exports.DeviceRecordingRetriggerIntervalBatteryDoorbellProperty = exports.DeviceRecordingRetriggerIntervalProperty = exports.DeviceRecordingClipLengthFloodlightProperty = exports.DeviceRecordingClipLengthProperty = exports.DeviceChargingStatusCamera3cProperty = exports.DeviceChargingStatusProperty = exports.DevicePowerWorkingModeBatteryDoorbellProperty = exports.DevicePowerWorkingModeProperty = exports.DevicePowerSourceProperty = exports.DeviceRingtoneVolumeT8200XProperty = void 0;
-exports.DeviceMotionDetectionSensitivityAdvancedGProperty = exports.DeviceMotionDetectionSensitivityAdvancedFProperty = exports.DeviceMotionDetectionSensitivityAdvancedEProperty = exports.DeviceMotionDetectionSensitivityAdvancedDProperty = exports.DeviceMotionDetectionSensitivityAdvancedCProperty = exports.DeviceMotionDetectionSensitivityAdvancedBProperty = exports.DeviceMotionDetectionSensitivityAdvancedAProperty = exports.DeviceMotionDetectionSensitivityStandardProperty = exports.DeviceMotionDetectionSensitivityModeProperty = exports.DeviceLoiteringDetectionLengthProperty = exports.DeviceLoiteringDetectionRangeProperty = exports.DeviceLoiteringDetectionProperty = exports.DeviceNotificationLockedProperty = exports.DeviceNotificationUnlockedProperty = exports.DeviceNotificationProperty = exports.DeviceSoundSimpleProperty = exports.DeviceSoundProperty = exports.DeviceScramblePasscodeSmartSafeProperty = exports.DeviceScramblePasscodeProperty = exports.DeviceWrongTryAttemptsSmartSafeProperty = exports.DeviceWrongTryAttemptsProperty = exports.DeviceWrongTryLockdownTimeSmartSafeProperty = exports.DeviceWrongTryLockdownTimeProperty = exports.DeviceWrongTryProtectionSmartSafeProperty = exports.DeviceWrongTryProtectionProperty = exports.DeviceOneTouchLockingProperty = exports.DeviceAutoLockScheduleEndTimeProperty = exports.DeviceAutoLockScheduleStartTimeProperty = exports.DeviceAutoLockScheduleProperty = exports.DeviceAutoLockTimerProperty = exports.DeviceAutoLockProperty = exports.DeviceAutoCalibrationProperty = exports.DeviceVideoColorNightvisionProperty = exports.DeviceVideoNightvisionImageAdjustmentProperty = exports.DeviceLightSettingsMotionActivationModeProperty = exports.DeviceLightSettingsColorTemperatureScheduleProperty = exports.DeviceLightSettingsColorTemperatureMotionProperty = exports.DeviceLightSettingsColorTemperatureManualProperty = exports.DeviceMotionOutOfViewDetectionProperty = exports.DeviceMotionAutoCruiseProperty = exports.DeviceMotionTrackingSensitivityProperty = exports.DeviceMotionDetectionTestModeProperty = exports.DeviceMotionDetectionRangeAdvancedRightSensitivityProperty = exports.DeviceMotionDetectionRangeAdvancedMiddleSensitivityProperty = exports.DeviceMotionDetectionRangeAdvancedLeftSensitivityProperty = exports.DeviceMotionDetectionRangeStandardSensitivityProperty = exports.DeviceMotionDetectionRangeProperty = exports.DeviceVideoRingRecordWiredDoorbellProperty = exports.DeviceVideoDistortionCorrectionWiredDoorbellProperty = exports.DeviceVideoHDRWiredDoorbellProperty = void 0;
-exports.DeviceNotificationUnlockByKeyProperty = exports.DeviceAlarmVolumeProperty = exports.DevicePromptVolumeProperty = exports.DeviceRemoteUnlockMasterPINProperty = exports.DeviceRemoteUnlockProperty = exports.DeviceTamperAlarmProperty = exports.DeviceInteriorBrightnessDurationProperty = exports.DeviceInteriorBrightnessProperty = exports.DevicePowerSaveProperty = exports.DeviceDualUnlockProperty = exports.DeviceLeftOpenAlarmDurationProperty = exports.DeviceLeftOpenAlarmProperty = exports.DeviceRadarMotionDetectedProperty = exports.DeviceSomeoneLoiteringProperty = exports.DevicePackageTakenProperty = exports.DevicePackageStrandedProperty = exports.DevicePackageDeliveredProperty = exports.StationOffSecuritySettings = exports.StationCustom3SecuritySettings = exports.StationCustom2SecuritySettings = exports.StationCustom1SecuritySettings = exports.StationAwaySecuritySettings = exports.StationHomeSecuritySettings = exports.DeviceSoundDetectionRoundLookProperty = exports.DeviceNotificationIntervalTimeProperty = exports.DeviceDefaultAngleIdleTimeProperty = exports.DeviceDefaultAngleProperty = exports.DeviceContinuousRecordingTypeProperty = exports.DeviceContinuousRecordingProperty = exports.DeviceRingAutoResponseTimeToProperty = exports.DeviceRingAutoResponseTimeFromProperty = exports.DeviceRingAutoResponseVoiceResponseVoiceProperty = exports.DeviceRingAutoResponseVoiceResponseProperty = exports.DeviceRingAutoResponseProperty = exports.DeviceDualCamWatchViewModeProperty = exports.DeviceDeliveryGuardPackageLiveCheckAssistanceProperty = exports.DeviceDeliveryGuardUncollectedPackageAlertTimeToCheckProperty = exports.DeviceDeliveryGuardUncollectedPackageAlertProperty = exports.DeviceDeliveryGuardPackageGuardingActivatedTimeToProperty = exports.DeviceDeliveryGuardPackageGuardingActivatedTimeFromProperty = exports.DeviceDeliveryGuardPackageGuardingVoiceResponseVoiceProperty = exports.DeviceDeliveryGuardPackageGuardingProperty = exports.DeviceDeliveryGuardProperty = exports.DeviceLoiteringCustomResponseTimeToProperty = exports.DeviceLoiteringCustomResponseTimeFromProperty = exports.DeviceLoiteringCustomResponseHomeBaseNotificationProperty = exports.DeviceLoiteringCustomResponseAutoVoiceResponseVoiceProperty = exports.DeviceLoiteringCustomResponseAutoVoiceResponseProperty = exports.DeviceLoiteringCustomResponsePhoneNotificationProperty = exports.DeviceMotionDetectionSensitivityAdvancedHProperty = void 0;
-exports.StationPromptVolumeProperty = exports.StationAlarmVolumeProperty = exports.StationMacAddressProperty = exports.StationLanIpAddressStandaloneProperty = exports.StationLanIpAddressProperty = exports.StationCurrentModeKeyPadProperty = exports.StationCurrentModeProperty = exports.StationGuardModeKeyPadProperty = exports.StationGuardModeProperty = exports.BaseStationProperties = exports.StationSerialNumberProperty = exports.StationModelProperty = exports.StationNameProperty = exports.DeviceProperties = exports.WiredDoorbellT8200XDeviceProperties = exports.FloodlightT8420XDeviceProperties = exports.DevicePictureProperty = exports.DeviceDetectionStatisticsRecordedEventsProperty = exports.DeviceDetectionStatisticsDetectedEventsProperty = exports.DeviceDetectionStatisticsWorkingDaysProperty = exports.DeviceDogPoopDetectedProperty = exports.DeviceDogLickDetectedProperty = exports.DeviceDogDetectedProperty = exports.DeviceVehicleDetectedProperty = exports.DeviceStrangerPersonDetectedProperty = exports.DeviceIdentityPersonDetectedProperty = exports.DevicePersonNameProperty = exports.DeviceSnoozeChimeProperty = exports.DeviceSnoozeMotionProperty = exports.DeviceSnoozeHomebaseProperty = exports.DeviceSnoozeStartTimeWiredDoorbellProperty = exports.DeviceSnoozeStartTimeProperty = exports.DeviceSnoozeTimeProperty = exports.DeviceSnoozeProperty = exports.DeviceVideoTypeStoreToNASProperty = exports.DeviceWrongTryProtectAlertProperty = exports.DeviceLongTimeNotCloseAlertProperty = exports.DeviceLowBatteryAlertProperty = exports.DeviceShakeAlertEventProperty = exports.DeviceShakeAlertProperty = exports.Device911AlertEventProperty = exports.Device911AlertProperty = exports.DeviceJammedAlertProperty = exports.DeviceNotificationJammedProperty = exports.DeviceNotificationWrongTryProtectProperty = exports.DeviceNotificationDualLockProperty = exports.DeviceNotificationDualUnlockProperty = exports.DeviceNotificationUnlockByAppProperty = exports.DeviceNotificationUnlockByFingerprintProperty = exports.DeviceNotificationUnlockByPINProperty = void 0;
-exports.StationCommands = exports.DeviceCommands = exports.CommandName = exports.StationProperties = exports.StationSdAvailableCapacityProperty = exports.StationSdCapacityProperty = exports.StationSdStatusProperty = exports.StationAlarmDelayTypeProperty = exports.StationAlarmDelayProperty = exports.StationAlarmArmDelayProperty = exports.StationAlarmArmedProperty = exports.StationAlarmTypeProperty = exports.StationAlarmProperty = exports.StationTurnOffAlarmWithButtonProperty = exports.StationAutoEndAlarmProperty = exports.StationSwitchModeWithAccessCodeProperty = exports.StationTimeFormatProperty = exports.StationNotificationStartAlarmDelayProperty = exports.StationNotificationSwitchModeKeypadProperty = exports.StationNotificationSwitchModeAppProperty = exports.StationNotificationSwitchModeGeofenceProperty = exports.StationNotificationSwitchModeScheduleProperty = exports.StationAlarmToneProperty = void 0;
+exports.DeviceAntitheftDetectionProperty = exports.DeviceBatteryIsChargingKeypadProperty = exports.DeviceBatteryTempProperty = exports.DeviceBatteryLowSensorProperty = exports.DeviceBatteryLowKeypadProperty = exports.DeviceBatteryLowMotionSensorProperty = exports.DeviceBatteryLockProperty = exports.DeviceBatteryProperty = exports.GenericDeviceProperties = exports.BaseDeviceProperties = exports.GenericTypeProperty = exports.GenericSWVersionProperty = exports.GenericHWVersionProperty = exports.DeviceSerialNumberProperty = exports.DeviceModelProperty = exports.DeviceNameProperty = exports.PropertyName = exports.DeviceEvent = exports.MotionActivationMode = exports.DailyLightingType = exports.TriggerType = exports.MicStatus = exports.RecordType = exports.MediaType = exports.VideoType = exports.IndoorMiniDetectionTypes = exports.IndoorDetectionTypes = exports.HB3DetectionTypes = exports.UserPasswordType = exports.UserType = exports.DualCamStreamMode = exports.VideoTypeStoreToNAS = exports.MotionDetectionMode = exports.SignalLevel = exports.TimeFormat = exports.GuardModeSecuritySettingsAction = exports.NotificationSwitchMode = exports.AlarmTone = exports.WalllightNotificationType = exports.NotificationType = exports.FloodlightMotionTriggeredDistance = exports.PublicKeyType = exports.PowerSource = exports.StorageType = exports.VerfyCodeTypes = exports.ResponseErrorCode = exports.GuardMode = exports.AlarmMode = exports.ParamType = exports.DeviceType = void 0;
+exports.DeviceRingingProperty = exports.DeviceCryingDetectedProperty = exports.DeviceSoundDetectedProperty = exports.DevicePetDetectedProperty = exports.DevicePersonDetectedProperty = exports.DeviceMotionDetectedProperty = exports.DeviceLockedSmartSafeProperty = exports.DeviceLockedProperty = exports.DeviceBatteryUsageLastWeekProperty = exports.DeviceLastChargingFalseEventsProperty = exports.DeviceLastChargingRecordedEventsProperty = exports.DeviceLastChargingTotalEventsProperty = exports.DeviceLastChargingDaysProperty = exports.DeviceStateLockProperty = exports.DeviceStateProperty = exports.DeviceWatermarkBatteryDoorbellCamera1Property = exports.DeviceWatermarkSoloWiredDoorbellProperty = exports.DeviceWatermarkIndoorFloodProperty = exports.DeviceWatermarkProperty = exports.DeviceRTSPStreamUrlProperty = exports.DeviceRTSPStreamProperty = exports.DevicePetDetectionProperty = exports.DeviceSoundDetectionProperty = exports.DeviceMotionDetectionDoorbellProperty = exports.DeviceMotionDetectionIndoorSoloFloodProperty = exports.DeviceMotionDetectionProperty = exports.DeviceStatusLedT8200XProperty = exports.DeviceStatusLedDoorbellProperty = exports.DeviceStatusLedBatteryDoorbellProperty = exports.DeviceStatusLedIndoorFloodProperty = exports.DeviceStatusLedProperty = exports.DeviceEnabledSoloProperty = exports.DeviceEnabledStandaloneProperty = exports.DeviceEnabledProperty = exports.DeviceWifiRSSISmartSafeProperty = exports.DeviceWifiRSSIKeypadProperty = exports.DeviceWifiRSSIEntrySensorProperty = exports.DeviceWifiRSSILockProperty = exports.DeviceCellularICCIDProperty = exports.DeviceCellularIMEIProperty = exports.DeviceCellularBandProperty = exports.DeviceCellularSignalProperty = exports.DeviceCellularSignalLevelProperty = exports.DeviceCellularRSSIProperty = exports.DeviceWifiSignalLevelProperty = exports.DeviceWifiRSSIProperty = exports.DeviceNightvisionProperty = exports.DeviceAutoNightvisionWalllightProperty = exports.DeviceAutoNightvisionWiredDoorbellProperty = exports.DeviceAutoNightvisionProperty = void 0;
+exports.DeviceSpeakerVolumeSoloProperty = exports.DeviceSpeakerVolumeProperty = exports.DeviceMotionTrackingProperty = exports.DeviceAudioRecordingFloodlightT8420Property = exports.DeviceAudioRecordingWiredDoorbellProperty = exports.DeviceAudioRecordingStarlight4gLTEProperty = exports.DeviceAudioRecordingIndoorSoloFloodlightProperty = exports.DeviceAudioRecordingProperty = exports.DeviceSpeakerProperty = exports.DeviceMicrophoneProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredTimerProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredDistanceProperty = exports.DeviceFloodlightLightSettingsMotionTriggeredProperty = exports.DeviceFloodlightLightSettingsBrightnessScheduleProperty = exports.DeviceFloodlightLightSettingsBrightnessMotionProperty = exports.DeviceCameraLightSettingsBrightnessManualProperty = exports.DeviceLightSettingsBrightnessManualCamera3Property = exports.DeviceFloodlightLightSettingsBrightnessManualProperty = exports.DeviceFloodlightLightSettingsEnableProperty = exports.DeviceFloodlightLightProperty = exports.DeviceMotionZoneProperty = exports.DeviceHiddenMotionDetectionModeWiredDoorbellProperty = exports.DeviceHiddenMotionDetectionSensitivityWiredDoorbellProperty = exports.DeviceMotionDetectionSensitivityFloodlightT8420Property = exports.DeviceMotionDetectionSensitivitySoloProperty = exports.DeviceMotionDetectionSensitivityWiredDoorbellProperty = exports.DeviceMotionDetectionSensitivityBatteryDoorbellProperty = exports.DeviceMotionDetectionSensitivityIndoorProperty = exports.DeviceMotionDetectionSensitivityCamera1Property = exports.DeviceMotionDetectionSensitivityCamera2Property = exports.DeviceMotionDetectionTypeIndoorMiniProperty = exports.DeviceMotionDetectionTypeIndoorProperty = exports.DeviceMotionDetectionTypeFloodlightProperty = exports.DeviceMotionDetectionTypeFloodlightT8423Property = exports.DeviceMotionDetectionCamera1Property = exports.DeviceMotionDetectionTypeT8200XProperty = exports.DeviceMotionDetectionTypeProperty = exports.DeviceMotionDetectionTypeAllOhterMotionsWalllightProperty = exports.DeviceMotionHB3DetectionTypeAllOhterMotionsProperty = exports.DeviceMotionHB3DetectionTypeVehicleProperty = exports.DeviceMotionHB3DetectionTypePetProperty = exports.DeviceMotionHB3DetectionTypeHumanRecognitionProperty = exports.DeviceMotionDetectionTypeHumanWallLightProperty = exports.DeviceMotionHB3DetectionTypeHumanProperty = exports.DevicePictureUrlProperty = exports.DeviceAdvancedLockStatusProperty = exports.DeviceBasicLockStatusProperty = exports.DeviceMotionSensorPIREventProperty = exports.DeviceSensorChangeTimeProperty = exports.DeviceSensorOpenProperty = void 0;
+exports.DeviceNotificationPersonProperty = exports.DeviceSoundDetectionSensitivityProperty = exports.DeviceSoundDetectionTypeProperty = exports.DeviceImageMirroredProperty = exports.DeviceRotationSpeedProperty = exports.DeviceNotificationTypeWalllightProperty = exports.DeviceNotificationTypeWiredDoorbellProperty = exports.DeviceNotificationTypeBatteryDoorbellProperty = exports.DeviceNotificationTypeIndoorFloodlightProperty = exports.DeviceNotificationTypeProperty = exports.DeviceChimeHomebaseRingtoneTypeBatteryDoorbellProperty = exports.DeviceChimeHomebaseRingtoneVolumeBatteryDoorbellProperty = exports.DeviceChimeHomebaseBatteryDoorbellProperty = exports.DeviceChimeIndoorT8200XProperty = exports.DeviceChimeIndoorWiredDoorbellProperty = exports.DeviceChimeIndoorBatteryDoorbellProperty = exports.DeviceWDRProperty = exports.DeviceVideoRecordingQualityCamera3Property = exports.DeviceVideoRecordingQualityCamera2CProProperty = exports.DeviceVideoRecordingQualityT8200XProperty = exports.DeviceVideoRecordingQualityWalllightProperty = exports.DeviceVideoRecordingQualityProperty = exports.DeviceVideoRecordingQualityWiredDoorbellProperty = exports.DeviceVideoRecordingQualityIndoorProperty = exports.DeviceVideoStreamingQualityCamera3Property = exports.DeviceVideoStreamingQualityWalllightProperty = exports.DeviceVideoStreamingQualitySoloProperty = exports.DeviceVideoStreamingQualityCameraProperty = exports.DeviceVideoStreamingQualityBatteryDoorbellProperty = exports.DeviceVideoStreamingQualityProperty = exports.DeviceRecordingEndClipMotionStopsProperty = exports.DeviceRecordingRetriggerIntervalFloodlightProperty = exports.DeviceRecordingRetriggerIntervalBatteryDoorbellProperty = exports.DeviceRecordingRetriggerIntervalProperty = exports.DeviceRecordingClipLengthWalllightProperty = exports.DeviceRecordingClipLengthFloodlightProperty = exports.DeviceRecordingClipLengthProperty = exports.DeviceChargingStatusCamera3cProperty = exports.DeviceChargingStatusProperty = exports.DevicePowerWorkingModeBatteryDoorbellProperty = exports.DevicePowerWorkingModeProperty = exports.DevicePowerSourceProperty = exports.DeviceRingtoneVolumeT8200XProperty = exports.DeviceRingtoneVolumeWiredDoorbellProperty = exports.DeviceRingtoneVolumeBatteryDoorbellProperty = exports.DeviceSpeakerVolumeWalllightProperty = exports.DeviceSpeakerVolumeFloodlightT8420Property = exports.DeviceSpeakerVolumeWiredDoorbellProperty = exports.DeviceSpeakerVolumeIndoorFloodDoorbellProperty = exports.DeviceSpeakerVolumeCamera3Property = void 0;
+exports.DeviceNotificationWalllightProperty = exports.DeviceNotificationProperty = exports.DeviceSoundSimpleProperty = exports.DeviceSoundProperty = exports.DeviceScramblePasscodeSmartSafeProperty = exports.DeviceScramblePasscodeProperty = exports.DeviceWrongTryAttemptsSmartSafeProperty = exports.DeviceWrongTryAttemptsProperty = exports.DeviceWrongTryLockdownTimeSmartSafeProperty = exports.DeviceWrongTryLockdownTimeProperty = exports.DeviceWrongTryProtectionSmartSafeProperty = exports.DeviceWrongTryProtectionProperty = exports.DeviceOneTouchLockingProperty = exports.DeviceAutoLockScheduleEndTimeProperty = exports.DeviceAutoLockScheduleStartTimeProperty = exports.DeviceAutoLockScheduleProperty = exports.DeviceAutoLockTimerProperty = exports.DeviceAutoLockProperty = exports.DeviceAutoCalibrationProperty = exports.DeviceVideoColorNightvisionProperty = exports.DeviceVideoNightvisionImageAdjustmentProperty = exports.DeviceLightSettingsMotionActivationModeProperty = exports.DeviceLightSettingsColorTemperatureScheduleProperty = exports.DeviceLightSettingsColorTemperatureMotionProperty = exports.DeviceLightSettingsColorTemperatureManualProperty = exports.DeviceMotionOutOfViewDetectionProperty = exports.DeviceMotionAutoCruiseProperty = exports.DeviceMotionTrackingSensitivityProperty = exports.DeviceMotionDetectionTestModeProperty = exports.DeviceMotionDetectionRangeAdvancedRightSensitivityProperty = exports.DeviceMotionDetectionRangeAdvancedMiddleSensitivityProperty = exports.DeviceMotionDetectionRangeAdvancedLeftSensitivityProperty = exports.DeviceMotionDetectionRangeStandardSensitivityProperty = exports.DeviceMotionDetectionRangeProperty = exports.DeviceVideoRingRecordWiredDoorbellProperty = exports.DeviceVideoDistortionCorrectionWiredDoorbellProperty = exports.DeviceVideoHDRWiredDoorbellProperty = exports.DeviceChirpToneEntrySensorProperty = exports.DeviceChirpVolumeEntrySensorProperty = exports.DeviceNotificationMotionWiredDoorbellProperty = exports.DeviceNotificationRadarDetectorProperty = exports.DeviceNotificationMotionProperty = exports.DeviceNotificationRingWiredDoorbellProperty = exports.DeviceNotificationRingProperty = exports.DeviceNotificationCryingProperty = exports.DeviceNotificationAllSoundProperty = exports.DeviceNotificationAllOtherMotionWalllightProperty = exports.DeviceNotificationAllOtherMotionProperty = exports.DeviceNotificationPetProperty = exports.DeviceNotificationPersonWalllightProperty = void 0;
+exports.DevicePackageTakenProperty = exports.DevicePackageStrandedProperty = exports.DevicePackageDeliveredProperty = exports.StationOffSecuritySettings = exports.StationCustom3SecuritySettings = exports.StationCustom2SecuritySettings = exports.StationCustom1SecuritySettings = exports.StationAwaySecuritySettings = exports.StationHomeSecuritySettings = exports.DeviceSoundDetectionRoundLookProperty = exports.DeviceNotificationIntervalTimeProperty = exports.DeviceDefaultAngleIdleTimeProperty = exports.DeviceDefaultAngleProperty = exports.DeviceContinuousRecordingTypeProperty = exports.DeviceContinuousRecordingProperty = exports.DeviceRingAutoResponseTimeToProperty = exports.DeviceRingAutoResponseTimeFromProperty = exports.DeviceRingAutoResponseVoiceResponseVoiceProperty = exports.DeviceRingAutoResponseVoiceResponseProperty = exports.DeviceRingAutoResponseProperty = exports.DeviceDualCamWatchViewModeProperty = exports.DeviceDeliveryGuardPackageLiveCheckAssistanceProperty = exports.DeviceDeliveryGuardUncollectedPackageAlertTimeToCheckProperty = exports.DeviceDeliveryGuardUncollectedPackageAlertProperty = exports.DeviceDeliveryGuardPackageGuardingActivatedTimeToProperty = exports.DeviceDeliveryGuardPackageGuardingActivatedTimeFromProperty = exports.DeviceDeliveryGuardPackageGuardingVoiceResponseVoiceProperty = exports.DeviceDeliveryGuardPackageGuardingProperty = exports.DeviceDeliveryGuardProperty = exports.DeviceLoiteringCustomResponseTimeToProperty = exports.DeviceLoiteringCustomResponseTimeFromProperty = exports.DeviceLoiteringCustomResponseHomeBaseNotificationProperty = exports.DeviceLoiteringCustomResponseAutoVoiceResponseVoiceProperty = exports.DeviceLoiteringCustomResponseAutoVoiceResponseProperty = exports.DeviceLoiteringCustomResponsePhoneNotificationProperty = exports.DeviceMotionDetectionSensitivityAdvancedHProperty = exports.DeviceMotionDetectionSensitivityAdvancedGProperty = exports.DeviceMotionDetectionSensitivityAdvancedFProperty = exports.DeviceMotionDetectionSensitivityAdvancedEProperty = exports.DeviceMotionDetectionSensitivityAdvancedDProperty = exports.DeviceMotionDetectionSensitivityAdvancedCProperty = exports.DeviceMotionDetectionSensitivityAdvancedBProperty = exports.DeviceMotionDetectionSensitivityAdvancedAProperty = exports.DeviceMotionDetectionSensitivityStandardProperty = exports.DeviceMotionDetectionSensitivityModeProperty = exports.DeviceLoiteringDetectionLengthProperty = exports.DeviceLoiteringDetectionRangeProperty = exports.DeviceLoiteringDetectionProperty = exports.DeviceNotificationLockedProperty = exports.DeviceNotificationUnlockedProperty = void 0;
+exports.DeviceLightSettingsManualColoredLightingProperty = exports.DeviceLightSettingsManualDailyLightingProperty = exports.DevicePictureProperty = exports.DeviceDetectionStatisticsRecordedEventsProperty = exports.DeviceDetectionStatisticsDetectedEventsProperty = exports.DeviceDetectionStatisticsWorkingDaysProperty = exports.DeviceDogPoopDetectedProperty = exports.DeviceDogLickDetectedProperty = exports.DeviceDogDetectedProperty = exports.DeviceVehicleDetectedProperty = exports.DeviceStrangerPersonDetectedProperty = exports.DeviceIdentityPersonDetectedProperty = exports.DevicePersonNameProperty = exports.DeviceSnoozeChimeProperty = exports.DeviceSnoozeMotionProperty = exports.DeviceSnoozeHomebaseProperty = exports.DeviceSnoozeStartTimeWiredDoorbellProperty = exports.DeviceSnoozeStartTimeProperty = exports.DeviceSnoozeTimeProperty = exports.DeviceSnoozeProperty = exports.DeviceVideoTypeStoreToNASProperty = exports.DeviceWrongTryProtectAlertProperty = exports.DeviceLongTimeNotCloseAlertProperty = exports.DeviceLowBatteryAlertProperty = exports.DeviceShakeAlertEventProperty = exports.DeviceShakeAlertProperty = exports.Device911AlertEventProperty = exports.Device911AlertProperty = exports.DeviceJammedAlertProperty = exports.DeviceNotificationJammedProperty = exports.DeviceNotificationWrongTryProtectProperty = exports.DeviceNotificationDualLockProperty = exports.DeviceNotificationDualUnlockProperty = exports.DeviceNotificationUnlockByAppProperty = exports.DeviceNotificationUnlockByFingerprintProperty = exports.DeviceNotificationUnlockByPINProperty = exports.DeviceNotificationUnlockByKeyProperty = exports.DeviceAlarmVolumeProperty = exports.DevicePromptVolumeProperty = exports.DeviceRemoteUnlockMasterPINProperty = exports.DeviceRemoteUnlockProperty = exports.DeviceTamperAlarmProperty = exports.DeviceInteriorBrightnessDurationProperty = exports.DeviceInteriorBrightnessProperty = exports.DevicePowerSaveProperty = exports.DeviceDualUnlockProperty = exports.DeviceLeftOpenAlarmDurationProperty = exports.DeviceLeftOpenAlarmProperty = exports.DeviceRadarMotionDetectedProperty = exports.DeviceSomeoneLoiteringProperty = void 0;
+exports.StationCommands = exports.DeviceCommands = exports.CommandName = exports.StationProperties = exports.StationSdAvailableCapacityProperty = exports.StationSdCapacityProperty = exports.StationSdStatusProperty = exports.StationAlarmDelayTypeProperty = exports.StationAlarmDelayProperty = exports.StationAlarmArmDelayProperty = exports.StationAlarmArmedProperty = exports.StationAlarmTypeProperty = exports.StationAlarmProperty = exports.StationTurnOffAlarmWithButtonProperty = exports.StationAutoEndAlarmProperty = exports.StationSwitchModeWithAccessCodeProperty = exports.StationTimeFormatProperty = exports.StationNotificationStartAlarmDelayProperty = exports.StationNotificationSwitchModeKeypadProperty = exports.StationNotificationSwitchModeAppProperty = exports.StationNotificationSwitchModeGeofenceProperty = exports.StationNotificationSwitchModeScheduleProperty = exports.StationAlarmToneProperty = exports.StationPromptVolumeProperty = exports.StationAlarmVolumeWalllightProperty = exports.StationAlarmVolumeProperty = exports.StationMacAddressProperty = exports.StationLanIpAddressStandaloneProperty = exports.StationLanIpAddressProperty = exports.StationCurrentModeKeyPadProperty = exports.StationCurrentModeProperty = exports.StationGuardModeKeyPadProperty = exports.StationGuardModeProperty = exports.BaseStationProperties = exports.StationSerialNumberProperty = exports.StationModelProperty = exports.StationNameProperty = exports.DeviceProperties = exports.WiredDoorbellT8200XDeviceProperties = exports.FloodlightT8420XDeviceProperties = exports.DeviceLightSettingsScheduleDynamicLightingProperty = exports.DeviceLightSettingsScheduleColoredLightingProperty = exports.DeviceLightSettingsScheduleDailyLightingProperty = exports.DeviceLightSettingsMotionDynamicLightingProperty = exports.DeviceLightSettingsMotionColoredLightingProperty = exports.DeviceLightSettingsMotionDailyLightingProperty = exports.DeviceLightSettingsManualDynamicLightingProperty = void 0;
 const types_1 = require("../p2p/types");
 var DeviceType;
 (function (DeviceType) {
@@ -64,6 +64,7 @@ var DeviceType;
     DeviceType[DeviceType["SMART_SAFE_7401"] = 141] = "SMART_SAFE_7401";
     DeviceType[DeviceType["SMART_SAFE_7402"] = 142] = "SMART_SAFE_7402";
     DeviceType[DeviceType["SMART_SAFE_7403"] = 143] = "SMART_SAFE_7403";
+    DeviceType[DeviceType["WALL_LIGHT_CAM"] = 151] = "WALL_LIGHT_CAM";
 })(DeviceType = exports.DeviceType || (exports.DeviceType = {}));
 var ParamType;
 (function (ParamType) {
@@ -236,6 +237,11 @@ var NotificationType;
     NotificationType[NotificationType["INCLUDE_THUMBNAIL"] = 2] = "INCLUDE_THUMBNAIL";
     NotificationType[NotificationType["FULL_EFFECT"] = 3] = "FULL_EFFECT";
 })(NotificationType = exports.NotificationType || (exports.NotificationType = {}));
+var WalllightNotificationType;
+(function (WalllightNotificationType) {
+    WalllightNotificationType[WalllightNotificationType["ONLY_TEXT"] = 1] = "ONLY_TEXT";
+    WalllightNotificationType[WalllightNotificationType["WITH_THUMBNAIL"] = 2] = "WITH_THUMBNAIL";
+})(WalllightNotificationType = exports.WalllightNotificationType || (exports.WalllightNotificationType = {}));
 var AlarmTone;
 (function (AlarmTone) {
     AlarmTone[AlarmTone["ALARM_TONE1"] = 1] = "ALARM_TONE1";
@@ -379,6 +385,17 @@ var TriggerType;
     TriggerType[TriggerType["MISSED_RING"] = 64] = "MISSED_RING";
     TriggerType[TriggerType["ANSWER_RING"] = 128] = "ANSWER_RING";
 })(TriggerType = exports.TriggerType || (exports.TriggerType = {}));
+var DailyLightingType;
+(function (DailyLightingType) {
+    DailyLightingType[DailyLightingType["COLD"] = 0] = "COLD";
+    DailyLightingType[DailyLightingType["WARM"] = 1] = "WARM";
+    DailyLightingType[DailyLightingType["VERY_WARM"] = 2] = "VERY_WARM";
+})(DailyLightingType = exports.DailyLightingType || (exports.DailyLightingType = {}));
+var MotionActivationMode;
+(function (MotionActivationMode) {
+    MotionActivationMode[MotionActivationMode["SMART"] = 0] = "SMART";
+    MotionActivationMode[MotionActivationMode["FAST"] = 1] = "FAST";
+})(MotionActivationMode = exports.MotionActivationMode || (exports.MotionActivationMode = {}));
 var DeviceEvent;
 (function (DeviceEvent) {
     DeviceEvent[DeviceEvent["MotionDetected"] = 0] = "MotionDetected";
@@ -498,6 +515,15 @@ var PropertyName;
     PropertyName["DeviceLightSettingsMotionTriggeredDistance"] = "lightSettingsMotionTriggeredDistance";
     PropertyName["DeviceLightSettingsMotionTriggeredTimer"] = "lightSettingsMotionTriggeredTimer";
     //DeviceLightSettingsSunsetToSunrise = "lightSettingsSunsetToSunrise",
+    PropertyName["DeviceLightSettingsManualDailyLighting"] = "lightSettingsManualDailyLighting";
+    PropertyName["DeviceLightSettingsManualColoredLighting"] = "lightSettingsManualColoredLighting";
+    PropertyName["DeviceLightSettingsManualDynamicLighting"] = "lightSettingsManualDynamicLighting";
+    PropertyName["DeviceLightSettingsMotionDailyLighting"] = "lightSettingsMotionDailyLighting";
+    PropertyName["DeviceLightSettingsMotionColoredLighting"] = "lightSettingsMotionColoredLighting";
+    PropertyName["DeviceLightSettingsMotionDynamicLighting"] = "lightSettingsMotionDynamicLighting";
+    PropertyName["DeviceLightSettingsScheduleDailyLighting"] = "lightSettingsScheduleDailyLighting";
+    PropertyName["DeviceLightSettingsScheduleColoredLighting"] = "lightSettingsScheduleColoredLighting";
+    PropertyName["DeviceLightSettingsScheduleDynamicLighting"] = "lightSettingsScheduleDynamicLighting";
     PropertyName["DeviceChimeIndoor"] = "chimeIndoor";
     PropertyName["DeviceChimeHomebase"] = "chimeHomebase";
     PropertyName["DeviceChimeHomebaseRingtoneVolume"] = "chimeHomebaseRingtoneVolume";
@@ -849,6 +875,10 @@ exports.DeviceAutoNightvisionProperty = {
 exports.DeviceAutoNightvisionWiredDoorbellProperty = {
     ...exports.DeviceAutoNightvisionProperty,
     key: ParamType.NIGHT_VISUAL,
+};
+exports.DeviceAutoNightvisionWalllightProperty = {
+    ...exports.DeviceAutoNightvisionProperty,
+    commandId: types_1.CommandType.CMD_SET_NIGHT_VISION_TYPE,
 };
 exports.DeviceNightvisionProperty = {
     key: types_1.CommandType.CMD_SET_NIGHT_VISION_TYPE,
@@ -1293,6 +1323,10 @@ exports.DeviceMotionHB3DetectionTypeHumanProperty = {
     writeable: true,
     type: "boolean",
 };
+exports.DeviceMotionDetectionTypeHumanWallLightProperty = {
+    ...exports.DeviceMotionHB3DetectionTypeHumanProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_MOTION_DETECTION_TYPE_HUMAN,
+};
 exports.DeviceMotionHB3DetectionTypeHumanRecognitionProperty = {
     key: types_1.CommandType.CMD_SET_MOTION_DETECTION_TYPE_HB3,
     name: PropertyName.DeviceMotionDetectionTypeHumanRecognition,
@@ -1324,6 +1358,10 @@ exports.DeviceMotionHB3DetectionTypeAllOhterMotionsProperty = {
     readable: true,
     writeable: true,
     type: "boolean",
+};
+exports.DeviceMotionDetectionTypeAllOhterMotionsWalllightProperty = {
+    ...exports.DeviceMotionHB3DetectionTypeAllOhterMotionsProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_MOTION_DETECTION_TYPE_ALL,
 };
 exports.DeviceMotionDetectionTypeProperty = {
     key: types_1.CommandType.CMD_DEV_PUSHMSG_MODE,
@@ -1653,6 +1691,15 @@ exports.DeviceSpeakerVolumeFloodlightT8420Property = {
     min: 1,
     max: 63,
 };
+exports.DeviceSpeakerVolumeWalllightProperty = {
+    ...exports.DeviceSpeakerVolumeProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_SPEAKER_VOLUME,
+    states: {
+        1: "Low",
+        2: "Medium",
+        3: "High"
+    },
+};
 exports.DeviceRingtoneVolumeBatteryDoorbellProperty = {
     key: types_1.CommandType.CMD_BAT_DOORBELL_SET_RINGTONE_VOLUME,
     name: PropertyName.DeviceRingtoneVolume,
@@ -1747,6 +1794,12 @@ exports.DeviceRecordingClipLengthFloodlightProperty = {
     max: 120,
     default: 100,
 };
+exports.DeviceRecordingClipLengthWalllightProperty = {
+    ...exports.DeviceRecordingClipLengthProperty,
+    min: 30,
+    max: 120,
+    default: 60,
+};
 exports.DeviceRecordingRetriggerIntervalProperty = {
     key: types_1.CommandType.CMD_DEV_RECORD_INTERVAL,
     name: PropertyName.DeviceRecordingRetriggerInterval,
@@ -1822,6 +1875,10 @@ exports.DeviceVideoStreamingQualitySoloProperty = {
     key: types_1.CommandType.CMD_SET_RESOLUTION,
     commandId: ParamType.COMMAND_VIDEO_QUALITY,
 };
+exports.DeviceVideoStreamingQualityWalllightProperty = {
+    ...exports.DeviceVideoStreamingQualitySoloProperty,
+    commandId: types_1.CommandType.CMD_SET_RESOLUTION,
+};
 exports.DeviceVideoStreamingQualityCamera3Property = {
     ...exports.DeviceVideoStreamingQualityBatteryDoorbellProperty,
     states: {
@@ -1863,6 +1920,15 @@ exports.DeviceVideoRecordingQualityProperty = {
         3: "2K HD",
     },
     commandId: ParamType.COMMAND_VIDEO_RECORDING_QUALITY,
+};
+exports.DeviceVideoRecordingQualityWalllightProperty = {
+    ...exports.DeviceVideoRecordingQualityIndoorProperty,
+    key: types_1.CommandType.CMD_SET_RECORD_QUALITY,
+    states: {
+        2: "Full HD (1080P)",
+        3: "2K HD",
+    },
+    commandId: types_1.CommandType.CMD_SET_RECORD_QUALITY,
 };
 exports.DeviceVideoRecordingQualityT8200XProperty = {
     ...exports.DeviceVideoRecordingQualityIndoorProperty,
@@ -1979,6 +2045,15 @@ exports.DeviceNotificationTypeWiredDoorbellProperty = {
     key: ParamType.DOORBELL_MOTION_NOTIFICATION,
     commandId: ParamType.COMMAND_NOTIFICATION_TYPE,
 };
+exports.DeviceNotificationTypeWalllightProperty = {
+    ...exports.DeviceNotificationTypeProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE,
+    commandId: types_1.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE,
+    states: {
+        1: "Text Only",
+        2: "With Thumbnail",
+    },
+};
 exports.DeviceRotationSpeedProperty = {
     key: types_1.CommandType.CMD_INDOOR_PAN_SPEED,
     name: PropertyName.DeviceRotationSpeed,
@@ -2038,6 +2113,10 @@ exports.DeviceNotificationPersonProperty = {
     writeable: true,
     type: "boolean",
 };
+exports.DeviceNotificationPersonWalllightProperty = {
+    ...exports.DeviceNotificationPersonProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE_HUMAN,
+};
 exports.DeviceNotificationPetProperty = {
     key: types_1.CommandType.CMD_INDOOR_AI_PET_ENABLE,
     name: PropertyName.DeviceNotificationPet,
@@ -2053,6 +2132,10 @@ exports.DeviceNotificationAllOtherMotionProperty = {
     readable: true,
     writeable: true,
     type: "boolean",
+};
+exports.DeviceNotificationAllOtherMotionWalllightProperty = {
+    ...exports.DeviceNotificationAllOtherMotionProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE_ALL,
 };
 exports.DeviceNotificationAllSoundProperty = {
     key: types_1.CommandType.CMD_INDOOR_AI_SOUND_ENABLE,
@@ -2461,6 +2544,10 @@ exports.DeviceNotificationProperty = {
     readable: true,
     writeable: true,
     type: "boolean",
+};
+exports.DeviceNotificationWalllightProperty = {
+    ...exports.DeviceNotificationProperty,
+    key: types_1.CommandType.CMD_WALL_LIGHT_NOTIFICATION,
 };
 exports.DeviceNotificationUnlockedProperty = {
     key: types_1.CommandType.CMD_SMARTLOCK_NOTIFICATION_UNLOCKED,
@@ -3352,6 +3439,93 @@ exports.DevicePictureProperty = {
     writeable: false,
     type: "object",
     default: null,
+};
+exports.DeviceLightSettingsManualDailyLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DAILY_LIGHTING,
+    name: PropertyName.DeviceLightSettingsManualDailyLighting,
+    label: "Light Setting Manual Daily Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+    states: {
+        "0": "Cold",
+        "1": "Warm",
+        "2": "Very warm",
+    },
+};
+exports.DeviceLightSettingsManualColoredLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_COLORED_LIGHTING,
+    name: PropertyName.DeviceLightSettingsManualColoredLighting,
+    label: "Light Setting Manual Colored Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+};
+exports.DeviceLightSettingsManualDynamicLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DYNAMIC_LIGHTING,
+    name: PropertyName.DeviceLightSettingsManualDynamicLighting,
+    label: "Light Setting Manual Dynamic Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+};
+exports.DeviceLightSettingsMotionDailyLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING,
+    name: PropertyName.DeviceLightSettingsMotionDailyLighting,
+    label: "Light Setting Motion Daily Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+    states: {
+        "0": "Cold",
+        "1": "Warm",
+        "2": "Very warm",
+    },
+};
+exports.DeviceLightSettingsMotionColoredLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING,
+    name: PropertyName.DeviceLightSettingsMotionColoredLighting,
+    label: "Light Setting Motion Colored Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+};
+exports.DeviceLightSettingsMotionDynamicLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING,
+    name: PropertyName.DeviceLightSettingsMotionDynamicLighting,
+    label: "Light Setting Motion Dynamic Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+};
+exports.DeviceLightSettingsScheduleDailyLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DAILY_LIGHTING,
+    name: PropertyName.DeviceLightSettingsScheduleDailyLighting,
+    label: "Light Setting Schedule Daily Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+    states: {
+        "0": "Cold",
+        "1": "Warm",
+        "2": "Very warm",
+    },
+};
+exports.DeviceLightSettingsScheduleColoredLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_COLORED_LIGHTING,
+    name: PropertyName.DeviceLightSettingsScheduleColoredLighting,
+    label: "Light Setting Schedule Colored Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
+};
+exports.DeviceLightSettingsScheduleDynamicLightingProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DYNAMIC_LIGHTING,
+    name: PropertyName.DeviceLightSettingsScheduleDynamicLighting,
+    label: "Light Setting Schedule Dynamic Lighting",
+    readable: true,
+    writeable: true,
+    type: "number",
 };
 exports.FloodlightT8420XDeviceProperties = {
     ...exports.GenericDeviceProperties,
@@ -5054,6 +5228,53 @@ exports.DeviceProperties = {
         [PropertyName.DeviceLongTimeNotCloseAlert]: exports.DeviceLongTimeNotCloseAlertProperty,
         [PropertyName.DeviceWrongTryProtectAlert]: exports.DeviceWrongTryProtectAlertProperty,
     },
+    [DeviceType.WALL_LIGHT_CAM]: {
+        ...exports.GenericDeviceProperties,
+        [PropertyName.DeviceEnabled]: exports.DeviceEnabledSoloProperty,
+        [PropertyName.DeviceAutoNightvision]: exports.DeviceAutoNightvisionWalllightProperty,
+        [PropertyName.DeviceMotionDetection]: exports.DeviceMotionDetectionIndoorSoloFloodProperty,
+        [PropertyName.DeviceWatermark]: exports.DeviceWatermarkSoloWiredDoorbellProperty,
+        [PropertyName.DeviceMotionDetected]: exports.DeviceMotionDetectedProperty,
+        [PropertyName.DevicePersonDetected]: exports.DevicePersonDetectedProperty,
+        [PropertyName.DeviceStatusLed]: exports.DeviceStatusLedProperty,
+        [PropertyName.DevicePicture]: exports.DevicePictureProperty,
+        [PropertyName.DevicePictureUrl]: exports.DevicePictureUrlProperty,
+        [PropertyName.DeviceLight]: exports.DeviceFloodlightLightProperty,
+        [PropertyName.DeviceLightSettingsBrightnessManual]: exports.DeviceFloodlightLightSettingsBrightnessManualProperty,
+        [PropertyName.DeviceLightSettingsManualDailyLighting]: exports.DeviceLightSettingsManualDailyLightingProperty,
+        //[PropertyName.DeviceLightSettingsManualColoredLighting]: DeviceLightSettingsManualColoredLightingProperty, //6381
+        [PropertyName.DeviceLightSettingsManualDynamicLighting]: exports.DeviceLightSettingsManualDynamicLightingProperty,
+        [PropertyName.DeviceLightSettingsBrightnessMotion]: exports.DeviceFloodlightLightSettingsBrightnessMotionProperty,
+        [PropertyName.DeviceLightSettingsBrightnessSchedule]: exports.DeviceFloodlightLightSettingsBrightnessScheduleProperty,
+        [PropertyName.DeviceLightSettingsScheduleDailyLighting]: exports.DeviceLightSettingsScheduleDailyLightingProperty,
+        //[PropertyName.DeviceLightSettingsScheduleColoredLighting]: DeviceLightSettingsScheduleColoredLightingProperty,
+        [PropertyName.DeviceLightSettingsScheduleDynamicLighting]: exports.DeviceLightSettingsScheduleDynamicLightingProperty,
+        [PropertyName.DeviceLightSettingsMotionTriggered]: exports.DeviceFloodlightLightSettingsMotionTriggeredProperty,
+        [PropertyName.DeviceLightSettingsMotionTriggeredTimer]: exports.DeviceFloodlightLightSettingsMotionTriggeredTimerProperty,
+        [PropertyName.DeviceLightSettingsMotionDailyLighting]: exports.DeviceLightSettingsMotionDailyLightingProperty,
+        //[PropertyName.DeviceLightSettingsMotionColoredLighting]: DeviceLightSettingsMotionColoredLightingProperty,
+        [PropertyName.DeviceLightSettingsMotionDynamicLighting]: exports.DeviceLightSettingsMotionDynamicLightingProperty,
+        [PropertyName.DeviceLightSettingsMotionActivationMode]: exports.DeviceLightSettingsMotionActivationModeProperty,
+        [PropertyName.DeviceMotionDetectionSensitivity]: exports.DeviceMotionDetectionSensitivityBatteryDoorbellProperty,
+        [PropertyName.DeviceSpeakerVolume]: exports.DeviceSpeakerVolumeWalllightProperty,
+        [PropertyName.DeviceAudioRecording]: exports.DeviceAudioRecordingProperty,
+        [PropertyName.DeviceRecordingClipLength]: exports.DeviceRecordingClipLengthWalllightProperty,
+        [PropertyName.DeviceRecordingEndClipMotionStops]: exports.DeviceRecordingEndClipMotionStopsProperty,
+        [PropertyName.DeviceWifiRSSI]: exports.DeviceWifiRSSIProperty,
+        [PropertyName.DeviceWifiSignalLevel]: exports.DeviceWifiSignalLevelProperty,
+        [PropertyName.DeviceSnooze]: exports.DeviceSnoozeProperty,
+        [PropertyName.DeviceSnoozeTime]: exports.DeviceSnoozeTimeProperty,
+        [PropertyName.DeviceSnoozeStartTime]: exports.DeviceSnoozeStartTimeProperty,
+        [PropertyName.DevicePersonName]: exports.DevicePersonNameProperty,
+        [PropertyName.DeviceVideoStreamingQuality]: exports.DeviceVideoStreamingQualityWalllightProperty,
+        [PropertyName.DeviceVideoRecordingQuality]: exports.DeviceVideoRecordingQualityWalllightProperty,
+        [PropertyName.DeviceNotificationPerson]: exports.DeviceNotificationPersonWalllightProperty,
+        [PropertyName.DeviceNotificationAllOtherMotion]: exports.DeviceNotificationAllOtherMotionWalllightProperty,
+        [PropertyName.DeviceMotionDetectionTypeHuman]: exports.DeviceMotionDetectionTypeHumanWallLightProperty,
+        [PropertyName.DeviceMotionDetectionTypeAllOtherMotions]: exports.DeviceMotionDetectionTypeAllOhterMotionsWalllightProperty,
+        [PropertyName.DeviceNotification]: exports.DeviceNotificationWalllightProperty,
+        [PropertyName.DeviceNotificationType]: exports.DeviceNotificationTypeWalllightProperty,
+    }
 };
 exports.StationNameProperty = {
     key: "station_name",
@@ -5178,6 +5399,19 @@ exports.StationAlarmVolumeProperty = {
     min: 1,
     max: 26,
     default: 26,
+};
+exports.StationAlarmVolumeWalllightProperty = {
+    key: types_1.CommandType.CMD_WALL_LIGHT_ALERT_VOLUME,
+    name: PropertyName.StationAlarmVolume,
+    label: "Alarm Volume",
+    readable: true,
+    writeable: true,
+    type: "number",
+    states: {
+        1: "Low",
+        2: "Medium",
+        3: "High"
+    },
 };
 exports.StationPromptVolumeProperty = {
     key: types_1.CommandType.CMD_SET_PROMPT_VOLUME,
@@ -5659,6 +5893,17 @@ exports.StationProperties = {
         [PropertyName.StationAlarm]: exports.StationAlarmProperty,
         [PropertyName.StationAlarmType]: exports.StationAlarmTypeProperty,
     },
+    [DeviceType.WALL_LIGHT_CAM]: {
+        ...exports.BaseStationProperties,
+        [PropertyName.StationLANIpAddress]: exports.StationLanIpAddressStandaloneProperty,
+        [PropertyName.StationMacAddress]: exports.StationMacAddressProperty,
+        [PropertyName.StationGuardMode]: exports.StationGuardModeProperty,
+        [PropertyName.StationCurrentMode]: exports.StationCurrentModeProperty,
+        [PropertyName.StationTimeFormat]: exports.StationTimeFormatProperty,
+        [PropertyName.StationAlarm]: exports.StationAlarmProperty,
+        [PropertyName.StationAlarmType]: exports.StationAlarmTypeProperty,
+        [PropertyName.StationAlarmVolume]: exports.StationAlarmVolumeWalllightProperty,
+    },
     [DeviceType.LOCK_WIFI]: {
         ...exports.BaseStationProperties,
     },
@@ -6025,6 +6270,15 @@ exports.DeviceCommands = {
         CommandName.DeviceStopTalkback,
         CommandName.DeviceSnooze,
     ],
+    [DeviceType.WALL_LIGHT_CAM]: [
+        CommandName.DeviceStartLivestream,
+        CommandName.DeviceStopLivestream,
+        CommandName.DeviceStartDownload,
+        CommandName.DeviceCancelDownload,
+        CommandName.DeviceStartTalkback,
+        CommandName.DeviceStopTalkback,
+        CommandName.DeviceSnooze,
+    ],
     [DeviceType.KEYPAD]: [],
     [DeviceType.LOCK_BLE]: [],
     [DeviceType.LOCK_BLE_NO_FINGER]: [],
@@ -6260,6 +6514,24 @@ exports.StationCommands = {
         CommandName.StationDatabaseDelete,
     ],
     [DeviceType.FLOODLIGHT_CAMERA_8424]: [
+        CommandName.StationReboot,
+        CommandName.StationTriggerAlarmSound,
+        CommandName.StationDownloadImage,
+        CommandName.StationDatabaseQueryLatestInfo,
+        CommandName.StationDatabaseQueryLocal,
+        CommandName.StationDatabaseCountByDate,
+        CommandName.StationDatabaseDelete,
+    ],
+    [DeviceType.CAMERA_FG]: [
+        CommandName.StationReboot,
+        CommandName.StationTriggerAlarmSound,
+        CommandName.StationDownloadImage,
+        CommandName.StationDatabaseQueryLatestInfo,
+        CommandName.StationDatabaseQueryLocal,
+        CommandName.StationDatabaseCountByDate,
+        CommandName.StationDatabaseDelete,
+    ],
+    [DeviceType.WALL_LIGHT_CAM]: [
         CommandName.StationReboot,
         CommandName.StationTriggerAlarmSound,
         CommandName.StationDownloadImage,

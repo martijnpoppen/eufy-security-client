@@ -466,6 +466,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         station.on("database query local", (station, returnCode, data) => this.onStationDatabaseQueryLocal(station, returnCode, data));
                         station.on("database count by date", (station, returnCode, data) => this.onStationDatabaseCountByDate(station, returnCode, data));
                         station.on("database delete", (station, returnCode, failedIds) => this.onStationDatabaseDelete(station, returnCode, failedIds));
+                        station.on("sensor status", (station, channel, status) => this.onStationSensorStatus(station, channel, status));
                         this.addStation(station);
                         station.initialize();
                     }
@@ -480,6 +481,10 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.stationsLoaded = true;
             this.loadingEmitter.emit("stations loaded");
         });
+        if (promises.length === 0) {
+            this.stationsLoaded = true;
+            this.loadingEmitter.emit("stations loaded");
+        }
         for (const stationSN of stationsSNs) {
             if (!newStationsSNs.includes(stationSN)) {
                 this.getStation(stationSN).then((station) => {
@@ -551,6 +556,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 else if (device_1.Device.isFloodLight(device.device_type)) {
                     new_device = device_1.FloodlightCamera.getInstance(this.api, device);
+                }
+                else if (device_1.Device.isWallLightCam(device.device_type)) {
+                    new_device = device_1.WallLightCam.getInstance(this.api, device);
                 }
                 else if (device_1.Device.isCamera(device.device_type)) {
                     new_device = device_1.Camera.getInstance(this.api, device);
@@ -626,6 +634,10 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.devicesLoaded = true;
             this.loadingEmitter.emit("devices loaded");
         });
+        if (promises.length === 0) {
+            this.devicesLoaded = true;
+            this.loadingEmitter.emit("devices loaded");
+        }
         for (const deviceSN of deviceSNs) {
             if (!newDeviceSNs.includes(deviceSN)) {
                 this.getDevice(deviceSN).then((device) => {
@@ -1412,7 +1424,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_RECOGNITION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeHuman:
-                await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
+                if (device.isWallLightCam()) {
+                    await station.setMotionDetectionTypeHuman(device, value);
+                }
+                else {
+                    await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
+                }
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypePet:
                 await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
@@ -1421,7 +1438,39 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.VEHICLE_DETECTION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions:
-                await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);
+                if (device.isWallLightCam()) {
+                    await station.setMotionDetectionTypeAllOtherMotions(device, value);
+                }
+                else {
+                    await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);
+                }
+                break;
+            case types_1.PropertyName.DeviceLightSettingsManualDailyLighting:
+                await station.setLightSettingsManualDailyLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsManualColoredLighting:
+                await station.setLightSettingsManualColoredLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsManualDynamicLighting:
+                await station.setLightSettingsManualDynamicLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsMotionDailyLighting:
+                await station.setLightSettingsMotionDailyLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsMotionColoredLighting:
+                await station.setLightSettingsMotionColoredLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsMotionDynamicLighting:
+                await station.setLightSettingsMotionDynamicLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsScheduleDailyLighting:
+                await station.setLightSettingsScheduleDailyLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsScheduleColoredLighting:
+                await station.setLightSettingsScheduleColoredLighting(device, value);
+                break;
+            case types_1.PropertyName.DeviceLightSettingsScheduleDynamicLighting:
+                await station.setLightSettingsScheduleDynamicLighting(device, value);
                 break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
@@ -1732,7 +1781,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 const picture = device.getPropertyValue(types_1.PropertyName.DevicePicture);
                 if (picture === undefined || picture === null || (picture && ((_a = picture.data) === null || _a === void 0 ? void 0 : _a.length) === 0)) {
                     this.getStation(device.getStationSerial()).then((station) => {
-                        station.downloadImage(value);
+                        if (station.hasCommand(types_1.CommandName.StationDownloadImage)) {
+                            station.downloadImage(value);
+                        }
                     }).catch((error) => {
                         this.log.error(`Device property changed error (device: ${device.getSerial()} name: ${name}) - station download image (station: ${device.getStationSerial()} image_path: ${value})`, error);
                     });
@@ -2191,6 +2242,16 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     }
     onStationDatabaseDelete(station, returnCode, failedIds) {
         this.emit("station database delete", station, returnCode, failedIds);
+    }
+    onStationSensorStatus(station, channel, status) {
+        this.getStationDevice(station.getSerial(), channel).then((device) => {
+            if (device.hasProperty(types_1.PropertyName.DeviceSensorOpen)) {
+                const metadataSensorOpen = device.getPropertyMetadata(types_1.PropertyName.DeviceSensorOpen);
+                device.updateRawProperty(metadataSensorOpen.key, status.toString());
+            }
+        }).catch((error) => {
+            this.log.error(`Station sensor status error (station: ${station.getSerial()} channel: ${channel})`, error);
+        });
     }
 }
 exports.EufySecurity = EufySecurity;

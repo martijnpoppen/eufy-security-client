@@ -165,4 +165,5 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onStationDatabaseQueryLocal;
     private onStationDatabaseCountByDate;
     private onStationDatabaseDelete;
+    private onStationSensorStatus;
 }

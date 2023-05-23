@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnknownDevice = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
+exports.UnknownDevice = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.WallLightCam = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const types_1 = require("./types");
 const parameter_1 = require("./parameter");
@@ -52,9 +52,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         }
         this.log.debug("Normalized Properties", { deviceSN: this.getSerial(), properties: this.properties });
     }
-    updateProperty(name, value) {
+    updateProperty(name, value, force = false) {
         if ((this.properties[name] !== undefined && this.properties[name] !== value)
-            || this.properties[name] === undefined) {
+            || this.properties[name] === undefined || force) {
             const oldValue = this.properties[name];
             this.properties[name] = value;
             this.emit("property changed", this, name, value, this.ready);
@@ -537,11 +537,11 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     }
                 }
             }
-            else if (property.name === types_1.PropertyName.DeviceMotionDetectionTypeHuman ||
+            else if ((property.name === types_1.PropertyName.DeviceMotionDetectionTypeHuman ||
                 property.name === types_1.PropertyName.DeviceMotionDetectionTypeHumanRecognition ||
                 property.name === types_1.PropertyName.DeviceMotionDetectionTypePet ||
                 property.name === types_1.PropertyName.DeviceMotionDetectionTypeVehicle ||
-                property.name === types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions) {
+                property.name === types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions) && this.getStationSerial().startsWith("T8030")) {
                 const booleanProperty = property;
                 try {
                     return (0, utils_1.isHB3DetectionModeEnabled)(Number.parseInt(value), property.name === types_1.PropertyName.DeviceMotionDetectionTypeHuman ? types_1.HB3DetectionTypes.HUMAN_DETECTION : property.name === types_1.PropertyName.DeviceMotionDetectionTypeHumanRecognition ? types_1.HB3DetectionTypes.HUMAN_RECOGNITION : property.name === types_1.PropertyName.DeviceMotionDetectionTypePet ? types_1.HB3DetectionTypes.PET_DETECTION : property.name === types_1.PropertyName.DeviceMotionDetectionTypeVehicle ? types_1.HB3DetectionTypes.VEHICLE_DETECTION : types_1.HB3DetectionTypes.ALL_OTHER_MOTION);
@@ -755,7 +755,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.INDOOR_COST_DOWN_CAMERA ||
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8422 ||
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8423 ||
-            type == types_1.DeviceType.FLOODLIGHT_CAMERA_8424)
+            type == types_1.DeviceType.FLOODLIGHT_CAMERA_8424 ||
+            type == types_1.DeviceType.WALL_LIGHT_CAM)
             return true;
         return false;
     }
@@ -860,6 +861,11 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     static isFloodLightT8420X(type, serialnumber) {
         if (type == types_1.DeviceType.FLOODLIGHT && serialnumber.startsWith("T8420") && serialnumber.length > 7 && serialnumber.charAt(6) === "6")
+            return true;
+        return false;
+    }
+    static isWallLightCam(type) {
+        if (type == types_1.DeviceType.WALL_LIGHT_CAM)
             return true;
         return false;
     }
@@ -1034,6 +1040,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     isFloodLightT8420X() {
         return Device.isFloodLightT8420X(this.rawDevice.device_type, this.rawDevice.device_sn);
     }
+    isWallLightCam() {
+        return Device.isWallLightCam(this.rawDevice.device_type);
+    }
     isDoorbell() {
         return Device.isDoorbell(this.rawDevice.device_type);
     }
@@ -1173,7 +1182,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         if (this.isLock() || this.isSmartDrop()) {
             return this.rawDevice.device_sn === this.rawDevice.station_sn;
         }
-        return this.isWiredDoorbellDual() || this.isFloodLight() || this.isWiredDoorbell() || this.isIndoorCamera() || this.isSoloCameras();
+        return this.isWiredDoorbellDual() || this.isFloodLight() || this.isWiredDoorbell() || this.isIndoorCamera() || this.isSoloCameras() || this.isWallLightCam();
     }
     hasBattery() {
         return Device.hasBattery(this.rawDevice.device_type);
@@ -1446,7 +1455,7 @@ class Camera extends Device {
                     if (!(0, utils_3.isEmpty)(message.pic_url)) {
                         (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                             if (image.data.length > 0) {
-                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                             }
                         }).catch((error) => {
                             this.log.debug(`CusPushEvent.SECURITY - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -1483,7 +1492,7 @@ class Camera extends Device {
                         if (!(0, utils_3.isEmpty)(message.pic_url)) {
                             (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                                 if (image.data.length > 0) {
-                                    this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                    this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                                 }
                             }).catch((error) => {
                                 this.log.debug(`HB3PairedDevicePushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -1616,7 +1625,7 @@ class SoloCamera extends Camera {
                     if (!(0, utils_3.isEmpty)(message.pic_url)) {
                         (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                             if (image.data.length > 0) {
-                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                             }
                         }).catch((error) => {
                             this.log.debug(`SoloPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -1693,7 +1702,7 @@ class IndoorCamera extends Camera {
                     if (!(0, utils_3.isEmpty)(message.pic_url)) {
                         (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                             if (image.data.length > 0) {
-                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                             }
                         }).catch((error) => {
                             this.log.debug(`IndoorPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -1825,7 +1834,7 @@ class DoorbellCamera extends Camera {
                     if (!(0, utils_3.isEmpty)(message.pic_url)) {
                         (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                             if (image.data.length > 0) {
-                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                             }
                         }).catch((error) => {
                             this.log.debug(`DoorbellPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -1995,7 +2004,7 @@ class FloodlightCamera extends Camera {
                     if (!(0, utils_3.isEmpty)(message.pic_url)) {
                         (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
                             if (image.data.length > 0) {
-                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image, true);
                             }
                         }).catch((error) => {
                             this.log.debug(`FloodlightPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
@@ -2033,6 +2042,76 @@ class FloodlightCamera extends Camera {
     }
 }
 exports.FloodlightCamera = FloodlightCamera;
+class WallLightCam extends Camera {
+    static async getInstance(api, device) {
+        return new WallLightCam(api, device);
+    }
+    isLedEnabled() {
+        return this.getPropertyValue(types_1.PropertyName.DeviceStatusLed);
+    }
+    isMotionDetectionEnabled() {
+        return this.getPropertyValue(types_1.PropertyName.DeviceMotionDetection);
+    }
+    convertRawPropertyValue(property, value) {
+        try {
+            switch (property.key) {
+                case types_2.CommandType.CMD_DEV_RECORD_AUTOSTOP:
+                    return value !== undefined ? (value === "0" ? true : false) : false;
+                case types_2.CommandType.CMD_SET_AUDIO_MUTE_RECORD:
+                    return value !== undefined ? (value === "1" ? true : false) : false;
+            }
+        }
+        catch (error) {
+            this.log.error("Convert Error:", { property: property, value: value, error: error });
+        }
+        return super.convertRawPropertyValue(property, value);
+    }
+    processPushNotification(message, eventDurationSeconds) {
+        super.processPushNotification(message, eventDurationSeconds);
+        if (message.type !== undefined && message.event_type !== undefined) {
+            if (message.device_sn === this.getSerial()) {
+                try {
+                    if (!(0, utils_3.isEmpty)(message.pic_url)) {
+                        (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
+                            if (image.data.length > 0) {
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                            }
+                        }).catch((error) => {
+                            this.log.debug(`WallLightCamPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
+                        });
+                    }
+                    switch (message.event_type) {
+                        case types_3.IndoorPushEvent.MOTION_DETECTION:
+                            this.updateProperty(types_1.PropertyName.DeviceMotionDetected, true);
+                            this.clearEventTimeout(types_1.DeviceEvent.MotionDetected);
+                            this.eventTimeouts.set(types_1.DeviceEvent.MotionDetected, setTimeout(async () => {
+                                this.updateProperty(types_1.PropertyName.DeviceMotionDetected, false);
+                                this.eventTimeouts.delete(types_1.DeviceEvent.MotionDetected);
+                            }, eventDurationSeconds * 1000));
+                            break;
+                        case types_3.IndoorPushEvent.FACE_DETECTION:
+                            this.updateProperty(types_1.PropertyName.DevicePersonName, !(0, utils_3.isEmpty)(message.person_name) ? message.person_name : "Unknown");
+                            this.updateProperty(types_1.PropertyName.DevicePersonDetected, true);
+                            this.clearEventTimeout(types_1.DeviceEvent.PersonDetected);
+                            this.eventTimeouts.set(types_1.DeviceEvent.PersonDetected, setTimeout(async () => {
+                                this.updateProperty(types_1.PropertyName.DevicePersonName, "");
+                                this.updateProperty(types_1.PropertyName.DevicePersonDetected, false);
+                                this.eventTimeouts.delete(types_1.DeviceEvent.PersonDetected);
+                            }, eventDurationSeconds * 1000));
+                            break;
+                        default:
+                            this.log.debug("Unhandled WallLightCam push event", message);
+                            break;
+                    }
+                }
+                catch (error) {
+                    this.log.debug(`WallLightCamPushEvent - Device: ${message.device_sn} Error:`, error);
+                }
+            }
+        }
+    }
+}
+exports.WallLightCam = WallLightCam;
 class Sensor extends Device {
     static async getInstance(api, device) {
         return new Sensor(api, device);

@@ -1,6 +1,6 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
-import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes } from "./types";
+import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
 import { FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4 } from "../p2p/types";
@@ -30,7 +30,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     getStateChannel(): string;
     getRawStation(): StationListResponse;
     update(station: StationListResponse, cloudOnlyProperties?: boolean): void;
-    updateProperty(name: string, value: PropertyValue): boolean;
+    updateProperty(name: string, value: PropertyValue, force?: boolean): boolean;
     updateRawProperties(values: RawValues): void;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
     updateRawProperty(type: number, value: string): boolean;
@@ -119,7 +119,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     enableHomebaseChime(device: Device, value: boolean): Promise<void>;
     setHomebaseChimeRingtoneVolume(device: Device, value: number): Promise<void>;
     setHomebaseChimeRingtoneType(device: Device, value: number): Promise<void>;
-    setNotificationType(device: Device, value: NotificationType): Promise<void>;
+    setNotificationType(device: Device, value: NotificationType | WalllightNotificationType): Promise<void>;
     setNotificationPerson(device: Device, value: boolean): Promise<void>;
     setNotificationPet(device: Device, value: boolean): Promise<void>;
     setNotificationAllOtherMotion(device: Device, value: boolean): Promise<void>;
@@ -186,7 +186,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setLightSettingsColorTemperatureManual(device: Device, value: number): Promise<void>;
     setLightSettingsColorTemperatureMotion(device: Device, value: number): Promise<void>;
     setLightSettingsColorTemperatureSchedule(device: Device, value: number): Promise<void>;
-    setLightSettingsMotionActivationMode(device: Device, value: number): Promise<void>;
+    setLightSettingsMotionActivationMode(device: Device, value: MotionActivationMode): Promise<void>;
     setVideoNightvisionImageAdjustment(device: Device, enabled: boolean): Promise<void>;
     setVideoColorNightvision(device: Device, enabled: boolean): Promise<void>;
     setAutoCalibration(device: Device, enabled: boolean): Promise<void>;
@@ -302,4 +302,16 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onDatabaseQueryLocal;
     private onDatabaseCountByDate;
     private onDatabaseDelete;
+    private onSensorStatus;
+    setMotionDetectionTypeHuman(device: Device, value: boolean): Promise<void>;
+    setMotionDetectionTypeAllOtherMotions(device: Device, value: boolean): Promise<void>;
+    setLightSettingsManualDailyLighting(device: Device, value: DailyLightingType): Promise<void>;
+    setLightSettingsManualColoredLighting(device: Device, value: number): Promise<void>;
+    setLightSettingsManualDynamicLighting(device: Device, value: number): Promise<void>;
+    setLightSettingsMotionDailyLighting(device: Device, value: DailyLightingType): Promise<void>;
+    setLightSettingsMotionColoredLighting(device: Device, value: number): Promise<void>;
+    setLightSettingsMotionDynamicLighting(device: Device, value: number): Promise<void>;
+    setLightSettingsScheduleDailyLighting(device: Device, value: DailyLightingType): Promise<void>;
+    setLightSettingsScheduleColoredLighting(device: Device, value: number): Promise<void>;
+    setLightSettingsScheduleDynamicLighting(device: Device, value: number): Promise<void>;
 }

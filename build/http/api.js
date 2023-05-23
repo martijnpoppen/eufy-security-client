@@ -557,12 +557,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             houses.forEach(element => {
                 this.houses[element.house_id] = element;
             });
-            if (Object.keys(this.houses).length > 0)
-                this.emit("houses", this.houses);
         }
         else {
             this.log.info("No houses found.");
         }
+        this.emit("houses", this.houses);
     }
     async refreshStationData() {
         //Get Stations
@@ -571,12 +570,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             stations.forEach(element => {
                 this.hubs[element.station_sn] = element;
             });
-            if (Object.keys(this.hubs).length > 0)
-                this.emit("hubs", this.hubs);
         }
         else {
             this.log.info("No stations found.");
         }
+        this.emit("hubs", this.hubs);
     }
     async refreshDeviceData() {
         //Get Devices
@@ -585,12 +583,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             devices.forEach(element => {
                 this.devices[element.device_sn] = element;
             });
-            if (Object.keys(this.devices).length > 0)
-                this.emit("devices", this.devices);
         }
         else {
             this.log.info("No devices found.");
         }
+        this.emit("devices", this.devices);
     }
     async refreshAllData() {
         //Get the latest info

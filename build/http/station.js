@@ -70,6 +70,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.p2pSession.on("database query local", (returnCode, data) => this.onDatabaseQueryLocal(returnCode, data));
         this.p2pSession.on("database count by date", (returnCode, data) => this.onDatabaseCountByDate(returnCode, data));
         this.p2pSession.on("database delete", (returnCode, failedIds) => this.onDatabaseDelete(returnCode, failedIds));
+        this.p2pSession.on("sensor status", (channel, status) => this.onSensorStatus(channel, status));
     }
     initializeState() {
         this.update(this.rawStation);
@@ -125,9 +126,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         }
         this.log.debug("Normalized Properties", { stationSN: this.getSerial(), properties: this.properties });
     }
-    updateProperty(name, value) {
+    updateProperty(name, value, force = false) {
         if ((this.properties[name] !== undefined && this.properties[name] !== value)
-            || this.properties[name] === undefined) {
+            || this.properties[name] === undefined || force) {
             const oldValue = this.properties[name];
             this.properties[name] = value;
             this.emit("property changed", this, name, value, this.ready);
@@ -409,7 +410,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             else
                 return true;
         }
-        return device_1.Device.isWiredDoorbellDual(this.getDeviceType()) || device_1.Device.isFloodLight(this.getDeviceType()) || device_1.Device.isWiredDoorbell(this.getDeviceType()) || device_1.Device.isIndoorCamera(this.getDeviceType()) || device_1.Device.isSoloCameras(this.getDeviceType());
+        return device_1.Device.isWiredDoorbellDual(this.getDeviceType()) || device_1.Device.isFloodLight(this.getDeviceType()) || device_1.Device.isWiredDoorbell(this.getDeviceType()) || device_1.Device.isIndoorCamera(this.getDeviceType()) || device_1.Device.isSoloCameras(this.getDeviceType()) || device_1.Device.isWallLightCam(this.getDeviceType());
     }
     getDeviceType() {
         return this.rawStation.device_type;
@@ -960,6 +961,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_DEV_LED_SWITCH,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else if (device.isSoloCameras()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
@@ -1042,14 +1055,28 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending autonightvision command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
-        await this.p2pSession.sendCommandWithIntString({
-            commandType: types_2.CommandType.CMD_IRCUT_SWITCH,
-            value: value === true ? 1 : 0,
-            valueSub: device.getChannel(),
-            channel: device.getChannel()
-        }, {
-            property: propertyData
-        });
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_NIGHT_VISION_TYPE,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            await this.p2pSession.sendCommandWithIntString({
+                commandType: types_2.CommandType.CMD_IRCUT_SWITCH,
+                value: value === true ? 1 : 0,
+                valueSub: device.getChannel(),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
     }
     async setNightVision(device, value) {
         const propertyData = {
@@ -1120,16 +1147,19 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
                     "commandType": types_2.CommandType.CMD_INDOOR_DET_SET_MOTION_DETECT_ENABLE,
-                    "data": {
-                        "enable": 0,
-                        "index": 0,
-                        "status": value === true ? 1 : 0,
-                        "type": 0,
-                        "url": "",
-                        "value": 0,
-                        "voiceID": 0,
-                        "zonecount": 0
-                    }
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_INDOOR_DET_SET_MOTION_DETECT_ENABLE,
+                    "data": value === true ? 1 : 0,
                 }),
                 channel: device.getChannel()
             }, {
@@ -1386,6 +1416,20 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_FLOODLIGHT_MANUAL_SWITCH,
+                    "data": {
+                        "value": value === true ? 1 : 0,
+                    }
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else {
             throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
         }
@@ -1432,6 +1476,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "data": {
                         "value": value,
                     }
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_MOTION_SENSITIVITY,
+                    "data": value,
                 }),
                 channel: device.getChannel()
             }, {
@@ -1864,6 +1920,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_AUDIO_MUTE_RECORD,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else if (device.isCamera2Product() || device.isCamera3Product() || device.isBatteryDoorbell() || device.getDeviceType() === types_1.DeviceType.CAMERA || device.getDeviceType() === types_1.DeviceType.CAMERA_E || device.isWiredDoorbellDual()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
@@ -1951,15 +2019,29 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending speaker volume command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
-        await this.p2pSession.sendCommandWithIntString({
-            commandType: types_2.CommandType.CMD_SET_DEV_SPEAKER_VOLUME,
-            value: value,
-            valueSub: device.getChannel(),
-            strValue: this.rawStation.member.admin_user_id,
-            channel: device.getChannel()
-        }, {
-            property: propertyData
-        });
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SPEAKER_VOLUME,
+                    "data": value
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            await this.p2pSession.sendCommandWithIntString({
+                commandType: types_2.CommandType.CMD_SET_DEV_SPEAKER_VOLUME,
+                value: value,
+                valueSub: device.getChannel(),
+                strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
     }
     async setRingtoneVolume(device, value) {
         const propertyData = {
@@ -2173,6 +2255,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending notification type command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
         if (device.isFloodLight() || device.isIndoorCamera() || device.isSoloCameras() || device.isStarlight4GLTE()) {
+            if (!Object.values(types_1.NotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.NotificationType);
+                return;
+            }
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -2194,6 +2280,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else if (device.isWiredDoorbellT8200X()) {
+            if (!Object.values(types_1.NotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.NotificationType);
+                return;
+            }
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -2207,7 +2297,27 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            if (!Object.values(types_1.WalllightNotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.WalllightNotificationType);
+                return;
+            }
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else if (device.isBatteryDoorbell() || device.isWiredDoorbellDual()) {
+            if (!Object.values(types_1.NotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.NotificationType);
+                return;
+            }
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -2226,6 +2336,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else if (device.isCamera2Product() || device.getDeviceType() === types_1.DeviceType.CAMERA || device.getDeviceType() === types_1.DeviceType.CAMERA_E || device.isCamera3Product()) {
+            if (!Object.values(types_1.NotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.NotificationType);
+                return;
+            }
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -2242,6 +2356,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else if (device.isWiredDoorbell()) {
+            if (!Object.values(types_1.NotificationType).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_1.NotificationType);
+                return;
+            }
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -2288,6 +2406,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                         "zonecount": 0,
                         "transaction": `${new Date().getTime()}`,
                     }
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE_HUMAN,
+                    "data": value === true ? 1 : 0,
                 }),
                 channel: device.getChannel()
             }, {
@@ -2366,6 +2496,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                         "zonecount": 0,
                         "transaction": `${new Date().getTime()}`,
                     }
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_NOTIFICATION_TYPE_ALL,
+                    "data": value === true ? 1 : 0,
                 }),
                 channel: device.getChannel()
             }, {
@@ -2720,6 +2862,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_RESOLUTION,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else if (device.isBatteryDoorbell() || device.isCamera2CPro() || device.isWiredDoorbellDual() || device.isCamera3() || device.isCamera3C()) {
             await this.p2pSession.sendCommandWithIntString({
                 commandType: types_2.CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY,
@@ -2757,6 +2911,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "data": {
                         "quality": value,
                     }
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_RECORD_QUALITY,
+                    "data": value,
                 }),
                 channel: device.getChannel()
             }, {
@@ -2858,6 +3024,21 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_FLOODLIGHT_BRIGHT_VALUE,
+                    "data": {
+                        "type": 0,
+                        "value": value,
+                    },
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else {
             throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
         }
@@ -2882,6 +3063,21 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: value,
                 valueSub: device.getChannel(),
                 strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_LIGHT_CTRL_BRIGHT_PIR,
+                    "data": {
+                        "type": 0,
+                        "value": value,
+                    },
+                }),
                 channel: device.getChannel()
             }, {
                 property: propertyData
@@ -2916,6 +3112,21 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_LIGHT_CTRL_BRIGHT_SCH,
+                    "data": {
+                        "type": 0,
+                        "value": value,
+                    },
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else {
             throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
         }
@@ -2940,6 +3151,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: value === true ? 1 : 0,
                 valueSub: device.getChannel(),
                 strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_LIGHT_CTRL_PIR_SWITCH,
+                    "data": value === true ? 1 : 0,
+                }),
                 channel: device.getChannel()
             }, {
                 property: propertyData
@@ -3018,6 +3241,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: seconds,
                 valueSub: device.getChannel(),
                 strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_LIGHT_CTRL_PIR_TIME,
+                    "data": seconds,
+                }),
                 channel: device.getChannel()
             }, {
                 property: propertyData
@@ -3104,14 +3339,28 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending station alarm ringtone volume command to station ${this.getSerial()} with value: ${value}`);
-        await this.p2pSession.sendCommandWithInt({
-            commandType: types_2.CommandType.CMD_SET_HUB_SPK_VOLUME,
-            value: value,
-            strValue: this.rawStation.member.admin_user_id,
-            channel: Station.CHANNEL
-        }, {
-            property: propertyData
-        });
+        if (device_1.Device.isWallLightCam(this.getDeviceType())) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_ALERT_VOLUME,
+                    "data": value
+                }),
+                channel: 0
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            await this.p2pSession.sendCommandWithInt({
+                commandType: types_2.CommandType.CMD_SET_HUB_SPK_VOLUME,
+                value: value,
+                strValue: this.rawStation.member.admin_user_id,
+                channel: Station.CHANNEL
+            }, {
+                property: propertyData
+            });
+        }
     }
     async setStationAlarmTone(value) {
         const propertyData = {
@@ -3293,14 +3542,28 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending station time format command to station ${this.getSerial()} with value: ${types_1.TimeFormat[value]}`);
-        await this.p2pSession.sendCommandWithInt({
-            commandType: types_2.CommandType.CMD_SET_HUB_OSD,
-            value: value,
-            strValue: this.rawStation.member.admin_user_id,
-            channel: Station.CHANNEL
-        }, {
-            property: propertyData
-        });
+        if (device_1.Device.isWallLightCam(this.getDeviceType())) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_HUB_OSD,
+                    "data": value
+                }),
+                channel: 0
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            await this.p2pSession.sendCommandWithInt({
+                commandType: types_2.CommandType.CMD_SET_HUB_OSD,
+                value: value,
+                strValue: this.rawStation.member.admin_user_id,
+                channel: Station.CHANNEL
+            }, {
+                property: propertyData
+            });
+        }
     }
     async setRTSPStream(device, value) {
         const propertyData = {
@@ -3422,6 +3685,23 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: value,
                 valueSub: device.getChannel(),
                 strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            if (!Object.values(types_2.WatermarkSetting1).includes(value)) {
+                this.log.error(`The device ${device.getSerial()} accepts only this type of values:`, types_2.WatermarkSetting1);
+                return;
+            }
+            this.log.debug(`Sending watermark command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${types_2.WatermarkSetting1[value]}`);
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_DEVS_OSD,
+                    "data": value
+                }),
                 channel: device.getChannel()
             }, {
                 property: propertyData
@@ -3583,7 +3863,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         }
         this.log.debug(`Sending start livestream command to station ${this.getSerial()} for device ${device.getSerial()}`);
         const rsa_key = this.p2pSession.getRSAPrivateKey();
-        if (device.isSoloCameras() || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8423 || device.isWiredDoorbellT8200X()) {
+        if (device.isSoloCameras() || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8423 || device.isWiredDoorbellT8200X() || device.isWallLightCam()) {
             this.log.debug(`Using CMD_DOORBELL_SET_PAYLOAD (1) for station ${this.getSerial()} (main_sw_version: ${this.getSoftwareVersion()})`);
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
@@ -4498,6 +4778,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: value,
                 valueSub: device.getChannel(),
                 strValue: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_SET_FLOODLIGHT_STREET_LAMP,
+                    "data": value,
+                }),
                 channel: device.getChannel()
             }, {
                 property: propertyData
@@ -5781,7 +6073,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             throw new error_2.LivestreamNotRunningError(`Livestream for device ${device.getSerial()} is not running`);
         }
         this.log.debug(`Sending start talkback command to station ${this.getSerial()} for device ${device.getSerial()}`);
-        if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE()) {
+        if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE() || device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -5827,7 +6119,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             throw new error_2.LivestreamNotRunningError(`Livestream for device ${device.getSerial()} is not running`);
         }
         this.log.debug(`Sending stop talkback command to station ${this.getSerial()} for device ${device.getSerial()}`);
-        if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE()) {
+        if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE() || device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -6651,6 +6943,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         else if (device.isLockWifiR10() || device.isLockWifiR20()) {
             //TODO: Implmenet LockWifiR10 / LockWifiR20 commnand
         }
+        else if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_NOTIFICATION,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
         else {
             throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
         }
@@ -6993,6 +7297,345 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     onDatabaseDelete(returnCode, failedIds) {
         this.emit("database delete", this, returnCode, failedIds);
+    }
+    onSensorStatus(channel, status) {
+        this.emit("sensor status", this, channel, status);
+    }
+    async setMotionDetectionTypeHuman(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceMotionDetectionTypeHuman,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending motion detection type human command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_MOTION_DETECTION_TYPE_HUMAN,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setMotionDetectionTypeAllOtherMotions(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending motion detection type all other motions command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_MOTION_DETECTION_TYPE_ALL,
+                    "data": value === true ? 1 : 0,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsManualDailyLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsManualDailyLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting manual daily lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DAILY_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsManualColoredLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsManualColoredLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting manual colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_COLORED_LIGHTING,
+                    "data": {
+                        "rgb_color": value
+                    },
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsManualDynamicLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsManualDynamicLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting manual dynamic lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DYNAMIC_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsMotionDailyLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsMotionDailyLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting motion daily lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsMotionColoredLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsMotionColoredLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting motion colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING,
+                    "data": {
+                        "rgb_color": value
+                    },
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsMotionDynamicLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsMotionDynamicLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting motion dynamic lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsScheduleDailyLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsScheduleDailyLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting schedule daily lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DAILY_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsScheduleColoredLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsScheduleColoredLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting schedule colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_COLORED_LIGHTING,
+                    "data": {
+                        "rgb_color": value
+                    },
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+    }
+    async setLightSettingsScheduleDynamicLighting(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsScheduleDynamicLighting,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting schedule dynamic lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        if (device.isWallLightCam()) {
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DYNAMIC_LIGHTING,
+                    "data": value,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+        }
     }
 }
 Station.CHANNEL = 255;

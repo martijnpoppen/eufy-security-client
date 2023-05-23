@@ -1644,6 +1644,14 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                                         break;
                                 }
                             }
+                            else if (json.cmd === types_1.CommandType.CMD_ENTRY_SENSOR_STATUS) {
+                                // {"cmd":1550,"payload":{"status":1}}
+                                const payload = json.payload;
+                                this.log.debug(`Station ${this.rawStation.station_sn} - CMD_NOTIFY_PAYLOAD EntrySensor Status update`, { status: payload === null || payload === void 0 ? void 0 : payload.status });
+                                if (payload) {
+                                    this.emit("sensor status", message.channel, payload.status);
+                                }
+                            }
                             else {
                                 this.log.debug(`Station ${this.rawStation.station_sn} - CMD_NOTIFY_PAYLOAD - Not implemented`, { commandIdName: types_1.CommandType[json.cmd], commandId: json.cmd, message: message.data.toString() });
                             }

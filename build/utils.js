@@ -153,7 +153,7 @@ const validValue = function (metadata, value) {
     }
     else if (metadata.type === "boolean") {
         const str = String(value).toLowerCase().trim();
-        if (str !== "true" && str !== "false") {
+        if (str !== "true" && str !== "false" && str !== "1" && str !== "0") {
             throw new error_1.InvalidPropertyValueError(`Value "${value}" isn't a valid value for property "${metadata.name}"`);
         }
     }

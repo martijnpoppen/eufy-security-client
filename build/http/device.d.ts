@@ -21,7 +21,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     initialize(): void;
     getRawDevice(): DeviceListResponse;
     update(device: DeviceListResponse, cloudOnlyProperties?: boolean): void;
-    updateProperty(name: string, value: PropertyValue): boolean;
+    updateProperty(name: string, value: PropertyValue, force?: boolean): boolean;
     updateRawProperties(values: RawValues): void;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
     updateRawProperty(type: number, value: string): boolean;
@@ -53,6 +53,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isPanAndTiltCamera(type: number): boolean;
     static isFloodLight(type: number): boolean;
     static isFloodLightT8420X(type: number, serialnumber: string): boolean;
+    static isWallLightCam(type: number): boolean;
     static isLock(type: number): boolean;
     static isLockKeypad(type: number): boolean;
     static isLockBle(type: number): boolean;
@@ -96,6 +97,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isCamera(): boolean;
     isFloodLight(): boolean;
     isFloodLightT8420X(): boolean;
+    isWallLightCam(): boolean;
     isDoorbell(): boolean;
     isWiredDoorbell(): boolean;
     isWiredDoorbellT8200X(): boolean;
@@ -238,6 +240,13 @@ export declare class BatteryDoorbellCamera extends DoorbellCamera {
 }
 export declare class FloodlightCamera extends Camera {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<FloodlightCamera>;
+    isLedEnabled(): PropertyValue;
+    isMotionDetectionEnabled(): PropertyValue;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
+}
+export declare class WallLightCam extends Camera {
+    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<WallLightCam>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
