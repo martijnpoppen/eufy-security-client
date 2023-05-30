@@ -4,7 +4,7 @@ import { dummyLogger, Logger } from "ts-log";
 import { TypedEmitter } from "tiny-typed-emitter";
 
 import { buildCheckinRequest, convertTimestampMs, generateFid, parseCheckinResponse, sleep } from "./utils";
-import { CheckinResponse, Credentials, CusPushData, DoorbellPushData, FidInstallationResponse, FidTokenResponse, GcmRegisterResponse, IndoorPushData, RawPushMessage, PushMessage, BatteryDoorbellPushData, LockPushData, SmartSafeData, PlatformPushMode } from "./models";
+import { CheckinResponse, Credentials, CusPushData, DoorbellPushData, FidInstallationResponse, FidTokenResponse, GcmRegisterResponse, IndoorPushData, RawPushMessage, PushMessage, BatteryDoorbellPushData, LockPushData, SmartSafeData, PlatformPushMode, GarageDoorPushData } from "./models";
 import { PushClient } from "./client";
 import { PushNotificationServiceEvents } from "./interfaces";
 import { Device } from "../http/device";
@@ -427,6 +427,16 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
                     normalized_message.short_user_id = push_data.short_user_id !== undefined ? push_data.short_user_id : "";
                     normalized_message.user_id = push_data.user_id !== undefined ? push_data.user_id : "";
                     normalized_message.name = push_data.device_name !== undefined ? push_data.device_name : "";
+                } else if (Device.isGarageCamera(normalized_message.type)) {
+                    const push_data = message.payload.payload as GarageDoorPushData;
+                    normalized_message.event_type = push_data.event_type;
+                    normalized_message.user_name = push_data.user_name !== undefined ? push_data.user_name : "";
+                    normalized_message.door_id = push_data.door_id !== undefined ? push_data.door_id : -1;
+                    normalized_message.name = push_data.door_name !== undefined ? push_data.door_name : "";
+                    normalized_message.pic_url = push_data.pic_url !== undefined ? push_data.pic_url : "";
+                    normalized_message.file_path = push_data.file_path !== undefined ? push_data.file_path : "";
+                    normalized_message.storage_type = push_data.storage_type !== undefined ? push_data.storage_type : 1;
+                    normalized_message.power = push_data.power !== undefined ? push_data.power : undefined;
                 } else {
                     const push_data = message.payload.payload as CusPushData;
                     normalized_message.name = push_data.device_name && push_data.device_name !== null && push_data.device_name !== "" ? push_data.device_name : push_data.n ? push_data.n : "";
