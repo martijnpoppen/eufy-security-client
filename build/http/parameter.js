@@ -41,7 +41,8 @@ class ParameterHelper {
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_DISTANCE ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_TIME ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_DELIVERY_GUARD_SWITCH ||
-                type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_VOICE) {
+                type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_VOICE ||
+                type === types_1.CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS) {
                 if (typeof value === "string") {
                     try {
                         return (0, utils_2.parseJSON)(value, log); //return object

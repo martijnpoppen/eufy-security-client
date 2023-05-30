@@ -350,7 +350,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
             catch (error) {
                 this.log.error(`Type ${types_1.DeviceType[normalized_message.type]} CusPush - push_time - Error:`, error);
             }
-            const excludeDevices = !device_1.Device.isBatteryDoorbell(normalized_message.type) && !device_1.Device.isWiredDoorbellDual(normalized_message.type) && !device_1.Device.isSensor(normalized_message.type);
+            const excludeDevices = !device_1.Device.isDoorbell(normalized_message.type) && !device_1.Device.isSensor(normalized_message.type);
             if ((normalized_message.station_sn.startsWith("T8030") && excludeDevices) || normalized_message.type === types_1.DeviceType.HB3) {
                 const push_data = message.payload.payload;
                 normalized_message.name = push_data.name ? push_data.name : "";
@@ -435,6 +435,17 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                     normalized_message.short_user_id = push_data.short_user_id !== undefined ? push_data.short_user_id : "";
                     normalized_message.user_id = push_data.user_id !== undefined ? push_data.user_id : "";
                     normalized_message.name = push_data.device_name !== undefined ? push_data.device_name : "";
+                }
+                else if (device_1.Device.isGarageCamera(normalized_message.type)) {
+                    const push_data = message.payload.payload;
+                    normalized_message.event_type = push_data.event_type;
+                    normalized_message.user_name = push_data.user_name !== undefined ? push_data.user_name : "";
+                    normalized_message.door_id = push_data.door_id !== undefined ? push_data.door_id : -1;
+                    normalized_message.name = push_data.door_name !== undefined ? push_data.door_name : "";
+                    normalized_message.pic_url = push_data.pic_url !== undefined ? push_data.pic_url : "";
+                    normalized_message.file_path = push_data.file_path !== undefined ? push_data.file_path : "";
+                    normalized_message.storage_type = push_data.storage_type !== undefined ? push_data.storage_type : 1;
+                    normalized_message.power = push_data.power !== undefined ? push_data.power : undefined;
                 }
                 else {
                     const push_data = message.payload.payload;

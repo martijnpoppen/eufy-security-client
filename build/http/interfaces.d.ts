@@ -191,6 +191,7 @@ export interface StationEvents {
     "database count by date": (station: Station, returnCode: DatabaseReturnCode, data: Array<DatabaseCountByDate>) => void;
     "database delete": (station: Station, returnCode: DatabaseReturnCode, failedIds: Array<unknown>) => void;
     "sensor status": (station: Station, channel: number, status: number) => void;
+    "garage door status": (station: Station, channel: number, doorId: number, status: number) => void;
 }
 export interface DeviceEvents {
     "property changed": (device: Device, name: string, value: PropertyValue, ready: boolean) => void;

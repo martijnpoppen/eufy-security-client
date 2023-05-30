@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
+exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
 exports.RequestMessageType = {
     STUN: Buffer.from([0xF1, 0x00]),
     LOOKUP: Buffer.from([0xF1, 0x20]),
@@ -544,6 +544,13 @@ var CommandType;
     CommandType[CommandType["CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING"] = 6373] = "CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING";
     CommandType[CommandType["CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING"] = 6386] = "CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING";
     CommandType[CommandType["CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING"] = 6378] = "CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING";
+    CommandType[CommandType["CMD_CAMERA_GARAGE_DOOR_CONTROL_WARNING"] = 7511] = "CMD_CAMERA_GARAGE_DOOR_CONTROL_WARNING";
+    CommandType[CommandType["CMD_CAMERA_GARAGE_DOOR_STATUS"] = 7500] = "CMD_CAMERA_GARAGE_DOOR_STATUS";
+    //CMD_CAMERA_GARAGE_DOOR_UNKNOWN1 = 7501,
+    //CMD_CAMERA_GARAGE_DOOR_UNKNOWN2 = 7502,
+    CommandType[CommandType["CMD_CAMERA_GARAGE_DOOR_CALIBRATE"] = 7505] = "CMD_CAMERA_GARAGE_DOOR_CALIBRATE";
+    //CMD_CAMERA_GARAGE_DOOR_UNKNOWN3 = 7506,
+    CommandType[CommandType["CMD_CAMERA_GARAGE_DOOR_SENSORS"] = 7503] = "CMD_CAMERA_GARAGE_DOOR_SENSORS";
 })(CommandType = exports.CommandType || (exports.CommandType = {}));
 var MessageType;
 (function (MessageType) {
@@ -731,6 +738,12 @@ var WatermarkSetting4;
     WatermarkSetting4[WatermarkSetting4["TIMESTAMP_AND_LOGO"] = 1] = "TIMESTAMP_AND_LOGO";
     WatermarkSetting4[WatermarkSetting4["OFF"] = 2] = "OFF";
 })(WatermarkSetting4 = exports.WatermarkSetting4 || (exports.WatermarkSetting4 = {}));
+// Garage cameras
+var WatermarkSetting5;
+(function (WatermarkSetting5) {
+    WatermarkSetting5[WatermarkSetting5["LOGO"] = 1] = "LOGO";
+    WatermarkSetting5[WatermarkSetting5["OFF"] = 2] = "OFF";
+})(WatermarkSetting5 = exports.WatermarkSetting5 || (exports.WatermarkSetting5 = {}));
 var PanTiltDirection;
 (function (PanTiltDirection) {
     PanTiltDirection[PanTiltDirection["ROTATE360"] = 0] = "ROTATE360";
@@ -1035,4 +1048,10 @@ var FilterDetectType;
     FilterDetectType[FilterDetectType["PACKAGE_PICK_UP"] = 512] = "PACKAGE_PICK_UP";
     FilterDetectType[FilterDetectType["PACKAGE_DELIVERED"] = 1024] = "PACKAGE_DELIVERED";
 })(FilterDetectType = exports.FilterDetectType || (exports.FilterDetectType = {}));
+var CalibrateGarageType;
+(function (CalibrateGarageType) {
+    CalibrateGarageType[CalibrateGarageType["ROLLER_DOOR"] = 1] = "ROLLER_DOOR";
+    CalibrateGarageType[CalibrateGarageType["SECTIONAL_DOOR"] = 2] = "SECTIONAL_DOOR";
+    CalibrateGarageType[CalibrateGarageType["TILT_DOOR"] = 3] = "TILT_DOOR";
+})(CalibrateGarageType = exports.CalibrateGarageType || (exports.CalibrateGarageType = {}));
 //# sourceMappingURL=types.js.map

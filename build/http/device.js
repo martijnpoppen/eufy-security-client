@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnknownDevice = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.WallLightCam = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
+exports.UnknownDevice = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.GarageCamera = exports.WallLightCam = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const types_1 = require("./types");
 const parameter_1 = require("./parameter");
@@ -678,7 +678,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             newMetadata[types_1.PropertyName.DeviceEnabled] = types_1.DeviceEnabledSoloProperty;
             metadata = newMetadata;
         }
-        else if (metadata === undefined) {
+        else if (Object.keys(metadata).length === 0) {
             metadata = {
                 ...types_1.GenericDeviceProperties
             };
@@ -756,7 +756,11 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8422 ||
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8423 ||
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8424 ||
-            type == types_1.DeviceType.WALL_LIGHT_CAM)
+            type == types_1.DeviceType.WALL_LIGHT_CAM ||
+            type == types_1.DeviceType.WALL_LIGHT_CAM_81A0 ||
+            type == types_1.DeviceType.CAMERA_GARAGE_T8453_COMMON ||
+            type == types_1.DeviceType.CAMERA_GARAGE_T8453 ||
+            type == types_1.DeviceType.CAMERA_GARAGE_T8452)
             return true;
         return false;
     }
@@ -788,7 +792,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SMART_SAFE_7401 ||
             type == types_1.DeviceType.SMART_SAFE_7402 ||
             type == types_1.DeviceType.SMART_SAFE_7403 ||
-            type == types_1.DeviceType.CAMERA_FG)
+            type == types_1.DeviceType.CAMERA_FG ||
+            type == types_1.DeviceType.WALL_LIGHT_CAM_81A0)
             //TODO: Add other battery devices
             return true;
         return false;
@@ -865,7 +870,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return false;
     }
     static isWallLightCam(type) {
-        if (type == types_1.DeviceType.WALL_LIGHT_CAM)
+        if (type == types_1.DeviceType.WALL_LIGHT_CAM || type == types_1.DeviceType.WALL_LIGHT_CAM_81A0)
             return true;
         return false;
     }
@@ -1004,6 +1009,13 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SMART_SAFE_7401 ||
             type == types_1.DeviceType.SMART_SAFE_7402 ||
             type == types_1.DeviceType.SMART_SAFE_7403)
+            return true;
+        return false;
+    }
+    static isGarageCamera(type) {
+        if (type == types_1.DeviceType.CAMERA_GARAGE_T8452 ||
+            type == types_1.DeviceType.CAMERA_GARAGE_T8453 ||
+            type == types_1.DeviceType.CAMERA_GARAGE_T8453_COMMON)
             return true;
         return false;
     }
@@ -1177,6 +1189,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isSmartSafe() {
         return Device.isSmartSafe(this.rawDevice.device_type);
+    }
+    isGarageCamera() {
+        return Device.isGarageCamera(this.rawDevice.device_type);
     }
     isIntegratedDevice() {
         if (this.isLock() || this.isSmartDrop()) {
@@ -2112,6 +2127,150 @@ class WallLightCam extends Camera {
     }
 }
 exports.WallLightCam = WallLightCam;
+class GarageCamera extends Camera {
+    static async getInstance(api, device) {
+        return new GarageCamera(api, device);
+    }
+    isLedEnabled() {
+        return this.getPropertyValue(types_1.PropertyName.DeviceStatusLed);
+    }
+    isMotionDetectionEnabled() {
+        return this.getPropertyValue(types_1.PropertyName.DeviceMotionDetection);
+    }
+    convertRawPropertyValue(property, value) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28, _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39;
+        try {
+            switch (property.key) {
+                case types_2.CommandType.CMD_SET_AUDIO_MUTE_RECORD:
+                    return value !== undefined ? (value === "1" ? true : false) : false;
+                case types_2.CommandType.CMD_CAMERA_GARAGE_DOOR_STATUS:
+                    if (value != undefined) {
+                        const status = Number.parseInt(value);
+                        if (status >= 0) {
+                            if (property.name === types_1.PropertyName.DeviceDoor1Open) {
+                                return (status & types_1.GarageDoorState.A_OPENED) === types_1.GarageDoorState.A_OPENED;
+                            }
+                            else if (property.name === types_1.PropertyName.DeviceDoor2Open) {
+                                return (status & types_1.GarageDoorState.B_OPENED) === types_1.GarageDoorState.B_OPENED;
+                            }
+                        }
+                    }
+                    return false;
+                case types_2.CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS:
+                    if (value != undefined) {
+                        const sensorsData = value;
+                        if (property.name === types_1.PropertyName.DeviceDoorSensor1BatteryLevel) {
+                            if (((_b = (_a = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _a === void 0 ? void 0 : _a.door_1) === null || _b === void 0 ? void 0 : _b.power) !== undefined && ((_d = (_c = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _c === void 0 ? void 0 : _c.door_1) === null || _d === void 0 ? void 0 : _d.power) > 1) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoorSensor1LowBattery, false);
+                            }
+                            return ((_f = (_e = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _e === void 0 ? void 0 : _e.door_1) === null || _f === void 0 ? void 0 : _f.power) !== undefined ? (_h = (_g = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _g === void 0 ? void 0 : _g.door_1) === null || _h === void 0 ? void 0 : _h.power : 0;
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2BatteryLevel) {
+                            if (((_k = (_j = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _j === void 0 ? void 0 : _j.door_2) === null || _k === void 0 ? void 0 : _k.power) !== undefined && ((_m = (_l = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _l === void 0 ? void 0 : _l.door_2) === null || _m === void 0 ? void 0 : _m.power) > 1) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoorSensor1LowBattery, false);
+                            }
+                            return ((_p = (_o = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _o === void 0 ? void 0 : _o.door_2) === null || _p === void 0 ? void 0 : _p.power) !== undefined ? (_r = (_q = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _q === void 0 ? void 0 : _q.door_2) === null || _r === void 0 ? void 0 : _r.power : 0;
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor1MacAddress) {
+                            return ((_t = (_s = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _s === void 0 ? void 0 : _s.door_1) === null || _t === void 0 ? void 0 : _t.mac_address) !== undefined ? (_v = (_u = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _u === void 0 ? void 0 : _u.door_1) === null || _v === void 0 ? void 0 : _v.mac_address : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2MacAddress) {
+                            return ((_x = (_w = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _w === void 0 ? void 0 : _w.door_2) === null || _x === void 0 ? void 0 : _x.mac_address) !== undefined ? (_z = (_y = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _y === void 0 ? void 0 : _y.door_2) === null || _z === void 0 ? void 0 : _z.mac_address : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor1Name) {
+                            return ((_1 = (_0 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _0 === void 0 ? void 0 : _0.door_1) === null || _1 === void 0 ? void 0 : _1.name) !== undefined ? (_3 = (_2 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _2 === void 0 ? void 0 : _2.door_1) === null || _3 === void 0 ? void 0 : _3.name : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2Name) {
+                            return ((_5 = (_4 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _4 === void 0 ? void 0 : _4.door_2) === null || _5 === void 0 ? void 0 : _5.name) !== undefined ? (_7 = (_6 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _6 === void 0 ? void 0 : _6.door_2) === null || _7 === void 0 ? void 0 : _7.name : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor1SerialNumber) {
+                            return ((_9 = (_8 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _8 === void 0 ? void 0 : _8.door_1) === null || _9 === void 0 ? void 0 : _9.sn) !== undefined ? (_11 = (_10 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _10 === void 0 ? void 0 : _10.door_1) === null || _11 === void 0 ? void 0 : _11.sn : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2SerialNumber) {
+                            return ((_13 = (_12 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _12 === void 0 ? void 0 : _12.door_2) === null || _13 === void 0 ? void 0 : _13.sn) !== undefined ? (_15 = (_14 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _14 === void 0 ? void 0 : _14.door_2) === null || _15 === void 0 ? void 0 : _15.sn : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor1Version) {
+                            return ((_17 = (_16 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _16 === void 0 ? void 0 : _16.door_1) === null || _17 === void 0 ? void 0 : _17.version) !== undefined ? (_19 = (_18 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _18 === void 0 ? void 0 : _18.door_1) === null || _19 === void 0 ? void 0 : _19.version : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2Version) {
+                            return ((_21 = (_20 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _20 === void 0 ? void 0 : _20.door_2) === null || _21 === void 0 ? void 0 : _21.version) !== undefined ? (_23 = (_22 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _22 === void 0 ? void 0 : _22.door_2) === null || _23 === void 0 ? void 0 : _23.version : "";
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorControlWarning) {
+                            return ((_25 = (_24 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _24 === void 0 ? void 0 : _24.door_1) === null || _25 === void 0 ? void 0 : _25.playalarm) !== undefined ? ((_27 = (_26 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _26 === void 0 ? void 0 : _26.door_1) === null || _27 === void 0 ? void 0 : _27.playalarm) === 1 ? true : false : false;
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor1Status) {
+                            return ((_29 = (_28 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _28 === void 0 ? void 0 : _28.door_1) === null || _29 === void 0 ? void 0 : _29.power) !== undefined ? ((_31 = (_30 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _30 === void 0 ? void 0 : _30.door_1) === null || _31 === void 0 ? void 0 : _31.power) >= 1 && ((_33 = (_32 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _32 === void 0 ? void 0 : _32.door_1) === null || _33 === void 0 ? void 0 : _33.sn) !== "" ? 1 : 0 : 0;
+                        }
+                        else if (property.name === types_1.PropertyName.DeviceDoorSensor2Status) {
+                            return ((_35 = (_34 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _34 === void 0 ? void 0 : _34.door_2) === null || _35 === void 0 ? void 0 : _35.power) !== undefined ? ((_37 = (_36 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _36 === void 0 ? void 0 : _36.door_2) === null || _37 === void 0 ? void 0 : _37.power) >= 1 && ((_39 = (_38 = sensorsData === null || sensorsData === void 0 ? void 0 : sensorsData.data) === null || _38 === void 0 ? void 0 : _38.door_2) === null || _39 === void 0 ? void 0 : _39.sn) !== "" ? 1 : 0 : 0;
+                        }
+                    }
+                    break;
+            }
+        }
+        catch (error) {
+            this.log.error("Convert Error:", { property: property, value: value, error: error });
+        }
+        return super.convertRawPropertyValue(property, value);
+    }
+    processPushNotification(message, eventDurationSeconds) {
+        super.processPushNotification(message, eventDurationSeconds);
+        if (message.type !== undefined && message.event_type !== undefined) {
+            if (message.device_sn === this.getSerial()) {
+                try {
+                    if (!(0, utils_3.isEmpty)(message.pic_url)) {
+                        (0, utils_1.getImage)(this.api, this.getSerial(), message.pic_url).then((image) => {
+                            if (image.data.length > 0) {
+                                this.updateProperty(types_1.PropertyName.DevicePicture, image);
+                            }
+                        }).catch((error) => {
+                            this.log.debug(`GarageDoorPushEvent - Device: ${message.device_sn} - Get picture - Error:`, error);
+                        });
+                    }
+                    switch (message.event_type) {
+                        case types_3.GarageDoorPushEvent.CLOSED_DOOR_BY_APP:
+                        case types_3.GarageDoorPushEvent.CLOSED_DOOR_WITHOUT_APP:
+                        case types_3.GarageDoorPushEvent.TIMEOUT_CLOSED_DOOR:
+                            if (message.door_id === 1) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoor1Open, false);
+                            }
+                            else if (message.door_id === 2) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoor2Open, false);
+                            }
+                            break;
+                        case types_3.GarageDoorPushEvent.OPEN_DOOR_BY_APP:
+                        case types_3.GarageDoorPushEvent.OPEN_DOOR_WITHOUT_APP:
+                        case types_3.GarageDoorPushEvent.TIMEOUT_DOOR_OPEN_WARNING:
+                        case types_3.GarageDoorPushEvent.TIMEOUT_DOOR_OPEN_WARNING_MINUTES:
+                            if (message.door_id === 1) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoor1Open, true);
+                            }
+                            else if (message.door_id === 2) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoor2Open, true);
+                            }
+                            break;
+                        case types_3.GarageDoorPushEvent.LOW_BATTERY:
+                            //TODO: Check if low battery status resets to false after battery change
+                            if (message.door_id === 1) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoorSensor1LowBattery, true);
+                            }
+                            else if (message.door_id === 2) {
+                                this.updateProperty(types_1.PropertyName.DeviceDoorSensor2LowBattery, true);
+                            }
+                            break;
+                        default:
+                            this.log.debug("Unhandled GarageDoor push event", message);
+                            break;
+                    }
+                }
+                catch (error) {
+                    this.log.debug(`GarageDoorPushEvent - Device: ${message.device_sn} Error:`, error);
+                }
+            }
+        }
+    }
+}
+exports.GarageCamera = GarageCamera;
 class Sensor extends Device {
     static async getInstance(api, device) {
         return new Sensor(api, device);

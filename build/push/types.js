@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationStyle = exports.IndoorPushMessageType = exports.HB3HDDType = exports.HB3PairedDeviceMessageType = exports.HB3PairedDevicePushEvent = exports.SmartSafeEvent = exports.IndoorPushEvent = exports.LockPushEvent = exports.DoorbellPushEvent = exports.ServerPushEvent = exports.CusPushMode = exports.CusPushAlarmType = exports.CusPushEvent = void 0;
+exports.NotificationStyle = exports.IndoorPushMessageType = exports.HB3HDDType = exports.HB3PairedDeviceMessageType = exports.HB3PairedDevicePushEvent = exports.SmartSafeEvent = exports.GarageDoorPushEvent = exports.IndoorPushEvent = exports.LockPushEvent = exports.DoorbellPushEvent = exports.ServerPushEvent = exports.CusPushMode = exports.CusPushAlarmType = exports.CusPushEvent = void 0;
 var CusPushEvent;
 (function (CusPushEvent) {
     CusPushEvent[CusPushEvent["SECURITY"] = 1] = "SECURITY";
@@ -112,6 +112,17 @@ var IndoorPushEvent;
     IndoorPushEvent[IndoorPushEvent["PET_DETECTION"] = 3106] = "PET_DETECTION";
     IndoorPushEvent[IndoorPushEvent["VEHICLE_DETECTION"] = 3107] = "VEHICLE_DETECTION";
 })(IndoorPushEvent = exports.IndoorPushEvent || (exports.IndoorPushEvent = {}));
+var GarageDoorPushEvent;
+(function (GarageDoorPushEvent) {
+    GarageDoorPushEvent[GarageDoorPushEvent["CLOSED_DOOR_BY_APP"] = 1] = "CLOSED_DOOR_BY_APP";
+    GarageDoorPushEvent[GarageDoorPushEvent["OPEN_DOOR_BY_APP"] = 2] = "OPEN_DOOR_BY_APP";
+    GarageDoorPushEvent[GarageDoorPushEvent["CLOSED_DOOR_WITHOUT_APP"] = 3] = "CLOSED_DOOR_WITHOUT_APP";
+    GarageDoorPushEvent[GarageDoorPushEvent["OPEN_DOOR_WITHOUT_APP"] = 4] = "OPEN_DOOR_WITHOUT_APP";
+    GarageDoorPushEvent[GarageDoorPushEvent["TIMEOUT_DOOR_OPEN_WARNING"] = 5] = "TIMEOUT_DOOR_OPEN_WARNING";
+    GarageDoorPushEvent[GarageDoorPushEvent["TIMEOUT_CLOSED_DOOR"] = 6] = "TIMEOUT_CLOSED_DOOR";
+    GarageDoorPushEvent[GarageDoorPushEvent["TIMEOUT_DOOR_OPEN_WARNING_MINUTES"] = 7] = "TIMEOUT_DOOR_OPEN_WARNING_MINUTES";
+    GarageDoorPushEvent[GarageDoorPushEvent["LOW_BATTERY"] = 8] = "LOW_BATTERY";
+})(GarageDoorPushEvent = exports.GarageDoorPushEvent || (exports.GarageDoorPushEvent = {}));
 var SmartSafeEvent;
 (function (SmartSafeEvent) {
     SmartSafeEvent[SmartSafeEvent["ALARM_911"] = 1946161152] = "ALARM_911";

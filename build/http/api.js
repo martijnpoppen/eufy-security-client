@@ -126,6 +126,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 limit: 3,
                 methods: ["GET", "POST"],
                 statusCodes: [
+                    404,
                     408,
                     413,
                     423,

@@ -1652,6 +1652,14 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                                     this.emit("sensor status", message.channel, payload.status);
                                 }
                             }
+                            else if (json.cmd === types_1.CommandType.CMD_CAMERA_GARAGE_DOOR_STATUS) {
+                                // {"cmd":7500,"payload":{"type":24,"notify_tag":"","door_id":2}}
+                                const payload = json.payload;
+                                this.log.debug(`Station ${this.rawStation.station_sn} - CMD_NOTIFY_PAYLOAD GarageDoor Status update`, { doorId: payload === null || payload === void 0 ? void 0 : payload.door_id, status: payload === null || payload === void 0 ? void 0 : payload.type, notify_tag: payload === null || payload === void 0 ? void 0 : payload.notify_tag });
+                                if (payload) {
+                                    this.emit("garage door status", message.channel, payload.door_id, payload.type);
+                                }
+                            }
                             else {
                                 this.log.debug(`Station ${this.rawStation.station_sn} - CMD_NOTIFY_PAYLOAD - Not implemented`, { commandIdName: types_1.CommandType[json.cmd], commandId: json.cmd, message: message.data.toString() });
                             }

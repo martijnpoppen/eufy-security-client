@@ -536,7 +536,11 @@ export declare enum CommandType {
     CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DYNAMIC_LIGHTING = 6372,
     CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING = 6373,
     CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING = 6386,
-    CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING = 6378
+    CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING = 6378,
+    CMD_CAMERA_GARAGE_DOOR_CONTROL_WARNING = 7511,
+    CMD_CAMERA_GARAGE_DOOR_STATUS = 7500,
+    CMD_CAMERA_GARAGE_DOOR_CALIBRATE = 7505,
+    CMD_CAMERA_GARAGE_DOOR_SENSORS = 7503
 }
 export declare enum MessageType {
     INIT_P2P_CLIENT_TYPE = 1,
@@ -707,6 +711,10 @@ export declare enum WatermarkSetting3 {
 export declare enum WatermarkSetting4 {
     TIMESTAMP = 0,
     TIMESTAMP_AND_LOGO = 1,
+    OFF = 2
+}
+export declare enum WatermarkSetting5 {
+    LOGO = 1,
     OFF = 2
 }
 export declare enum PanTiltDirection {
@@ -989,6 +997,11 @@ export declare enum FilterDetectType {
     PACKAGE = 512,
     PACKAGE_PICK_UP = 512,
     PACKAGE_DELIVERED = 1024
+}
+export declare enum CalibrateGarageType {
+    ROLLER_DOOR = 1,
+    SECTIONAL_DOOR = 2,
+    TILT_DOOR = 3
 }
 export interface LockV12P2PCommand {
     aesKey: string;

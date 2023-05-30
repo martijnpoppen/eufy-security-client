@@ -48,11 +48,19 @@ export declare enum DeviceType {
     CAMERA_GUN = 101,
     CAMERA_SNAIL = 102,
     CAMERA_FG = 110,
+    CAMERA_GARAGE_T8453_COMMON = 131,
+    CAMERA_GARAGE_T8452 = 132,
+    CAMERA_GARAGE_T8453 = 133,
     SMART_SAFE_7400 = 140,
     SMART_SAFE_7401 = 141,
     SMART_SAFE_7402 = 142,
     SMART_SAFE_7403 = 143,
-    WALL_LIGHT_CAM = 151
+    WALL_LIGHT_CAM = 151,
+    TRACKER_87B0 = 157,
+    TRACKER_87B2 = 159,
+    LOCK_8502 = 180,
+    LOCK_8506 = 180,
+    WALL_LIGHT_CAM_81A0 = 10005
 }
 export declare enum ParamType {
     CHIME_STATE = 2015,
@@ -350,6 +358,21 @@ export declare enum MotionActivationMode {
     SMART = 0,
     FAST = 1
 }
+export declare enum GarageDoorState {
+    A_CLOSED = 2,
+    A_CLOSING = -102,
+    A_NO_MOTOR = -108,
+    A_OPENED = 1,
+    A_OPENING = -101,
+    A_UNKNOWN = 16,
+    B_CLOSED = 8,
+    B_CLOSING = -104,
+    B_NO_MOTOR = -109,
+    B_OPENED = 4,
+    B_OPENING = -103,
+    B_UNKNOWN = 32,
+    UNKNOWN = 0
+}
 export interface EventFilterType {
     deviceSN?: string;
     stationSN?: string;
@@ -610,6 +633,23 @@ export declare enum PropertyName {
     DeviceCellularBand = "cellularBand",
     DeviceCellularIMEI = "cellularIMEI",
     DeviceCellularICCID = "cellularICCID",
+    DeviceDoorControlWarning = "doorControlWarning",
+    DeviceDoor1Open = "door1Open",
+    DeviceDoor2Open = "door2Open",
+    DeviceDoorSensor1Status = "doorSensor1Status",
+    DeviceDoorSensor2Status = "doorSensor2Status",
+    DeviceDoorSensor1MacAddress = "doorSensor1MacAddress",
+    DeviceDoorSensor2MacAddress = "doorSensor2MacAddress",
+    DeviceDoorSensor1Name = "doorSensor1Name",
+    DeviceDoorSensor2Name = "doorSensor2Name",
+    DeviceDoorSensor1SerialNumber = "doorSensor1SerialNumber",
+    DeviceDoorSensor2SerialNumber = "doorSensor2SerialNumber",
+    DeviceDoorSensor1Version = "doorSensor1Version",
+    DeviceDoorSensor2Version = "doorSensor2Version",
+    DeviceDoorSensor1LowBattery = "doorSensor1LowBattery",
+    DeviceDoorSensor2LowBattery = "doorSensor2LowBattery",
+    DeviceDoorSensor1BatteryLevel = "doorSensor1BatteryLevel",
+    DeviceDoorSensor2BatteryLevel = "doorSensor2BatteryLevel",
     DeviceHiddenMotionDetectionSensitivity = "hidden-motionDetectionSensitivity",
     DeviceHiddenMotionDetectionMode = "hidden-motionDetectionMode",
     StationLANIpAddress = "lanIpAddress",
@@ -695,6 +735,7 @@ export declare const DeviceWatermarkProperty: PropertyMetadataNumeric;
 export declare const DeviceWatermarkIndoorFloodProperty: PropertyMetadataNumeric;
 export declare const DeviceWatermarkSoloWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceWatermarkBatteryDoorbellCamera1Property: PropertyMetadataNumeric;
+export declare const DeviceWatermarkGarageCameraProperty: PropertyMetadataNumeric;
 export declare const DeviceStateProperty: PropertyMetadataNumeric;
 export declare const DeviceStateLockProperty: PropertyMetadataNumeric;
 export declare const DeviceLastChargingDaysProperty: PropertyMetadataNumeric;
@@ -737,6 +778,7 @@ export declare const DeviceMotionDetectionSensitivityBatteryDoorbellProperty: Pr
 export declare const DeviceMotionDetectionSensitivityWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivitySoloProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityFloodlightT8420Property: PropertyMetadataNumeric;
+export declare const DeviceMotionDetectionSensitivityGarageCameraProperty: PropertyMetadataNumeric;
 export declare const DeviceHiddenMotionDetectionSensitivityWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceHiddenMotionDetectionModeWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionZoneProperty: PropertyMetadataString;
@@ -967,6 +1009,23 @@ export declare const DeviceLightSettingsMotionDynamicLightingProperty: PropertyM
 export declare const DeviceLightSettingsScheduleDailyLightingProperty: PropertyMetadataNumeric;
 export declare const DeviceLightSettingsScheduleColoredLightingProperty: PropertyMetadataNumeric;
 export declare const DeviceLightSettingsScheduleDynamicLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceDoorControlWarningProperty: PropertyMetadataBoolean;
+export declare const DeviceDoor1OpenProperty: PropertyMetadataBoolean;
+export declare const DeviceDoor2OpenProperty: PropertyMetadataBoolean;
+export declare const DeviceDoorSensor1StatusProperty: PropertyMetadataNumeric;
+export declare const DeviceDoorSensor2StatusProperty: PropertyMetadataNumeric;
+export declare const DeviceDoorSensor1MacAddressProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor2MacAddressProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor1NameProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor2NameProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor1SerialNumberProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor2SerialNumberProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor1VersionProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor2VersionProperty: PropertyMetadataString;
+export declare const DeviceDoorSensor1LowBatteryProperty: PropertyMetadataBoolean;
+export declare const DeviceDoorSensor2LowBatteryProperty: PropertyMetadataBoolean;
+export declare const DeviceDoorSensor1BatteryLevelProperty: PropertyMetadataNumeric;
+export declare const DeviceDoorSensor2BatteryLevelProperty: PropertyMetadataNumeric;
 export declare const FloodlightT8420XDeviceProperties: IndexedProperty;
 export declare const WiredDoorbellT8200XDeviceProperties: IndexedProperty;
 export declare const DeviceProperties: Properties;
@@ -1027,6 +1086,7 @@ export declare enum CommandName {
     DeviceSnooze = "deviceSnooze",
     DeviceVerifyPIN = "deviceVerifyPIN",
     DeviceQueryAllUserId = "deviceQueryAllUserId",
+    DeviceCalibrateGarageDoor = "deviceCalibrateGarageDoor",
     StationReboot = "stationReboot",
     StationTriggerAlarmSound = "stationTriggerAlarmSound",
     StationChime = "stationChime",

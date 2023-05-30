@@ -48,7 +48,7 @@ export interface EufyPushMessage {
     content: string;
     device_sn: string;
     event_time: string;
-    payload?: CusPushData | IndoorPushData | ServerPushData | BatteryDoorbellPushData | LockPushData | SmartSafeData;
+    payload?: CusPushData | IndoorPushData | ServerPushData | BatteryDoorbellPushData | LockPushData | SmartSafeData | GarageDoorPushData;
     push_time: string;
     station_sn: string;
     title: string;
@@ -77,6 +77,19 @@ export interface LockPushData {
     user_id: string;
     device_name: string;
     device_sn: string;
+}
+export interface GarageDoorPushData {
+    a: number;
+    msg_type: number;
+    event_type: number;
+    door_id: number;
+    user_name: string;
+    door_name: string;
+    pic_url: string;
+    file_path: string;
+    storage_type: number;
+    unique_id: string;
+    power?: number;
 }
 export interface BatteryDoorbellPushData {
     name: string;
@@ -255,6 +268,8 @@ export interface PushMessage {
     timeout?: number;
     event_value?: number | SmartSafeEventValueDetail;
     person_id?: number;
+    door_id?: number;
+    power?: number;
 }
 export interface PlatformPushMode {
     a: number;

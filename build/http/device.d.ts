@@ -92,6 +92,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isMotionSensor(type: number): boolean;
     static isSmartDrop(type: number): boolean;
     static isSmartSafe(type: number): boolean;
+    static isGarageCamera(type: number): boolean;
     static isIntegratedDeviceBySn(sn: string): boolean;
     static isSoloCameraBySn(sn: string): boolean;
     isCamera(): boolean;
@@ -143,6 +144,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isPanAndTiltCamera(): boolean;
     isSmartDrop(): boolean;
     isSmartSafe(): boolean;
+    isGarageCamera(): boolean;
     isIntegratedDevice(): boolean;
     hasBattery(): boolean;
     getDeviceKey(): string;
@@ -247,6 +249,13 @@ export declare class FloodlightCamera extends Camera {
 }
 export declare class WallLightCam extends Camera {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<WallLightCam>;
+    isLedEnabled(): PropertyValue;
+    isMotionDetectionEnabled(): PropertyValue;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
+}
+export declare class GarageCamera extends Camera {
+    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<GarageCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;

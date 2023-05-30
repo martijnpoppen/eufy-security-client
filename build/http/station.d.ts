@@ -3,7 +3,7 @@ import { HTTPApi } from "./api";
 import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
-import { FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4 } from "../p2p/types";
+import { CalibrateGarageType, FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4, WatermarkSetting5 } from "../p2p/types";
 import { Device } from "./device";
 import { PushMessage } from "../push/models";
 export declare class Station extends TypedEmitter<StationEvents> {
@@ -154,7 +154,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setStationTimeFormat(value: TimeFormat): Promise<void>;
     setRTSPStream(device: Device, value: boolean): Promise<void>;
     setAntiTheftDetection(device: Device, value: boolean): Promise<void>;
-    setWatermark(device: Device, value: WatermarkSetting1 | WatermarkSetting2 | WatermarkSetting3 | WatermarkSetting4): Promise<void>;
+    setWatermark(device: Device, value: WatermarkSetting1 | WatermarkSetting2 | WatermarkSetting3 | WatermarkSetting4 | WatermarkSetting5): Promise<void>;
     enableDevice(device: Device, value: boolean): Promise<void>;
     startDownload(device: Device, path: string, cipher_id?: number): Promise<void>;
     cancelDownload(device: Device): Promise<void>;
@@ -314,4 +314,8 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setLightSettingsScheduleDailyLighting(device: Device, value: DailyLightingType): Promise<void>;
     setLightSettingsScheduleColoredLighting(device: Device, value: number): Promise<void>;
     setLightSettingsScheduleDynamicLighting(device: Device, value: number): Promise<void>;
+    setDoorControlWarning(device: Device, value: boolean): Promise<void>;
+    openDoor(device: Device, value: boolean, doorId?: number): Promise<void>;
+    private onGarageDoorStatus;
+    calibrateGarageDoor(device: Device, doorId: number, type: CalibrateGarageType): Promise<void>;
 }

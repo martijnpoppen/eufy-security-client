@@ -467,6 +467,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         station.on("database count by date", (station, returnCode, data) => this.onStationDatabaseCountByDate(station, returnCode, data));
                         station.on("database delete", (station, returnCode, failedIds) => this.onStationDatabaseDelete(station, returnCode, failedIds));
                         station.on("sensor status", (station, channel, status) => this.onStationSensorStatus(station, channel, status));
+                        station.on("garage door status", (station, channel, doorId, status) => this.onStationGarageDoorStatus(station, channel, doorId, status));
                         this.addStation(station);
                         station.initialize();
                     }
@@ -559,6 +560,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 else if (device_1.Device.isWallLightCam(device.device_type)) {
                     new_device = device_1.WallLightCam.getInstance(this.api, device);
+                }
+                else if (device_1.Device.isGarageCamera(device.device_type)) {
+                    new_device = device_1.GarageCamera.getInstance(this.api, device);
                 }
                 else if (device_1.Device.isCamera(device.device_type)) {
                     new_device = device_1.Camera.getInstance(this.api, device);
@@ -1472,6 +1476,15 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             case types_1.PropertyName.DeviceLightSettingsScheduleDynamicLighting:
                 await station.setLightSettingsScheduleDynamicLighting(device, value);
                 break;
+            case types_1.PropertyName.DeviceDoorControlWarning:
+                await station.setDoorControlWarning(device, value);
+                break;
+            case types_1.PropertyName.DeviceDoor1Open:
+                await station.openDoor(device, value, 1);
+                break;
+            case types_1.PropertyName.DeviceDoor2Open:
+                await station.openDoor(device, value, 2);
+                break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
                     throw new error_1.ReadOnlyPropertyError(`Property ${name} is read only`);
@@ -1585,10 +1598,10 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.getStationDevice(station.getSerial(), result.channel).then((device) => {
                 if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isLockWifiVideo() && !device.isSmartSafe()) ||
                     (result.customData !== undefined && result.customData.property !== undefined && device.isSmartSafe() && result.command_type !== types_2.CommandType.CMD_SMARTSAFE_SETTINGS)) {
-                    if (device.hasProperty(result.customData.property.name)) {
+                    if (device.hasProperty(result.customData.property.name) && typeof result.customData.property.value !== "object") {
                         device.updateProperty(result.customData.property.name, result.customData.property.value);
                     }
-                    else if (station.hasProperty(result.customData.property.name)) {
+                    else if (station.hasProperty(result.customData.property.name) && typeof result.customData.property.value !== "object") {
                         station.updateProperty(result.customData.property.name, result.customData.property.value);
                     }
                 }
@@ -2251,6 +2264,13 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             }
         }).catch((error) => {
             this.log.error(`Station sensor status error (station: ${station.getSerial()} channel: ${channel})`, error);
+        });
+    }
+    onStationGarageDoorStatus(station, channel, doorId, status) {
+        this.getStationDevice(station.getSerial(), channel).then((device) => {
+            device.updateRawProperty(types_2.CommandType.CMD_CAMERA_GARAGE_DOOR_STATUS, status.toString());
+        }).catch((error) => {
+            this.log.error(`Station garage door status error (station: ${station.getSerial()} channel: ${channel})`, error);
         });
     }
 }
