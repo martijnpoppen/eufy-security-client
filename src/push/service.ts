@@ -374,6 +374,8 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
                     //Get family face names from Doorbell Dual "Family Recognition" event
                     if (push_data.objects !== undefined) {
                         normalized_message.person_name = push_data.objects.names !== undefined ? push_data.objects.names.join(",") : "";
+                    } else if(push_data.nick_name) {
+                        normalized_message.person_name = push_data.nick_name;
                     }
 
                     normalized_message.channel = push_data.channel !== undefined ? push_data.channel : 0;

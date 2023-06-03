@@ -382,6 +382,9 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                     if (push_data.objects !== undefined) {
                         normalized_message.person_name = push_data.objects.names !== undefined ? push_data.objects.names.join(",") : "";
                     }
+                    else if (push_data.nick_name) {
+                        normalized_message.person_name = push_data.nick_name;
+                    }
                     normalized_message.channel = push_data.channel !== undefined ? push_data.channel : 0;
                     normalized_message.cipher = push_data.cipher !== undefined ? push_data.cipher : 0;
                     normalized_message.event_session = push_data.session_id !== undefined ? push_data.session_id : "";
