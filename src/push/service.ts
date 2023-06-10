@@ -369,12 +369,13 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
             } else {
                 if (Device.isBatteryDoorbell(normalized_message.type) || Device.isWiredDoorbellDual(normalized_message.type)) {
                     const push_data = message.payload.payload as BatteryDoorbellPushData;
+                    const push_data2 = message.payload.payload as PlatformPushMode;
                     normalized_message.name = push_data.name ? push_data.name : "";
 
                     //Get family face names from Doorbell Dual "Family Recognition" event
                     if (push_data.objects !== undefined) {
                         normalized_message.person_name = push_data.objects.names !== undefined ? push_data.objects.names.join(",") : "";
-                    } else if(push_data.nick_name) {
+                    } else if(push_data.nick_name || push_data2.nick_name) {
                         normalized_message.person_name = push_data.nick_name;
                     }
 
