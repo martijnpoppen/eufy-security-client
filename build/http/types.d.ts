@@ -127,7 +127,9 @@ export declare enum ParamType {
     CAMERA_MOTION_ZONES = 1204,
     PUSH_MSG_MODE = 1252,
     PRIVATE_MODE = 99904,
-    CUSTOM_RTSP_URL = 999991
+    CUSTOM_RTSP_URL = 999991,
+    CMD_GET_BATTERY = 1101,
+    CMD_GET_BATTERY_TEMP = 1138
 }
 export declare enum AlarmMode {
     AWAY = 0,
@@ -814,7 +816,7 @@ export declare const DevicePowerSourceProperty: PropertyMetadataNumeric;
 export declare const DevicePowerWorkingModeProperty: PropertyMetadataNumeric;
 export declare const DevicePowerWorkingModeBatteryDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceChargingStatusProperty: PropertyMetadataNumeric;
-export declare const DeviceChargingStatusCamera3cProperty: PropertyMetadataNumeric;
+export declare const DeviceChargingStatusCamera3Property: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthFloodlightProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthWalllightProperty: PropertyMetadataNumeric;
