@@ -37,8 +37,6 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     update(device, cloudOnlyProperties = false) {
         this.rawDevice = device;
         const metadata = this.getPropertiesMetadata(true);
-        console.log(metadata);
-        console.log(this.rawDevice);
         for (const property of Object.values(metadata)) {
             if (this.rawDevice[property.key] !== undefined && typeof property.key === "string") {
                 this.updateProperty(property.name, property.key === "cover_path" ? (0, utils_1.getImagePath)(this.rawDevice[property.key]) : this.rawDevice[property.key]);
