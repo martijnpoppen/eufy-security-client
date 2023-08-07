@@ -1083,7 +1083,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             sn.startsWith("T8131") ||
             sn.startsWith("T8122") ||
             sn.startsWith("T8123") ||
-            sn.startsWith("T8124");
+            sn.startsWith("T8124") ||
+            sn.startsWith("T8134");
     }
     static isSmartTrackCard(type) {
         if (type == types_1.DeviceType.SMART_TRACK_CARD)
