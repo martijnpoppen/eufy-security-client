@@ -15,7 +15,7 @@ var BleCommandFactorySeparator;
     BleCommandFactorySeparator[BleCommandFactorySeparator["i"] = -88] = "i";
     BleCommandFactorySeparator[BleCommandFactorySeparator["j"] = -87] = "j";
     BleCommandFactorySeparator[BleCommandFactorySeparator["k"] = -86] = "k";
-})(BleCommandFactorySeparator = exports.BleCommandFactorySeparator || (exports.BleCommandFactorySeparator = {}));
+})(BleCommandFactorySeparator || (exports.BleCommandFactorySeparator = BleCommandFactorySeparator = {}));
 class BleCommandFactory {
     static HEADER = Buffer.from([-1, 9]);
     data;

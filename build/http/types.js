@@ -74,7 +74,7 @@ var DeviceType;
     DeviceType[DeviceType["LOCK_8502"] = 180] = "LOCK_8502";
     DeviceType[DeviceType["LOCK_8506"] = 180] = "LOCK_8506";
     DeviceType[DeviceType["WALL_LIGHT_CAM_81A0"] = 10005] = "WALL_LIGHT_CAM_81A0";
-})(DeviceType = exports.DeviceType || (exports.DeviceType = {}));
+})(DeviceType || (exports.DeviceType = DeviceType = {}));
 var ParamType;
 (function (ParamType) {
     //List retrieved from com.oceanwing.battery.cam.binder.model.CameraParams
@@ -145,7 +145,7 @@ var ParamType;
     ParamType[ParamType["PUSH_MSG_MODE"] = 1252] = "PUSH_MSG_MODE";
     ParamType[ParamType["PRIVATE_MODE"] = 99904] = "PRIVATE_MODE";
     ParamType[ParamType["CUSTOM_RTSP_URL"] = 999991] = "CUSTOM_RTSP_URL";
-})(ParamType = exports.ParamType || (exports.ParamType = {}));
+})(ParamType || (exports.ParamType = ParamType = {}));
 var AlarmMode;
 (function (AlarmMode) {
     AlarmMode[AlarmMode["AWAY"] = 0] = "AWAY";
@@ -154,7 +154,7 @@ var AlarmMode;
     AlarmMode[AlarmMode["CUSTOM2"] = 4] = "CUSTOM2";
     AlarmMode[AlarmMode["CUSTOM3"] = 5] = "CUSTOM3";
     AlarmMode[AlarmMode["DISARMED"] = 63] = "DISARMED";
-})(AlarmMode = exports.AlarmMode || (exports.AlarmMode = {}));
+})(AlarmMode || (exports.AlarmMode = AlarmMode = {}));
 var GuardMode;
 (function (GuardMode) {
     GuardMode[GuardMode["UNKNOWN"] = -1] = "UNKNOWN";
@@ -167,7 +167,7 @@ var GuardMode;
     GuardMode[GuardMode["CUSTOM2"] = 4] = "CUSTOM2";
     GuardMode[GuardMode["CUSTOM3"] = 5] = "CUSTOM3";
     GuardMode[GuardMode["OFF"] = 6] = "OFF";
-})(GuardMode = exports.GuardMode || (exports.GuardMode = {}));
+})(GuardMode || (exports.GuardMode = GuardMode = {}));
 var ResponseErrorCode;
 (function (ResponseErrorCode) {
     ResponseErrorCode[ResponseErrorCode["CODE_CONNECT_ERROR"] = 997] = "CODE_CONNECT_ERROR";
@@ -208,30 +208,30 @@ var ResponseErrorCode;
     ResponseErrorCode[ResponseErrorCode["MULTIPLE_REGISTRATION_ERROR"] = 26000] = "MULTIPLE_REGISTRATION_ERROR";
     ResponseErrorCode[ResponseErrorCode["RESP_ERROR_CODE_SESSION_TIMEOUT"] = 401] = "RESP_ERROR_CODE_SESSION_TIMEOUT";
     ResponseErrorCode[ResponseErrorCode["CODE_REQUEST_TOO_FAST"] = 250999] = "CODE_REQUEST_TOO_FAST";
-})(ResponseErrorCode = exports.ResponseErrorCode || (exports.ResponseErrorCode = {}));
+})(ResponseErrorCode || (exports.ResponseErrorCode = ResponseErrorCode = {}));
 var VerfyCodeTypes;
 (function (VerfyCodeTypes) {
     VerfyCodeTypes[VerfyCodeTypes["TYPE_SMS"] = 0] = "TYPE_SMS";
     VerfyCodeTypes[VerfyCodeTypes["TYPE_PUSH"] = 1] = "TYPE_PUSH";
     VerfyCodeTypes[VerfyCodeTypes["TYPE_EMAIL"] = 2] = "TYPE_EMAIL";
-})(VerfyCodeTypes = exports.VerfyCodeTypes || (exports.VerfyCodeTypes = {}));
+})(VerfyCodeTypes || (exports.VerfyCodeTypes = VerfyCodeTypes = {}));
 var StorageType;
 (function (StorageType) {
     StorageType[StorageType["NONE"] = 0] = "NONE";
     StorageType[StorageType["LOCAL"] = 1] = "LOCAL";
     StorageType[StorageType["CLOUD"] = 2] = "CLOUD";
     StorageType[StorageType["LOCAL_AND_CLOUD"] = 3] = "LOCAL_AND_CLOUD";
-})(StorageType = exports.StorageType || (exports.StorageType = {}));
+})(StorageType || (exports.StorageType = StorageType = {}));
 var PowerSource;
 (function (PowerSource) {
     PowerSource[PowerSource["BATTERY"] = 0] = "BATTERY";
     PowerSource[PowerSource["SOLAR_PANEL"] = 1] = "SOLAR_PANEL";
-})(PowerSource = exports.PowerSource || (exports.PowerSource = {}));
+})(PowerSource || (exports.PowerSource = PowerSource = {}));
 var PublicKeyType;
 (function (PublicKeyType) {
     PublicKeyType[PublicKeyType["SERVER"] = 1] = "SERVER";
     PublicKeyType[PublicKeyType["LOCK"] = 2] = "LOCK";
-})(PublicKeyType = exports.PublicKeyType || (exports.PublicKeyType = {}));
+})(PublicKeyType || (exports.PublicKeyType = PublicKeyType = {}));
 var FloodlightMotionTriggeredDistance;
 (function (FloodlightMotionTriggeredDistance) {
     FloodlightMotionTriggeredDistance[FloodlightMotionTriggeredDistance["MIN"] = 66] = "MIN";
@@ -239,30 +239,30 @@ var FloodlightMotionTriggeredDistance;
     FloodlightMotionTriggeredDistance[FloodlightMotionTriggeredDistance["MEDIUM"] = 86] = "MEDIUM";
     FloodlightMotionTriggeredDistance[FloodlightMotionTriggeredDistance["HIGH"] = 91] = "HIGH";
     FloodlightMotionTriggeredDistance[FloodlightMotionTriggeredDistance["MAX"] = 96] = "MAX";
-})(FloodlightMotionTriggeredDistance = exports.FloodlightMotionTriggeredDistance || (exports.FloodlightMotionTriggeredDistance = {}));
+})(FloodlightMotionTriggeredDistance || (exports.FloodlightMotionTriggeredDistance = FloodlightMotionTriggeredDistance = {}));
 var NotificationType;
 (function (NotificationType) {
     NotificationType[NotificationType["MOST_EFFICIENT"] = 1] = "MOST_EFFICIENT";
     NotificationType[NotificationType["INCLUDE_THUMBNAIL"] = 2] = "INCLUDE_THUMBNAIL";
     NotificationType[NotificationType["FULL_EFFECT"] = 3] = "FULL_EFFECT";
-})(NotificationType = exports.NotificationType || (exports.NotificationType = {}));
+})(NotificationType || (exports.NotificationType = NotificationType = {}));
 var WalllightNotificationType;
 (function (WalllightNotificationType) {
     WalllightNotificationType[WalllightNotificationType["ONLY_TEXT"] = 1] = "ONLY_TEXT";
     WalllightNotificationType[WalllightNotificationType["WITH_THUMBNAIL"] = 2] = "WITH_THUMBNAIL";
-})(WalllightNotificationType = exports.WalllightNotificationType || (exports.WalllightNotificationType = {}));
+})(WalllightNotificationType || (exports.WalllightNotificationType = WalllightNotificationType = {}));
 var AlarmTone;
 (function (AlarmTone) {
     AlarmTone[AlarmTone["ALARM_TONE1"] = 1] = "ALARM_TONE1";
     AlarmTone[AlarmTone["ALARM_TONE2"] = 2] = "ALARM_TONE2";
-})(AlarmTone = exports.AlarmTone || (exports.AlarmTone = {}));
+})(AlarmTone || (exports.AlarmTone = AlarmTone = {}));
 var NotificationSwitchMode;
 (function (NotificationSwitchMode) {
     NotificationSwitchMode[NotificationSwitchMode["APP"] = 16] = "APP";
     NotificationSwitchMode[NotificationSwitchMode["GEOFENCE"] = 32] = "GEOFENCE";
     NotificationSwitchMode[NotificationSwitchMode["SCHEDULE"] = 64] = "SCHEDULE";
     NotificationSwitchMode[NotificationSwitchMode["KEYPAD"] = 128] = "KEYPAD";
-})(NotificationSwitchMode = exports.NotificationSwitchMode || (exports.NotificationSwitchMode = {}));
+})(NotificationSwitchMode || (exports.NotificationSwitchMode = NotificationSwitchMode = {}));
 var GuardModeSecuritySettingsAction;
 (function (GuardModeSecuritySettingsAction) {
     GuardModeSecuritySettingsAction[GuardModeSecuritySettingsAction["VIDEO_RECORDING"] = 1] = "VIDEO_RECORDING";
@@ -272,12 +272,12 @@ var GuardModeSecuritySettingsAction;
     GuardModeSecuritySettingsAction[GuardModeSecuritySettingsAction["PRIVACY"] = 16] = "PRIVACY";
     GuardModeSecuritySettingsAction[GuardModeSecuritySettingsAction["LIGHT_ALARM"] = 32] = "LIGHT_ALARM";
     GuardModeSecuritySettingsAction[GuardModeSecuritySettingsAction["PROFESSIONAL_SECURITY"] = 64] = "PROFESSIONAL_SECURITY";
-})(GuardModeSecuritySettingsAction = exports.GuardModeSecuritySettingsAction || (exports.GuardModeSecuritySettingsAction = {}));
+})(GuardModeSecuritySettingsAction || (exports.GuardModeSecuritySettingsAction = GuardModeSecuritySettingsAction = {}));
 var TimeFormat;
 (function (TimeFormat) {
     TimeFormat[TimeFormat["FORMAT_12H"] = 0] = "FORMAT_12H";
     TimeFormat[TimeFormat["FORMAT_24H"] = 1] = "FORMAT_24H";
-})(TimeFormat = exports.TimeFormat || (exports.TimeFormat = {}));
+})(TimeFormat || (exports.TimeFormat = TimeFormat = {}));
 var SignalLevel;
 (function (SignalLevel) {
     SignalLevel[SignalLevel["NO_SIGNAL"] = 0] = "NO_SIGNAL";
@@ -285,17 +285,17 @@ var SignalLevel;
     SignalLevel[SignalLevel["NORMAL"] = 2] = "NORMAL";
     SignalLevel[SignalLevel["STRONG"] = 3] = "STRONG";
     SignalLevel[SignalLevel["FULL"] = 4] = "FULL";
-})(SignalLevel = exports.SignalLevel || (exports.SignalLevel = {}));
+})(SignalLevel || (exports.SignalLevel = SignalLevel = {}));
 var MotionDetectionMode;
 (function (MotionDetectionMode) {
     MotionDetectionMode[MotionDetectionMode["STANDARD"] = 0] = "STANDARD";
     MotionDetectionMode[MotionDetectionMode["ADVANCED"] = 1] = "ADVANCED";
-})(MotionDetectionMode = exports.MotionDetectionMode || (exports.MotionDetectionMode = {}));
+})(MotionDetectionMode || (exports.MotionDetectionMode = MotionDetectionMode = {}));
 var VideoTypeStoreToNAS;
 (function (VideoTypeStoreToNAS) {
     VideoTypeStoreToNAS[VideoTypeStoreToNAS["Events"] = 0] = "Events";
     VideoTypeStoreToNAS[VideoTypeStoreToNAS["ContinuousRecording"] = 1] = "ContinuousRecording";
-})(VideoTypeStoreToNAS = exports.VideoTypeStoreToNAS || (exports.VideoTypeStoreToNAS = {}));
+})(VideoTypeStoreToNAS || (exports.VideoTypeStoreToNAS = VideoTypeStoreToNAS = {}));
 var DualCamStreamMode;
 (function (DualCamStreamMode) {
     DualCamStreamMode[DualCamStreamMode["SINGLE_MAIN"] = 0] = "SINGLE_MAIN";
@@ -313,19 +313,19 @@ var DualCamStreamMode;
     DualCamStreamMode[DualCamStreamMode["SPLICE_ABOVE"] = 12] = "SPLICE_ABOVE";
     DualCamStreamMode[DualCamStreamMode["SPLICE_UNDER"] = 13] = "SPLICE_UNDER";
     DualCamStreamMode[DualCamStreamMode["SPLICE_MIRROR"] = 14] = "SPLICE_MIRROR";
-})(DualCamStreamMode = exports.DualCamStreamMode || (exports.DualCamStreamMode = {}));
+})(DualCamStreamMode || (exports.DualCamStreamMode = DualCamStreamMode = {}));
 var UserType;
 (function (UserType) {
     UserType[UserType["NORMAL"] = 0] = "NORMAL";
     UserType[UserType["ADMIN"] = 1] = "ADMIN";
     UserType[UserType["SUPER_ADMIN"] = 2] = "SUPER_ADMIN";
     UserType[UserType["ENTRY_ONLY"] = 4] = "ENTRY_ONLY";
-})(UserType = exports.UserType || (exports.UserType = {}));
+})(UserType || (exports.UserType = UserType = {}));
 var UserPasswordType;
 (function (UserPasswordType) {
     UserPasswordType[UserPasswordType["PIN"] = 1] = "PIN";
     UserPasswordType[UserPasswordType["FINGERPRINT"] = 2] = "FINGERPRINT";
-})(UserPasswordType = exports.UserPasswordType || (exports.UserPasswordType = {}));
+})(UserPasswordType || (exports.UserPasswordType = UserPasswordType = {}));
 var HB3DetectionTypes;
 (function (HB3DetectionTypes) {
     HB3DetectionTypes[HB3DetectionTypes["HUMAN_DETECTION"] = 2] = "HUMAN_DETECTION";
@@ -333,18 +333,18 @@ var HB3DetectionTypes;
     HB3DetectionTypes[HB3DetectionTypes["PET_DETECTION"] = 8] = "PET_DETECTION";
     HB3DetectionTypes[HB3DetectionTypes["ALL_OTHER_MOTION"] = 32768] = "ALL_OTHER_MOTION";
     HB3DetectionTypes[HB3DetectionTypes["HUMAN_RECOGNITION"] = 131072] = "HUMAN_RECOGNITION";
-})(HB3DetectionTypes = exports.HB3DetectionTypes || (exports.HB3DetectionTypes = {}));
+})(HB3DetectionTypes || (exports.HB3DetectionTypes = HB3DetectionTypes = {}));
 var IndoorDetectionTypes;
 (function (IndoorDetectionTypes) {
     IndoorDetectionTypes[IndoorDetectionTypes["PERSON_DETECTION"] = 1] = "PERSON_DETECTION";
     IndoorDetectionTypes[IndoorDetectionTypes["PET_DETECTION"] = 2] = "PET_DETECTION";
     IndoorDetectionTypes[IndoorDetectionTypes["ALL_MOTION"] = 4] = "ALL_MOTION";
-})(IndoorDetectionTypes = exports.IndoorDetectionTypes || (exports.IndoorDetectionTypes = {}));
+})(IndoorDetectionTypes || (exports.IndoorDetectionTypes = IndoorDetectionTypes = {}));
 var IndoorMiniDetectionTypes;
 (function (IndoorMiniDetectionTypes) {
     IndoorMiniDetectionTypes[IndoorMiniDetectionTypes["PERSON_DETECTION"] = 1] = "PERSON_DETECTION";
     IndoorMiniDetectionTypes[IndoorMiniDetectionTypes["ALL_MOTION"] = 4] = "ALL_MOTION";
-})(IndoorMiniDetectionTypes = exports.IndoorMiniDetectionTypes || (exports.IndoorMiniDetectionTypes = {}));
+})(IndoorMiniDetectionTypes || (exports.IndoorMiniDetectionTypes = IndoorMiniDetectionTypes = {}));
 var VideoType;
 (function (VideoType) {
     VideoType[VideoType["RECEIVED_RING"] = 1000] = "RECEIVED_RING";
@@ -360,13 +360,13 @@ var VideoType;
     VideoType[VideoType["RECEIVED_RING_ACK"] = 524288] = "RECEIVED_RING_ACK";
     VideoType[VideoType["RECEIVED_RING_MISS"] = 1048576] = "RECEIVED_RING_MISS";
     VideoType[VideoType["RECEIVED_CAR_GUARD"] = 2097152] = "RECEIVED_CAR_GUARD";
-})(VideoType = exports.VideoType || (exports.VideoType = {}));
+})(VideoType || (exports.VideoType = VideoType = {}));
 var MediaType;
 (function (MediaType) {
     MediaType[MediaType["NONE"] = -1] = "NONE";
     MediaType[MediaType["H264"] = 0] = "H264";
     MediaType[MediaType["H265"] = 1] = "H265";
-})(MediaType = exports.MediaType || (exports.MediaType = {}));
+})(MediaType || (exports.MediaType = MediaType = {}));
 var RecordType;
 (function (RecordType) {
     RecordType[RecordType["MOTION"] = 256] = "MOTION";
@@ -376,12 +376,12 @@ var RecordType;
     RecordType[RecordType["SOUND"] = 4096] = "SOUND";
     RecordType[RecordType["VEHICLE"] = 16384] = "VEHICLE";
     RecordType[RecordType["CAR_GUARD"] = 131072] = "CAR_GUARD";
-})(RecordType = exports.RecordType || (exports.RecordType = {}));
+})(RecordType || (exports.RecordType = RecordType = {}));
 var MicStatus;
 (function (MicStatus) {
     MicStatus[MicStatus["CLOSED"] = 0] = "CLOSED";
     MicStatus[MicStatus["OPENED"] = 1] = "OPENED";
-})(MicStatus = exports.MicStatus || (exports.MicStatus = {}));
+})(MicStatus || (exports.MicStatus = MicStatus = {}));
 var TriggerType;
 (function (TriggerType) {
     TriggerType[TriggerType["MOTION1"] = 0] = "MOTION1";
@@ -393,29 +393,29 @@ var TriggerType;
     TriggerType[TriggerType["UNKNOWN"] = 32] = "UNKNOWN";
     TriggerType[TriggerType["MISSED_RING"] = 64] = "MISSED_RING";
     TriggerType[TriggerType["ANSWER_RING"] = 128] = "ANSWER_RING";
-})(TriggerType = exports.TriggerType || (exports.TriggerType = {}));
+})(TriggerType || (exports.TriggerType = TriggerType = {}));
 var LightingActiveMode;
 (function (LightingActiveMode) {
     LightingActiveMode[LightingActiveMode["DAILY"] = 0] = "DAILY";
     LightingActiveMode[LightingActiveMode["COLORED"] = 1] = "COLORED";
     LightingActiveMode[LightingActiveMode["DYNAMIC"] = 2] = "DYNAMIC";
-})(LightingActiveMode = exports.LightingActiveMode || (exports.LightingActiveMode = {}));
+})(LightingActiveMode || (exports.LightingActiveMode = LightingActiveMode = {}));
 var DailyLightingType;
 (function (DailyLightingType) {
     DailyLightingType[DailyLightingType["COLD"] = 0] = "COLD";
     DailyLightingType[DailyLightingType["WARM"] = 1] = "WARM";
     DailyLightingType[DailyLightingType["VERY_WARM"] = 2] = "VERY_WARM";
-})(DailyLightingType = exports.DailyLightingType || (exports.DailyLightingType = {}));
+})(DailyLightingType || (exports.DailyLightingType = DailyLightingType = {}));
 var MotionActivationMode;
 (function (MotionActivationMode) {
     MotionActivationMode[MotionActivationMode["SMART"] = 0] = "SMART";
     MotionActivationMode[MotionActivationMode["FAST"] = 1] = "FAST";
-})(MotionActivationMode = exports.MotionActivationMode || (exports.MotionActivationMode = {}));
+})(MotionActivationMode || (exports.MotionActivationMode = MotionActivationMode = {}));
 var DynamicLightingEffect;
 (function (DynamicLightingEffect) {
     DynamicLightingEffect[DynamicLightingEffect["FADE"] = 1] = "FADE";
     DynamicLightingEffect[DynamicLightingEffect["BLINK"] = 2] = "BLINK";
-})(DynamicLightingEffect = exports.DynamicLightingEffect || (exports.DynamicLightingEffect = {}));
+})(DynamicLightingEffect || (exports.DynamicLightingEffect = DynamicLightingEffect = {}));
 var GarageDoorState;
 (function (GarageDoorState) {
     GarageDoorState[GarageDoorState["A_CLOSED"] = 2] = "A_CLOSED";
@@ -431,7 +431,7 @@ var GarageDoorState;
     GarageDoorState[GarageDoorState["B_OPENING"] = -103] = "B_OPENING";
     GarageDoorState[GarageDoorState["B_UNKNOWN"] = 32] = "B_UNKNOWN";
     GarageDoorState[GarageDoorState["UNKNOWN"] = 0] = "UNKNOWN";
-})(GarageDoorState = exports.GarageDoorState || (exports.GarageDoorState = {}));
+})(GarageDoorState || (exports.GarageDoorState = GarageDoorState = {}));
 var DeviceEvent;
 (function (DeviceEvent) {
     DeviceEvent[DeviceEvent["MotionDetected"] = 0] = "MotionDetected";
@@ -457,7 +457,7 @@ var DeviceEvent;
     DeviceEvent[DeviceEvent["DogDetected"] = 20] = "DogDetected";
     DeviceEvent[DeviceEvent["DogLickDetected"] = 21] = "DogLickDetected";
     DeviceEvent[DeviceEvent["DogPoopDetected"] = 22] = "DogPoopDetected";
-})(DeviceEvent = exports.DeviceEvent || (exports.DeviceEvent = {}));
+})(DeviceEvent || (exports.DeviceEvent = DeviceEvent = {}));
 var PropertyName;
 (function (PropertyName) {
     PropertyName["Name"] = "name";
@@ -746,7 +746,7 @@ var PropertyName;
     PropertyName["StationSdStatus"] = "sdStatus";
     PropertyName["StationSdCapacity"] = "sdCapacity";
     PropertyName["StationSdCapacityAvailable"] = "sdCapacityAvailable";
-})(PropertyName = exports.PropertyName || (exports.PropertyName = {}));
+})(PropertyName || (exports.PropertyName = PropertyName = {}));
 exports.DeviceNameProperty = {
     key: "device_name",
     name: PropertyName.Name,
@@ -6520,7 +6520,7 @@ var CommandName;
     CommandName["StationDatabaseQueryLocal"] = "stationDatabaseQueryLocal";
     CommandName["StationDatabaseDelete"] = "stationDatabaseDelete";
     CommandName["StationDatabaseCountByDate"] = "stationDatabaseCoundByDate";
-})(CommandName = exports.CommandName || (exports.CommandName = {}));
+})(CommandName || (exports.CommandName = CommandName = {}));
 exports.DeviceCommands = {
     [DeviceType.CAMERA]: [
         CommandName.DeviceStartLivestream,
