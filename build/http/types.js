@@ -145,8 +145,6 @@ var ParamType;
     ParamType[ParamType["PUSH_MSG_MODE"] = 1252] = "PUSH_MSG_MODE";
     ParamType[ParamType["PRIVATE_MODE"] = 99904] = "PRIVATE_MODE";
     ParamType[ParamType["CUSTOM_RTSP_URL"] = 999991] = "CUSTOM_RTSP_URL";
-    ParamType[ParamType["CMD_GET_BATTERY"] = 1101] = "CMD_GET_BATTERY";
-    ParamType[ParamType["CMD_GET_BATTERY_TEMP"] = 1138] = "CMD_GET_BATTERY_TEMP";
 })(ParamType = exports.ParamType || (exports.ParamType = {}));
 var AlarmMode;
 (function (AlarmMode) {

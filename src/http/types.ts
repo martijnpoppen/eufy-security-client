@@ -142,10 +142,7 @@ export enum ParamType {
     PUSH_MSG_MODE = 1252,                       // 0 to ???
 
     PRIVATE_MODE = 99904,
-    CUSTOM_RTSP_URL = 999991,
-
-    CMD_GET_BATTERY = 1101,
-    CMD_GET_BATTERY_TEMP = 1138,
+    CUSTOM_RTSP_URL = 999991
 }
 
 export enum AlarmMode {

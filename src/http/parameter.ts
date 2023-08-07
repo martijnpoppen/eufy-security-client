@@ -13,6 +13,8 @@ export class ParameterHelper {
                 type === ParamType.CAMERA_MOTION_ZONES ||
                 type === CommandType.CMD_SET_DOORSENSOR_ALWAYS_OPEN_DELAY ||
                 type === CommandType.CMD_SET_DOORSENSOR_ALWAYS_OPEN ||
+                type === CommandType.CMD_GET_BATTERY ||
+                type === CommandType.CMD_GET_BATTERY_TEMP ||
                 type === CommandType.ARM_DELAY_HOME ||
                 type === CommandType.ARM_DELAY_AWAY ||
                 type === CommandType.ARM_DELAY_CUS1 ||
