@@ -80,14 +80,22 @@ Please use GitHub issues for this.
 
 ## Changelog
 
-### 2.7.0 (2023-05-xx)
+### 2.7.0 (2023-08-01)
 
 * (bropat) Added support for Wired Wall Light Cam S100 (T84A1; #318)
 * (bropat) Added support for Garage-Control Cam (T8452; #219)
 * (bropat) Implemented entry sensor status update over p2p connection
-* (bropat) Added missing station command support for 4G LTE Starlight (T8151)
+* (bropat) Improved cloud device lookup
+* (bropat) Improved error handling
+* (bropat/witold-gren) Added missing station command support for 4G LTE Starlight (T8151; #333)
+* (bropat/witold-gren) Added missing push notification support for 4G LTE Starlight (T8151; #333)
+* (bropat/witold-gren) Fixed issue handling push notification alarm events (#333)
 * (bropat) Fixed image property not updating correctly
 * (bropat) Fixed issue of executing the download image command only if supported
+* (PhilippEngler) fix DeviceChargingStatus for eufyCam3 (#330)
+* (PhilippEngler) handle incomplete JSON for parameter (#347)
+* (bropat) Initiate p2p connection for supported devices only
+* (bropat) Updated versions of the package dependencies
 
 ### 2.6.2 (2023-05-16)
 
