@@ -11,6 +11,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private readonly MAX_AKNOWLEDGE_TIMEOUT;
     private readonly MAX_LOOKUP_TIMEOUT;
     private readonly LOOKUP_RETRY_TIMEOUT;
+    private readonly LOOKUP2_TIMEOUT;
     private readonly MAX_EXPECTED_SEQNO_WAIT;
     private readonly HEARTBEAT_INTERVAL;
     private readonly MAX_COMMAND_QUEUE_TIMEOUT;
@@ -31,6 +32,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private connected;
     private connecting;
     private terminating;
+    private handshake_UNKNOWN71;
     private seqNumber;
     private offsetDataSeqNumber;
     private videoSeqNumber;
@@ -48,6 +50,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private connectTimeout?;
     private lookupTimeout?;
     private lookupRetryTimeout?;
+    private lookup2Timeout?;
     private heartbeatTimeout?;
     private keepaliveTimeout?;
     private esdDisconnectTimeout?;
@@ -88,6 +91,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private _clearConnectTimeout;
     private _clearLookupTimeout;
     private _clearLookupRetryTimeout;
+    private _clearLookup2Timeout;
     private _clearESDDisconnectTimeout;
     private _clearSecondaryCommandTimeout;
     private sendMessage;
@@ -97,6 +101,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private localLookup;
     private cloudLookup;
     private cloudLookup2;
+    private cloudLookup3;
     private localLookupByAddress;
     private cloudLookupByAddress;
     private cloudLookupByAddress2;

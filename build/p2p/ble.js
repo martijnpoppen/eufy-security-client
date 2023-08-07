@@ -17,11 +17,17 @@ var BleCommandFactorySeparator;
     BleCommandFactorySeparator[BleCommandFactorySeparator["k"] = -86] = "k";
 })(BleCommandFactorySeparator = exports.BleCommandFactorySeparator || (exports.BleCommandFactorySeparator = {}));
 class BleCommandFactory {
+    static HEADER = Buffer.from([-1, 9]);
+    data;
+    commandCode;
+    versionCode;
+    dataType;
+    packageFlag;
+    unknown;
+    additionalDataSeparatorByte;
+    additionalData;
+    responseCode;
     constructor(data) {
-        this.toString = () => {
-            var _a;
-            return `BleCommandFactory (versionCode: ${this.versionCode} commandCode: ${this.commandCode} dataType: ${this.dataType} packageFlag: ${this.packageFlag} responseCode: ${this.responseCode} data: ${(_a = this.data) === null || _a === void 0 ? void 0 : _a.toString("hex")})`;
-        };
         if (data !== undefined) {
             if (typeof data === "string") {
                 data = Buffer.from(data, "hex");
@@ -40,6 +46,9 @@ class BleCommandFactory {
             }
         }
     }
+    toString = () => {
+        return `BleCommandFactory (versionCode: ${this.versionCode} commandCode: ${this.commandCode} dataType: ${this.dataType} packageFlag: ${this.packageFlag} responseCode: ${this.responseCode} data: ${this.data?.toString("hex")})`;
+    };
     getResponseCode() {
         return this.responseCode;
     }
@@ -184,6 +193,5 @@ class BleCommandFactory {
         return Buffer.concat([data, Buffer.from([hash])]);
     }
 }
-BleCommandFactory.HEADER = Buffer.from([-1, 9]);
 exports.BleCommandFactory = BleCommandFactory;
 //# sourceMappingURL=ble.js.map

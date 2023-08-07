@@ -42,45 +42,52 @@ const error_1 = require("./../error");
 const utils_2 = require("./../utils");
 const error_2 = require("./error");
 class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
+    static apiDomainBase = "https://extend.eufylife.com";
+    SERVER_PUBLIC_KEY = "04c5c00c4f8d1197cc7c3167c52bf7acb054d722f0ef08dcd7e0883236e0d72a3868d9750cb47fa4619248f3d83f0f662671dadc6e2d31c2f41db0161651c7c076";
+    apiBase;
+    username;
+    password;
+    ecdh = (0, crypto_1.createECDH)("prime256v1");
+    token = null;
+    tokenExpiration = null;
+    renewAuthTokenJob;
+    log;
+    connected = false;
+    requestEufyCloud;
+    throttle = (0, p_throttle_1.default)({
+        limit: 6,
+        interval: 10000,
+    });
+    devices = {};
+    hubs = {};
+    houses = {};
+    persistentData = {
+        user_id: "",
+        email: "",
+        nick_name: "",
+        device_public_keys: {},
+        clientPrivateKey: "",
+        serverPublicKey: this.SERVER_PUBLIC_KEY
+    };
+    headers = {
+        App_version: "v4.6.0_1630",
+        Os_type: "android",
+        Os_version: "31",
+        Phone_model: "ONEPLUS A3003",
+        Country: "DE",
+        Language: "en",
+        Openudid: "5e4621b0152c0d00",
+        //uid: "",
+        Net_type: "wifi",
+        Mnc: "02",
+        Mcc: "262",
+        Sn: "75814221ee75",
+        Model_type: "PHONE",
+        Timezone: "GMT+01:00",
+        "Cache-Control": "no-cache",
+    };
     constructor(apiBase, country, username, password, log = ts_log_1.dummyLogger, persistentData) {
         super();
-        this.SERVER_PUBLIC_KEY = "04c5c00c4f8d1197cc7c3167c52bf7acb054d722f0ef08dcd7e0883236e0d72a3868d9750cb47fa4619248f3d83f0f662671dadc6e2d31c2f41db0161651c7c076";
-        this.ecdh = (0, crypto_1.createECDH)("prime256v1");
-        this.token = null;
-        this.tokenExpiration = null;
-        this.connected = false;
-        this.throttle = (0, p_throttle_1.default)({
-            limit: 6,
-            interval: 10000,
-        });
-        this.devices = {};
-        this.hubs = {};
-        this.houses = {};
-        this.persistentData = {
-            user_id: "",
-            email: "",
-            nick_name: "",
-            device_public_keys: {},
-            clientPrivateKey: "",
-            serverPublicKey: this.SERVER_PUBLIC_KEY
-        };
-        this.headers = {
-            App_version: "v4.6.0_1630",
-            Os_type: "android",
-            Os_version: "31",
-            Phone_model: "ONEPLUS A3003",
-            Country: "DE",
-            Language: "en",
-            Openudid: "5e4621b0152c0d00",
-            //uid: "",
-            Net_type: "wifi",
-            Mnc: "02",
-            Mcc: "262",
-            Sn: "75814221ee75",
-            Model_type: "PHONE",
-            Timezone: "GMT+01:00",
-            "Cache-Control": "no-cache",
-        };
         this.username = username;
         this.password = password;
         this.log = log;
@@ -99,7 +106,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             try {
                 this.ecdh.setPrivateKey(Buffer.from(this.persistentData.clientPrivateKey, "hex"));
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.debug(`Invalid client private key, generate new client private key...`, error);
                 this.ecdh.generateKeys();
                 this.persistentData.clientPrivateKey = this.ecdh.getPrivateKey().toString("hex");
@@ -112,7 +120,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             try {
                 this.ecdh.computeSecret(Buffer.from(this.persistentData.serverPublicKey, "hex"));
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.debug(`Invalid server public key, fallback to default server public key...`, error);
                 this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
             }
@@ -171,25 +180,38 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 ],
                 beforeRetry: [
                     (options, error, retryCount) => {
-                        var _a;
                         // This will be called on `retryWithMergedOptions(...)`
-                        this.log.debug(`Retrying [${retryCount}]: ${error === null || error === void 0 ? void 0 : error.code} (${(_a = error === null || error === void 0 ? void 0 : error.request) === null || _a === void 0 ? void 0 : _a.requestUrl})`, { options: options });
+                        this.log.debug(`Retrying [${retryCount}]: ${error?.code} (${error?.request?.requestUrl})`, { options: options });
                         // Retrying [1]: ERR_NON_2XX_3XX_RESPONSE
                     }
                 ],
                 beforeError: [
                     error => {
-                        var _a;
-                        const { response } = error;
-                        if (response && response.body) {
-                            const result = response.body;
-                            error.name = "EufyError";
-                            error.message = `Code: ${result.code} Message: ${result.msg} (HTTP Code: ${response.statusCode})`;
-                            this.log.error(`${error.name} - ${error.message} - requestUrl: ${(_a = error.request) === null || _a === void 0 ? void 0 : _a.requestUrl}`);
+                        const { response, options } = error;
+                        const statusCode = response?.statusCode || 0;
+                        const { method, url, prefixUrl } = options;
+                        const shortUrl = (0, utils_2.getShortUrl)(url, prefixUrl);
+                        const body = response?.body ? response.body : error.message;
+                        if (response?.body) {
+                            error.name = "EufyApiError";
+                            error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
                         }
                         return error;
                     }
                 ],
+                /*beforeError: [
+                    error => {
+                        const { response } = error;
+                        if (response && response.body) {
+                            const result = (response.body as ResultResponse);
+                            error.name = "EufyError";
+                            error.message = `Code: ${result.code} Message: ${result.msg} (HTTP Code: ${response.statusCode})`;
+                            this.log.error(`${error.name} - ${error.message} - requestUrl: ${error.request?.requestUrl}`);
+                        }
+
+                        return error;
+                    }
+                ],*/
                 beforeRequest: [
                     async (_options) => {
                         await this.throttle(async () => { return; })();
@@ -213,14 +235,14 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         if (result.code == types_1.ResponseErrorCode.CODE_WHATEVER_ERROR) {
             return `https://${result.data.domain}`;
         }
-        throw new error_2.ApiBaseLoadError(result.code, result.msg);
+        throw new error_2.ApiBaseLoadError("Error identifying API base from cloud", { context: { code: result.code, message: result.msg } });
     }
     static async initialize(country, username, password, log = ts_log_1.dummyLogger, persistentData) {
         if ((0, i18n_iso_countries_1.isValid)(country) && country.length === 2) {
             const apiBase = await this.getApiBaseFromCloud(country);
             return new HTTPApi(apiBase, country, username, password, log, persistentData);
         }
-        throw new error_1.InvalidCountryCodeError("Invalid ISO 3166-1 Alpha-2 country code");
+        throw new error_1.InvalidCountryCodeError("Invalid ISO 3166-1 Alpha-2 country code", { context: { countryCode: country } });
     }
     clearScheduleRenewAuthToken() {
         if (this.renewAuthTokenJob !== undefined) {
@@ -265,13 +287,12 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             this.requestEufyCloud.defaults.options.headers = this.headers;
         }
         else
-            throw new error_1.InvalidLanguageCodeError("Invalid ISO 639 language code");
+            throw new error_1.InvalidLanguageCodeError("Invalid ISO 639 language code", { context: { languageCode: language } });
     }
     getLanguage() {
         return this.headers.language;
     }
     async login(options) {
-        var _a;
         options = (0, utils_2.mergeDeep)(options, {
             force: false
         });
@@ -306,7 +327,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     if (result.data !== undefined) {
                         if (result.code == types_1.ResponseErrorCode.CODE_WHATEVER_ERROR) {
                             const dataresult = result.data;
-                            if ((_a = dataresult.server_secret_info) === null || _a === void 0 ? void 0 : _a.public_key)
+                            if (dataresult.server_secret_info?.public_key)
                                 this.persistentData.serverPublicKey = dataresult.server_secret_info.public_key;
                             this.persistentData.user_id = dataresult.user_id;
                             this.persistentData.email = this.decryptAPIData(dataresult.email, false);
@@ -340,22 +361,23 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                         }
                         else {
                             this.log.error("Response code not ok", { code: result.code, msg: result.msg });
-                            this.emit("connection error", new error_2.ApiResponseCodeError(`Response code not ok (${result.code}).`));
+                            this.emit("connection error", new error_2.ApiResponseCodeError("API response code not ok", { context: { code: result.code, message: result.msg } }));
                         }
                     }
                     else {
                         this.log.error("Response data is missing", { code: result.code, msg: result.msg, data: result.data });
-                        this.emit("connection error", new error_2.ApiInvalidResponseError("Response data is missing"));
+                        this.emit("connection error", new error_2.ApiInvalidResponseError("API response data is missing", { context: { code: result.code, message: result.msg, data: result.data } }));
                     }
                 }
                 else {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
-                    this.emit("connection error", new error_2.ApiHTTPResponseCodeError(`HTTP response code not ok (${response.status}).`));
+                    this.emit("connection error", new error_2.ApiHTTPResponseCodeError("API HTTP response code not ok", { context: { status: response.status, statusText: response.statusText } }));
                 }
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.error("Generic Error:", error);
-                this.emit("connection error", new error_2.ApiGenericError(`Generic error: ${error}`));
+                this.emit("connection error", new error_2.ApiGenericError("Generic API error", { cause: error }));
             }
         }
         else if (!this.connected) {
@@ -370,9 +392,10 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.emit("connection error", new error_2.ApiInvalidResponseError(`Invalid passport profile response`));
                 }
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.error("getPassportProfile Error", error);
-                this.emit("connection error", new error_2.ApiGenericError(`Get passport profile error: ${error}`));
+                this.emit("connection error", new error_2.ApiGenericError("API get passport profile error", { cause: error }));
             }
         }
     }
@@ -402,8 +425,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
             }
         }
-        catch (error) {
-            this.log.error("Generic Error:", error);
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
+            this.log.error("Generic Error", error);
         }
         return false;
     }
@@ -429,8 +453,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return [];
@@ -467,8 +492,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -506,8 +532,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Stations - Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Stations - Generic Error", error);
             }
         }
         return [];
@@ -545,8 +572,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Devices - Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Devices - Generic Error", error);
             }
         }
         return [];
@@ -617,7 +645,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             this.log.debug("Response:", { token: this.token, request: request, response: response.data });
             return response;
         }
-        catch (error) {
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
             if (error instanceof got_1.HTTPError) {
                 if (error.response.statusCode === 401) {
                     this.invalidateToken();
@@ -626,7 +655,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.emit("close");
                 }
             }
-            throw error;
+            throw new error_2.ApiRequestError("API request error", { cause: error, context: { method: request.method, endpoint: request.endpoint, responseType: request.responseType, token: this.token, data: request.data } });
         }
     }
     async checkPushToken() {
@@ -655,8 +684,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -688,8 +718,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -726,8 +757,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -763,8 +795,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return {};
@@ -795,8 +828,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return {};
@@ -891,8 +925,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error(`${functionName} - Status return code not 200`, { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error(`${functionName} - Generic Error:`, error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error(`${functionName} - Generic Error`, error);
             }
         }
         return records;
@@ -958,8 +993,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return {};
@@ -988,8 +1024,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -1024,8 +1061,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     }
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return "";
@@ -1036,7 +1074,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             try {
                 decryptedData = (0, utils_1.decryptAPIData)(data, this.ecdh.computeSecret(Buffer.from(this.persistentData.serverPublicKey, "hex")));
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.error("Data decryption error, invalidating session data and reconnecting...", error);
                 this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
                 this.invalidateToken();
@@ -1083,8 +1122,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return [];
@@ -1117,8 +1157,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return null;
@@ -1148,8 +1189,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return [];
@@ -1183,8 +1225,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return [];
@@ -1216,8 +1259,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -1251,8 +1295,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
             }
         }
-        catch (error) {
-            this.log.error("Generic Error:", error);
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
+            this.log.error("Generic Error", error);
         }
         return null;
     }
@@ -1283,8 +1328,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return null;
@@ -1315,8 +1361,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -1343,8 +1390,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 this.log.error("Status return code not 200", { status: response.status, statusText: response.statusText });
             }
         }
-        catch (error) {
-            this.log.error("Generic Error:", error);
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
+            this.log.error("Generic Error", error);
         }
         return null;
     }
@@ -1359,8 +1407,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 }
             }
         }
-        catch (error) {
-            this.log.error("Generic Error:", error);
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
+            this.log.error("Generic Error", error);
         }
         return null;
     }
@@ -1396,8 +1445,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     }
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return false;
@@ -1423,13 +1473,13 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     }
                 }
             }
-            catch (error) {
-                this.log.error("Generic Error:", error);
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                this.log.error("Generic Error", error);
             }
         }
         return Buffer.alloc(0);
     }
 }
-HTTPApi.apiDomainBase = "https://extend.eufylife.com";
 exports.HTTPApi = HTTPApi;
 //# sourceMappingURL=api.js.map

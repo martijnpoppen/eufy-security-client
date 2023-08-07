@@ -27,6 +27,8 @@ export interface CommandData {
 export interface CustomData {
     property?: PropertyData;
     command?: CommandData;
+    onSuccess?: () => void;
+    onFailure?: () => void;
 }
 export interface CommandResult {
     customData?: CustomData;

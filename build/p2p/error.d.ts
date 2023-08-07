@@ -1,24 +1,49 @@
-export declare class BleVersionCodeError extends Error {
-    constructor(message?: string);
+import { BaseError, Jsonable } from "../error";
+export declare class BleVersionCodeError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleCommandCodeError extends Error {
-    constructor(message?: string);
+export declare class BleCommandCodeError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleDataTypeError extends Error {
-    constructor(message?: string);
+export declare class BleDataTypeError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleDataError extends Error {
-    constructor(message?: string);
+export declare class BleDataError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleAdditionalDataError extends Error {
-    constructor(message?: string);
+export declare class BleAdditionalDataError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleAdditionalDataSeparatorError extends Error {
-    constructor(message?: string);
+export declare class BleAdditionalDataSeparatorError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleInvalidDataHeaderError extends Error {
-    constructor(message?: string);
+export declare class BleInvalidDataHeaderError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }
-export declare class BleInvalidChecksumError extends Error {
-    constructor(message?: string);
+export declare class BleInvalidChecksumError extends BaseError {
+    constructor(message: string, options?: {
+        cause?: Error;
+        context?: Jsonable;
+    });
 }

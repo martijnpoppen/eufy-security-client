@@ -56,8 +56,8 @@ export declare enum DeviceType {
     SMART_SAFE_7402 = 142,
     SMART_SAFE_7403 = 143,
     WALL_LIGHT_CAM = 151,
-    TRACKER_87B0 = 157,
-    TRACKER_87B2 = 159,
+    SMART_TRACK_LINK = 157,
+    SMART_TRACK_CARD = 159,
     LOCK_8502 = 180,
     LOCK_8506 = 180,
     WALL_LIGHT_CAM_81A0 = 10005
@@ -349,6 +349,11 @@ export declare enum TriggerType {
     MISSED_RING = 64,
     ANSWER_RING = 128
 }
+export declare enum LightingActiveMode {
+    DAILY = 0,
+    COLORED = 1,
+    DYNAMIC = 2
+}
 export declare enum DailyLightingType {
     COLD = 0,
     WARM = 1,
@@ -357,6 +362,10 @@ export declare enum DailyLightingType {
 export declare enum MotionActivationMode {
     SMART = 0,
     FAST = 1
+}
+export declare enum DynamicLightingEffect {
+    FADE = 1,
+    BLINK = 2
 }
 export declare enum GarageDoorState {
     A_CLOSED = 2,
@@ -494,15 +503,20 @@ export declare enum PropertyName {
     DeviceLightSettingsMotionActivationMode = "lightSettingsMotionActivationMode",
     DeviceLightSettingsMotionTriggeredDistance = "lightSettingsMotionTriggeredDistance",
     DeviceLightSettingsMotionTriggeredTimer = "lightSettingsMotionTriggeredTimer",
+    DeviceLightSettingsManualLightingActiveMode = "lightSettingsManualLightingActiveMode",
     DeviceLightSettingsManualDailyLighting = "lightSettingsManualDailyLighting",
     DeviceLightSettingsManualColoredLighting = "lightSettingsManualColoredLighting",
     DeviceLightSettingsManualDynamicLighting = "lightSettingsManualDynamicLighting",
+    DeviceLightSettingsMotionLightingActiveMode = "lightSettingsMotionLightingActiveMode",
     DeviceLightSettingsMotionDailyLighting = "lightSettingsMotionDailyLighting",
     DeviceLightSettingsMotionColoredLighting = "lightSettingsMotionColoredLighting",
     DeviceLightSettingsMotionDynamicLighting = "lightSettingsMotionDynamicLighting",
+    DeviceLightSettingsScheduleLightingActiveMode = "lightSettingsScheduleLightingActiveMode",
     DeviceLightSettingsScheduleDailyLighting = "lightSettingsScheduleDailyLighting",
     DeviceLightSettingsScheduleColoredLighting = "lightSettingsScheduleColoredLighting",
     DeviceLightSettingsScheduleDynamicLighting = "lightSettingsScheduleDynamicLighting",
+    DeviceLightSettingsColoredLightingColors = "lightSettingsColoredLightingColors",
+    DeviceLightSettingsDynamicLightingThemes = "lightSettingsDynamicLightingThemes",
     DeviceChimeIndoor = "chimeIndoor",
     DeviceChimeHomebase = "chimeHomebase",
     DeviceChimeHomebaseRingtoneVolume = "chimeHomebaseRingtoneVolume",
@@ -1001,14 +1015,19 @@ export declare const DeviceDetectionStatisticsDetectedEventsProperty: PropertyMe
 export declare const DeviceDetectionStatisticsRecordedEventsProperty: PropertyMetadataNumeric;
 export declare const DevicePictureProperty: PropertyMetadataObject;
 export declare const DeviceLightSettingsManualDailyLightingProperty: PropertyMetadataNumeric;
-export declare const DeviceLightSettingsManualColoredLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsManualColoredLightingProperty: PropertyMetadataObject;
 export declare const DeviceLightSettingsManualDynamicLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsManualLightingActiveModeProperty: PropertyMetadataNumeric;
 export declare const DeviceLightSettingsMotionDailyLightingProperty: PropertyMetadataNumeric;
-export declare const DeviceLightSettingsMotionColoredLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsMotionColoredLightingProperty: PropertyMetadataObject;
 export declare const DeviceLightSettingsMotionDynamicLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsMotionLightingActiveModeProperty: PropertyMetadataNumeric;
 export declare const DeviceLightSettingsScheduleDailyLightingProperty: PropertyMetadataNumeric;
-export declare const DeviceLightSettingsScheduleColoredLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsScheduleColoredLightingProperty: PropertyMetadataObject;
 export declare const DeviceLightSettingsScheduleDynamicLightingProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsScheduleLightingActiveModeProperty: PropertyMetadataNumeric;
+export declare const DeviceLightSettingsColoredLightingColorsProperty: PropertyMetadataObject;
+export declare const DeviceLightSettingsDynamicLightingThemesProperty: PropertyMetadataObject;
 export declare const DeviceDoorControlWarningProperty: PropertyMetadataBoolean;
 export declare const DeviceDoor1OpenProperty: PropertyMetadataBoolean;
 export declare const DeviceDoor2OpenProperty: PropertyMetadataBoolean;

@@ -1,6 +1,6 @@
 import { Socket } from "dgram";
 import NodeRSA from "node-rsa";
-import { P2PMessageParts, P2PMessageState, P2PQueueMessage } from "./interfaces";
+import { P2PMessageParts, P2PMessageState, P2PQueueMessage, RGBColor } from "./interfaces";
 import { CommandType, ESLCommand, LockV12P2PCommand, SmartSafeCommandCode, VideoCodec } from "./types";
 import { Address, LockP2PCommandType, SmartSafeNotificationResponse, SmartSafeP2PCommandType } from "./models";
 import { DeviceType } from "../http/types";
@@ -54,3 +54,5 @@ export declare const decodeSmartSafeData: (deviceSN: string, data: Buffer) => Sm
 export declare const getSmartSafeP2PCommand: (deviceSN: string, user_id: string, command: CommandType, intCommand: SmartSafeCommandCode, channel: number, sequence: number, data: Buffer) => SmartSafeP2PCommandType;
 export declare const getLockP2PCommand: (deviceSN: string, user_id: string, command: CommandType, channel: number, lockPublicKey: string, payload: any) => LockP2PCommandType;
 export declare const getLockV12P2PCommand: (deviceSN: string, user_id: string, command: CommandType | ESLCommand, channel: number, lockPublicKey: string, sequence: number, data: Buffer) => LockV12P2PCommand;
+export declare const DecimalToRGBColor: (color: number) => RGBColor;
+export declare const RGBColorToDecimal: (color: RGBColor) => number;

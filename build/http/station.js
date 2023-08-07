@@ -18,15 +18,23 @@ const types_3 = require("../push/types");
 const error_2 = require("./error");
 const utils_3 = require("../utils");
 class Station extends tiny_typed_emitter_1.TypedEmitter {
+    api;
+    rawStation;
+    log;
+    p2pSession;
+    properties = {};
+    rawProperties = {};
+    ready = false;
+    lockPublicKey;
+    currentDelay = 0;
+    reconnectTimeout;
+    terminating = false;
+    p2pConnectionType = types_2.P2PConnectionType.QUICKEST;
+    static CHANNEL = 255;
+    static CHANNEL_INDOOR = 1000;
+    pinVerified = false;
     constructor(api, station, ipAddress, publicKey = "") {
         super();
-        this.properties = {};
-        this.rawProperties = {};
-        this.ready = false;
-        this.currentDelay = 0;
-        this.terminating = false;
-        this.p2pConnectionType = types_2.P2PConnectionType.QUICKEST;
-        this.pinVerified = false;
         this.api = api;
         this.rawStation = station;
         this.lockPublicKey = publicKey;
@@ -90,6 +98,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         }
         return new Station(api, stationData, ipAddress, publicKey);
     }
+    //TODO: To remove
     getStateID(state, level = 2) {
         switch (level) {
             case 0:
@@ -136,7 +145,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             try {
                 this.handlePropertyChange(this.getPropertyMetadata(name, true), oldValue, this.properties[name]);
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 if (error instanceof error_2.InvalidPropertyError) {
                     this.log.error(`Invalid Property ${name} error`, error);
                 }
@@ -181,8 +191,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     updateRawProperty(type, value) {
         const parsedValue = parameter_1.ParameterHelper.readValue(type, value, this.log);
-        if ((this.rawProperties[type] !== undefined && this.rawProperties[type] !== parsedValue)
-            || this.rawProperties[type] === undefined) {
+        if (parsedValue !== undefined && ((this.rawProperties[type] !== undefined && this.rawProperties[type] !== parsedValue)
+            || this.rawProperties[type] === undefined)) {
             this.rawProperties[type] = parsedValue;
             if (this.ready) {
                 this.emit("raw property changed", this, type, this.rawProperties[type]);
@@ -194,7 +204,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                         this.emit("current mode", this, Number.parseInt(parsedValue));
                     }
                 }
-                catch (error) {
+                catch (err) {
+                    const error = (0, error_1.ensureError)(err);
                     this.log.error("Number conversion error", error);
                 }
             }
@@ -204,7 +215,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     try {
                         this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawProperties[type]));
                     }
-                    catch (error) {
+                    catch (err) {
+                        const error = (0, error_1.ensureError)(err);
                         if (error instanceof error_2.PropertyNotSupportedError) {
                             this.log.debug("Property not supported error", error);
                         }
@@ -240,17 +252,17 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                                 return value !== undefined ? (0, utils_1.isNotificationSwitchMode)(Number.parseInt(value), types_1.NotificationSwitchMode.SCHEDULE) : false;
                             case types_1.PropertyName.StationNotificationSwitchModeGeofence:
                                 if (!(0, utils_1.isGreaterEqualMinVersion)("2.1.1.6", this.getSoftwareVersion())) {
-                                    throw new error_2.PropertyNotSupportedError(`Property ${property.name} not supported for station ${this.getSerial()} with software version ${this.getSoftwareVersion()}`);
+                                    throw new error_2.PropertyNotSupportedError("Property not supported for station with this software version", { context: { propertName: property.name, station: this.getSerial(), softwareVersion: this.getSoftwareVersion() } });
                                 }
                                 return value !== undefined ? (0, utils_1.isNotificationSwitchMode)(Number.parseInt(value), types_1.NotificationSwitchMode.GEOFENCE) : false;
                             case types_1.PropertyName.StationNotificationSwitchModeApp:
                                 if (!(0, utils_1.isGreaterEqualMinVersion)("2.1.1.6", this.getSoftwareVersion())) {
-                                    throw new error_2.PropertyNotSupportedError(`Property ${property.name} not supported for station ${this.getSerial()} with software version ${this.getSoftwareVersion()}`);
+                                    throw new error_2.PropertyNotSupportedError("Property not supported for station with this software version", { context: { propertName: property.name, station: this.getSerial(), softwareVersion: this.getSoftwareVersion() } });
                                 }
                                 return value !== undefined ? (0, utils_1.isNotificationSwitchMode)(Number.parseInt(value), types_1.NotificationSwitchMode.APP) : false;
                             case types_1.PropertyName.StationNotificationSwitchModeKeypad:
                                 if (!(0, utils_1.isGreaterEqualMinVersion)("2.1.1.6", this.getSoftwareVersion())) {
-                                    throw new error_2.PropertyNotSupportedError(`Property ${property.name} not supported for station ${this.getSerial()} with software version ${this.getSoftwareVersion()}`);
+                                    throw new error_2.PropertyNotSupportedError("Property not supported for station with this software version", { context: { propertName: property.name, station: this.getSerial(), softwareVersion: this.getSoftwareVersion() } });
                                 }
                                 return value !== undefined ? (0, utils_1.isNotificationSwitchMode)(Number.parseInt(value), types_1.NotificationSwitchMode.KEYPAD) : false;
                         }
@@ -261,32 +273,36 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     try {
                         return value !== undefined ? Number.parseInt(value) : 1;
                     }
-                    catch (error) {
-                        this.log.error("Convert CMD_HUB_ALARM_TONE Error:", { property: property, value: value, error: error });
+                    catch (err) {
+                        const error = (0, error_1.ensureError)(err);
+                        this.log.error("Convert CMD_HUB_ALARM_TONE Error", { property: property, value: value, error: error });
                         return 1;
                     }
                 case types_2.CommandType.CMD_SET_HUB_SPK_VOLUME:
                     try {
                         return value !== undefined ? Number.parseInt(value) : 26;
                     }
-                    catch (error) {
-                        this.log.error("Convert CMD_SET_HUB_SPK_VOLUME Error:", { property: property, value: value, error: error });
+                    catch (err) {
+                        const error = (0, error_1.ensureError)(err);
+                        this.log.error("Convert CMD_SET_HUB_SPK_VOLUME Error", { property: property, value: value, error: error });
                         return 26;
                     }
                 case types_2.CommandType.CMD_SET_PROMPT_VOLUME:
                     try {
                         return value !== undefined ? Number.parseInt(value) : 26;
                     }
-                    catch (error) {
-                        this.log.error("Convert CMD_SET_PROMPT_VOLUME Error:", { property: property, value: value, error: error });
+                    catch (err) {
+                        const error = (0, error_1.ensureError)(err);
+                        this.log.error("Convert CMD_SET_PROMPT_VOLUME Error", { property: property, value: value, error: error });
                         return 26;
                     }
                 case types_2.CommandType.CMD_SET_HUB_OSD:
                     try {
                         return value !== undefined ? Number.parseInt(value) : 0;
                     }
-                    catch (error) {
-                        this.log.error("Convert CMD_SET_HUB_OSD Error:", { property: property, value: value, error: error });
+                    catch (err) {
+                        const error = (0, error_1.ensureError)(err);
+                        this.log.error("Convert CMD_SET_HUB_OSD Error", { property: property, value: value, error: error });
                         return 0;
                     }
                 case types_2.CommandType.CMD_SET_HUB_ALARM_AUTO_END:
@@ -299,8 +315,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 try {
                     return value !== undefined ? Number.parseInt(value) : (numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0));
                 }
-                catch (error) {
-                    this.log.warn("PropertyMetadataNumeric Convert Error:", { property: property, value: value, error: error });
+                catch (err) {
+                    const error = (0, error_1.ensureError)(err);
+                    this.log.warn("PropertyMetadataNumeric Convert Error", { property: property, value: value, error: error });
                     return numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
                 }
             }
@@ -309,8 +326,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 try {
                     return value !== undefined ? (value === "1" || value.toLowerCase() === "true" ? true : false) : (booleanProperty.default !== undefined ? booleanProperty.default : false);
                 }
-                catch (error) {
-                    this.log.warn("PropertyMetadataBoolean Convert Error:", { property: property, value: value, error: error });
+                catch (err) {
+                    const error = (0, error_1.ensureError)(err);
+                    this.log.warn("PropertyMetadataBoolean Convert Error", { property: property, value: value, error: error });
                     return booleanProperty.default !== undefined ? booleanProperty.default : false;
                 }
             }
@@ -323,8 +341,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 return value !== undefined ? value : (objectProperty.default !== undefined ? objectProperty.default : undefined);
             }
         }
-        catch (error) {
-            this.log.error("Convert Error:", { property: property, value: value, error: error });
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
+            this.log.error("Convert Error", { property: property, value: value, error: error });
         }
         return value;
     }
@@ -332,7 +351,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = this.getPropertiesMetadata(hidden)[name];
         if (property !== undefined)
             return property;
-        throw new error_2.InvalidPropertyError(`Property ${name} invalid`);
+        throw new error_2.InvalidPropertyError("Property name is not valid", { context: { name: name } });
     }
     getPropertyValue(name) {
         if (name === types_1.PropertyName.StationCurrentMode) {
@@ -404,14 +423,19 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         return Station.isStation(this.rawStation.device_type);
     }
     isIntegratedDevice() {
-        var _a, _b;
         if (device_1.Device.isLock(this.getDeviceType()) || device_1.Device.isSmartDrop(this.getDeviceType()) || device_1.Device.isSmartSafe(this.getDeviceType())) {
-            if (((_a = this.rawStation.devices) === null || _a === void 0 ? void 0 : _a.length) === 1)
-                return ((_b = this.rawStation.devices[0]) === null || _b === void 0 ? void 0 : _b.device_sn) === this.rawStation.station_sn;
+            if (this.rawStation.devices?.length === 1)
+                return this.rawStation.devices[0]?.device_sn === this.rawStation.station_sn;
             else
                 return true;
         }
         return device_1.Device.isWiredDoorbellDual(this.getDeviceType()) || device_1.Device.isFloodLight(this.getDeviceType()) || device_1.Device.isWiredDoorbell(this.getDeviceType()) || device_1.Device.isIndoorCamera(this.getDeviceType()) || device_1.Device.isSoloCameras(this.getDeviceType()) || device_1.Device.isWallLightCam(this.getDeviceType());
+    }
+    isP2PConnectableDevice() {
+        if (!device_1.Device.isSmartTrack(this.getDeviceType())) {
+            return true;
+        }
+        return false;
     }
     getDeviceType() {
         return this.rawStation.device_type;
@@ -457,14 +481,16 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     if (message.station_current_mode !== undefined)
                         this.updateRawProperty(types_2.CommandType.CMD_GET_ALARM_MODE, message.station_current_mode.toString());
                 }
-                catch (error) {
-                    this.log.debug(`Station ${message.station_sn} MODE_SWITCH event (${message.event_type}) - Error:`, error);
+                catch (err) {
+                    const error = (0, error_1.ensureError)(err);
+                    this.log.debug(`Station ${message.station_sn} MODE_SWITCH event (${message.event_type}) - Error`, error);
                 }
             }
             else if (message.event_type === types_3.CusPushEvent.ALARM && message.station_sn === this.getSerial() && !this.isStation()) {
                 this.log.info("Received push notification for alarm event", { stationSN: message.station_sn, alarmType: message.alarm_type });
-                if (message.alarm_type !== undefined)
-                    this.emit("alarm event", this, message.alarm_type);
+                if (message.alarm_type !== undefined) {
+                    this.onAlarmEvent(message.alarm_type);
+                }
             }
         }
         else if (message.msg_type === types_3.CusPushEvent.TFCARD && message.station_sn === this.getSerial() && message.tfcard_status !== undefined) {
@@ -522,8 +548,11 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     onParameter(channel, param, value) {
         const params = {};
-        params[param] = parameter_1.ParameterHelper.readValue(param, value, this.log);
-        this.emit("raw device property changed", this._getDeviceSerial(channel), params);
+        const parsedValue = parameter_1.ParameterHelper.readValue(param, value, this.log);
+        if (parsedValue !== undefined) {
+            params[param] = parsedValue;
+            this.emit("raw device property changed", this._getDeviceSerial(channel), params);
+        }
     }
     onAlarmDelay(alarmDelayEvent, alarmDelay) {
         this.emit("alarm delay event", this, alarmDelayEvent, alarmDelay);
@@ -595,7 +624,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: mode
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, mode);
@@ -682,7 +711,6 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         await this.getCameraInfo();
     }
     getArmDelay(mode) {
-        var _a, _b, _c;
         let propertyName;
         switch (mode) {
             case types_1.AlarmMode.HOME:
@@ -704,11 +732,12 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         if (propertyName !== undefined && this.hasPropertyValue(propertyName) && this.getPropertyValue(propertyName) !== "") {
             const settings = this.getPropertyValue(propertyName);
             try {
-                if (((_b = (_a = settings.count_down_arm) === null || _a === void 0 ? void 0 : _a.channel_list) === null || _b === void 0 ? void 0 : _b.length) > 0 && ((_c = settings.count_down_arm) === null || _c === void 0 ? void 0 : _c.delay_time) > 0) {
+                if (settings.count_down_arm?.channel_list?.length > 0 && settings.count_down_arm?.delay_time > 0) {
                     return settings.count_down_arm.delay_time;
                 }
             }
-            catch (error) {
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
                 this.log.debug(`Station ${this.getSerial()} - getArmDelay - Error`, { error: error, mode: mode, propertyName: propertyName, settings: settings });
             }
         }
@@ -735,7 +764,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     value = Number.parseInt(this.getRawProperty(CommandType.CMD_GET_CUSTOM3_ACTION));
                     break;
             }
-        } catch (error) {
+        } catch (err) {
+            const error = ensureError(err);
             this.log.debug(`Station ${this.getSerial()} - getGuardModeActionSetting - Error`, { error: error, mode: mode });
         }
         return value;
@@ -774,7 +804,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     if (!devices[device_sn]) {
                         devices[device_sn] = {};
                     }
-                    devices[device_sn][param.param_type] = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    if (parsedValue !== undefined) {
+                        devices[device_sn][param.param_type] = parsedValue;
+                    }
                 }
             }
             else {
@@ -783,7 +816,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     if (!devices[device_sn]) {
                         devices[device_sn] = {};
                     }
-                    devices[device_sn][param.param_type] = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    if (parsedValue !== undefined) {
+                        devices[device_sn][param.param_type] = parsedValue;
+                    }
                 }
             }
         });
@@ -796,10 +832,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.emit("command result", this, result);
     }
     onSecondaryCommandResponse(result) {
-        var _a, _b;
         this.log.debug("Got p2p secondary command response", { station: this.getSerial(), commandType: result.command_type, channel: result.channel, returnCode: result.return_code, customData: result.customData });
         this.emit("secondary command result", this, result);
-        if (result.command_type === types_2.CommandType.CMD_SMARTSAFE_SETTINGS && ((_b = (_a = result.customData) === null || _a === void 0 ? void 0 : _a.command) === null || _b === void 0 ? void 0 : _b.name) === "deviceVerifyPIN") {
+        if (result.command_type === types_2.CommandType.CMD_SMARTSAFE_SETTINGS && result.customData?.command?.name === "deviceVerifyPIN") {
             if (result.return_code === 0) {
                 // Verify PIN was successfull for this session
                 this.pinVerified = true;
@@ -828,7 +863,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     onTimeout() {
         this.log.info(`Timeout connecting to station ${this.getSerial()}`);
-        this.emit("connection error", this, new error_1.StationConnectTimeoutError());
+        this.emit("connection error", this, new error_1.StationConnectTimeoutError("Timeout connecting to station", { context: { station: this.getSerial() } }));
         this.scheduleReconnect();
     }
     getCurrentDelay() {
@@ -857,7 +892,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.StationReboot
         };
         if (!this.hasCommand(types_1.CommandName.StationReboot)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, station: this.getSerial() } });
         }
         this.log.debug(`Sending reboot command to station ${this.getSerial()}`);
         await this.p2pSession.sendCommandWithInt({
@@ -875,10 +910,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1039,7 +1074,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoNightVision(device, value) {
@@ -1048,10 +1083,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1085,10 +1120,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1115,10 +1150,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1199,10 +1234,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1232,10 +1267,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1265,10 +1300,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1298,10 +1333,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1331,13 +1366,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: direction
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DevicePanAndTilt)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!(direction in types_2.PanTiltDirection)) {
-            throw new error_1.InvalidCommandValueError(`Value "${direction}" isn't a valid value for command "panAndTilt"`);
+            throw new error_1.InvalidCommandValueError("Invalid value for this command", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending pan and tilt command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${types_2.PanTiltDirection[direction]}`);
         if (device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8423) {
@@ -1380,10 +1415,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1432,7 +1467,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionSensitivity(device, value) {
@@ -1441,10 +1476,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1627,7 +1662,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionType(device, value) {
@@ -1636,10 +1671,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1691,7 +1726,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionTypeHB3(device, type, value) {
@@ -1700,10 +1735,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1726,7 +1761,8 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
-        catch (error) {
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
             this.log.error(`setMotionDetectionTypeHB3 - station ${this.getSerial()} device ${device.getSerial()}`, error);
         }
     }
@@ -1736,10 +1772,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1761,10 +1797,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1795,10 +1831,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1829,10 +1865,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1853,10 +1889,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -1979,7 +2015,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async enableSpeaker(device, value) {
@@ -1988,10 +2024,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2012,10 +2048,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2050,10 +2086,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2098,7 +2134,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async enableIndoorChime(device, value) {
@@ -2107,10 +2143,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2141,7 +2177,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async enableHomebaseChime(device, value) {
@@ -2150,10 +2186,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2170,7 +2206,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setHomebaseChimeRingtoneVolume(device, value) {
@@ -2179,10 +2215,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2204,7 +2240,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setHomebaseChimeRingtoneType(device, value) {
@@ -2213,10 +2249,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2238,7 +2274,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationType(device, value) {
@@ -2247,10 +2283,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2375,7 +2411,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationPerson(device, value) {
@@ -2384,10 +2420,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2426,7 +2462,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationPet(device, value) {
@@ -2435,10 +2471,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2465,7 +2501,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationAllOtherMotion(device, value) {
@@ -2474,10 +2510,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2516,7 +2552,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationAllSound(device, value) {
@@ -2525,10 +2561,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2555,7 +2591,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationCrying(device, value) {
@@ -2564,10 +2600,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2594,7 +2630,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationRing(device, value) {
@@ -2603,10 +2639,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2644,7 +2680,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationMotion(device, value) {
@@ -2653,10 +2689,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2694,7 +2730,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setPowerSource(device, value) {
@@ -2703,10 +2739,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2748,10 +2784,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2772,10 +2808,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2795,10 +2831,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2818,10 +2854,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2841,10 +2877,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2887,7 +2923,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setVideoRecordingQuality(device, value) {
@@ -2896,10 +2932,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2947,7 +2983,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setWDR(device, value) {
@@ -2956,10 +2992,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -2980,10 +3016,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3004,10 +3040,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3041,7 +3077,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setFloodlightLightSettingsBrightnessMotion(device, value) {
@@ -3050,10 +3086,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3085,7 +3121,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setFloodlightLightSettingsBrightnessSchedule(device, value) {
@@ -3094,10 +3130,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3129,7 +3165,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setFloodlightLightSettingsMotionTriggered(device, value) {
@@ -3138,10 +3174,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3170,7 +3206,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setFloodlightLightSettingsMotionTriggeredDistance(device, value) {
@@ -3179,10 +3215,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3204,7 +3240,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 newValue = types_1.FloodlightMotionTriggeredDistance.MAX;
                 break;
             default:
-                throw new error_1.InvalidPropertyValueError(`Device ${device.getSerial()} not supported value "${value}" for property named "${types_1.PropertyName.DeviceLightSettingsMotionTriggeredDistance}"`);
+                throw new error_1.InvalidPropertyValueError("Invalid value for this property", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending floodlight light settings motion triggered distance command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${newValue}`);
         if (device.isFloodLight()) {
@@ -3219,7 +3255,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setFloodlightLightSettingsMotionTriggeredTimer(device, seconds) {
@@ -3228,10 +3264,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: seconds
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, seconds);
@@ -3260,7 +3296,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async triggerStationAlarmSound(seconds) {
@@ -3269,7 +3305,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: seconds
         };
         if (!this.hasCommand(types_1.CommandName.StationTriggerAlarmSound)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, station: this.getSerial() } });
         }
         this.log.debug(`Sending trigger station alarm sound command to station ${this.getSerial()} with value: ${seconds}`);
         if (!(0, utils_1.isGreaterEqualMinVersion)("2.0.7.9", this.getSoftwareVersion()) || device_1.Device.isIntegratedDeviceBySn(this.getSerial())) {
@@ -3310,10 +3346,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: seconds
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceTriggerAlarmSound)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending trigger device alarm sound command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${seconds}`);
         await this.p2pSession.sendCommandWithIntString({
@@ -3335,7 +3371,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3369,7 +3405,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3395,7 +3431,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3416,16 +3452,16 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         });
     }
     async setStationNotificationSwitchMode(mode, value) {
-        if ((!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeApp) && mode === types_1.NotificationSwitchMode.APP) ||
-            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeGeofence) && mode === types_1.NotificationSwitchMode.GEOFENCE) ||
-            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeKeypad) && mode === types_1.NotificationSwitchMode.KEYPAD) ||
-            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeSchedule) && mode === types_1.NotificationSwitchMode.SCHEDULE)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
-        }
         const propertyData = {
             name: mode === types_1.NotificationSwitchMode.APP ? types_1.PropertyName.StationNotificationSwitchModeApp : mode === types_1.NotificationSwitchMode.GEOFENCE ? types_1.PropertyName.StationNotificationSwitchModeGeofence : mode === types_1.NotificationSwitchMode.KEYPAD ? types_1.PropertyName.StationNotificationSwitchModeKeypad : mode === types_1.NotificationSwitchMode.SCHEDULE ? types_1.PropertyName.StationNotificationSwitchModeSchedule : "",
             value: value
         };
+        if ((!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeApp) && mode === types_1.NotificationSwitchMode.APP) ||
+            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeGeofence) && mode === types_1.NotificationSwitchMode.GEOFENCE) ||
+            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeKeypad) && mode === types_1.NotificationSwitchMode.KEYPAD) ||
+            (!this.hasProperty(types_1.PropertyName.StationNotificationSwitchModeSchedule) && mode === types_1.NotificationSwitchMode.SCHEDULE)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
+        }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending station notification switch mode command to station ${this.getSerial()} with value: ${value}`);
@@ -3481,7 +3517,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         let pushmode = 0;
         const rawproperty = this.getRawProperty(types_2.CommandType.CMD_HUB_NOTIFY_MODE);
@@ -3538,7 +3574,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3572,10 +3608,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3596,10 +3632,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3620,10 +3656,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3725,7 +3761,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async enableDevice(device, value) {
@@ -3734,10 +3770,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -3780,10 +3816,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceStartDownload)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (this.getDeviceType() === types_1.DeviceType.HB3) {
             //TODO: Implement HB3 Support! Actually doesn't work and returns return_code -104 (ERROR_INVALID_ACCOUNT). It could be that we need the new encrypted p2p protocol to make this work...
@@ -3798,7 +3834,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     mValue3: types_2.CommandType.CMD_DOWNLOAD_VIDEO,
                     payload: {
                         filepath: path,
-                        key: rsa_key === null || rsa_key === void 0 ? void 0 : rsa_key.exportKey("components-public").n.slice(1).toString("hex").toUpperCase(),
+                        key: rsa_key?.exportKey("components-public").n.slice(1).toString("hex").toUpperCase(),
                     }
                 }),
                 channel: device.getChannel()
@@ -3849,10 +3885,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceCancelDownload
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceCancelDownload)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending cancel download command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithInt({
@@ -3870,13 +3906,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: videoCodec
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceStartLivestream)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (this.isLiveStreaming(device)) {
-            throw new error_2.LivestreamAlreadyRunningError(`Livestream for device ${device.getSerial()} is already running`);
+            throw new error_2.LivestreamAlreadyRunningError("Livestream for device is already running", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending start livestream command to station ${this.getSerial()} for device ${device.getSerial()}`);
         const rsa_key = this.p2pSession.getRSAPrivateKey();
@@ -3888,7 +3924,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "commandType": types_1.ParamType.COMMAND_START_LIVESTREAM,
                     "data": {
                         "accountId": this.rawStation.member.admin_user_id,
-                        "encryptkey": rsa_key === null || rsa_key === void 0 ? void 0 : rsa_key.exportKey("components-public").n.slice(1).toString("hex"),
+                        "encryptkey": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
                         "streamtype": videoCodec
                     }
                 }),
@@ -3905,7 +3941,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "commandType": types_1.ParamType.COMMAND_START_LIVESTREAM,
                     "data": {
                         "account_id": this.rawStation.member.admin_user_id,
-                        "encryptkey": rsa_key === null || rsa_key === void 0 ? void 0 : rsa_key.exportKey("components-public").n.slice(1).toString("hex"),
+                        "encryptkey": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
                         "streamtype": videoCodec
                     }
                 }),
@@ -3920,7 +3956,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 await this.p2pSession.sendCommandWithInt({
                     commandType: types_2.CommandType.CMD_START_REALTIME_MEDIA,
                     value: device.getChannel(),
-                    strValue: rsa_key === null || rsa_key === void 0 ? void 0 : rsa_key.exportKey("components-public").n.slice(1).toString("hex"),
+                    strValue: rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
                     channel: device.getChannel()
                 }, {
                     command: commandData
@@ -3936,7 +3972,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                         "mValue3": types_2.CommandType.CMD_START_REALTIME_MEDIA,
                         "payload": {
                             "ClientOS": "Android",
-                            "key": rsa_key === null || rsa_key === void 0 ? void 0 : rsa_key.exportKey("components-public").n.slice(1).toString("hex"),
+                            "key": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
                             "streamtype": videoCodec === types_2.VideoCodec.H264 ? 1 : 2,
                         }
                     }),
@@ -3952,13 +3988,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceStopLivestream
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceStopLivestream)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!this.isLiveStreaming(device)) {
-            throw new error_2.LivestreamNotRunningError(`Livestream for device ${device.getSerial()} is not running`);
+            throw new error_2.LivestreamNotRunningError("Livestream for device is not running", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending stop livestream command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithInt({
@@ -3985,10 +4021,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: voice_id
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceQuickResponse)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending quick response command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${voice_id}`);
         if (device.isBatteryDoorbell()) {
@@ -4019,7 +4055,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
     }
     async setChirpVolume(device, value) {
@@ -4028,10 +4064,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4054,7 +4090,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setChirpTone(device, value) {
@@ -4063,10 +4099,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4083,7 +4119,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setHDR(device, value) {
@@ -4092,10 +4128,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4115,7 +4151,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDistortionCorrection(device, value) {
@@ -4124,10 +4160,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4147,7 +4183,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setRingRecord(device, value) {
@@ -4156,10 +4192,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4179,7 +4215,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async lockDevice(device, value) {
@@ -4188,10 +4224,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4246,7 +4282,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setStationSwitchModeWithAccessCode(value) {
@@ -4255,7 +4291,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4277,7 +4313,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
     }
     async setStationAutoEndAlarm(value) {
@@ -4286,7 +4322,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4308,7 +4344,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
     }
     async setStationTurnOffAlarmWithButton(value) {
@@ -4317,7 +4353,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
         const property = this.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4339,24 +4375,24 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { propertyName: propertyData.name, propertyValue: propertyData.value, station: this.getSerial() } });
         }
     }
     async startRTSPStream(device) {
-        if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
-        }
-        if (!device.hasProperty(types_1.PropertyName.DeviceRTSPStream)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
-        }
         const rtspStreamProperty = device.getPropertyValue(types_1.PropertyName.DeviceRTSPStream);
         if (rtspStreamProperty !== undefined && rtspStreamProperty !== true) {
-            throw new error_1.RTSPPropertyNotEnabledError(`RTSP setting for device ${device.getSerial()} must be enabled first, to enable this functionality!`);
+            throw new error_1.RTSPPropertyNotEnabledError("RTSP setting for this device must be enabled first, to enable this functionality!", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: types_1.PropertyName.DeviceRTSPStream, propertyValue: rtspStreamProperty } });
         }
         const propertyData = {
             name: types_1.PropertyName.DeviceRTSPStream,
             value: rtspStreamProperty
         };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        if (!device.hasProperty(types_1.PropertyName.DeviceRTSPStream)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
         this.log.debug(`Start RTSP stream command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithIntString({
             commandType: types_2.CommandType.CMD_NAS_TEST,
@@ -4369,20 +4405,20 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         });
     }
     async stopRTSPStream(device) {
-        if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
-        }
-        if (!device.hasProperty(types_1.PropertyName.DeviceRTSPStream)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
-        }
         const rtspStreamProperty = device.getPropertyValue(types_1.PropertyName.DeviceRTSPStream);
         if (rtspStreamProperty !== undefined && rtspStreamProperty !== true) {
-            throw new error_1.RTSPPropertyNotEnabledError(`RTSP setting for device ${device.getSerial()} must be enabled first, to enable this functionality!`);
+            throw new error_1.RTSPPropertyNotEnabledError("RTSP setting for this device must be enabled first, to enable this functionality!", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: types_1.PropertyName.DeviceRTSPStream, propertyValue: rtspStreamProperty } });
         }
         const propertyData = {
             name: types_1.PropertyName.DeviceRTSPStream,
             value: rtspStreamProperty
         };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        if (!device.hasProperty(types_1.PropertyName.DeviceRTSPStream)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
         this.log.debug(`Stop RTSP stream command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithIntString({
             commandType: types_2.CommandType.CMD_NAS_TEST,
@@ -4400,10 +4436,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: type
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, type);
@@ -4423,7 +4459,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionRangeStandardSensitivity(device, sensitivity) {
@@ -4432,10 +4468,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: sensitivity
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, sensitivity);
@@ -4455,7 +4491,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionRangeAdvancedLeftSensitivity(device, sensitivity) {
@@ -4464,10 +4500,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: sensitivity
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, sensitivity);
@@ -4487,7 +4523,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionRangeAdvancedMiddleSensitivity(device, sensitivity) {
@@ -4496,10 +4532,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: sensitivity
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, sensitivity);
@@ -4519,7 +4555,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionRangeAdvancedRightSensitivity(device, sensitivity) {
@@ -4528,10 +4564,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: sensitivity
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, sensitivity);
@@ -4551,7 +4587,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionTestMode(device, enabled) {
@@ -4560,10 +4596,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4580,7 +4616,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionTrackingSensitivity(device, sensitivity) {
@@ -4589,10 +4625,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: sensitivity
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, sensitivity);
@@ -4612,7 +4648,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionAutoCruise(device, enabled) {
@@ -4621,10 +4657,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4644,7 +4680,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionOutOfViewDetection(device, enabled) {
@@ -4653,10 +4689,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4676,7 +4712,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsColorTemperatureManual(device, value) {
@@ -4685,10 +4721,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4708,7 +4744,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsColorTemperatureMotion(device, value) {
@@ -4717,10 +4753,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4740,7 +4776,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsColorTemperatureSchedule(device, value) {
@@ -4749,10 +4785,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4772,7 +4808,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsMotionActivationMode(device, value) {
@@ -4781,10 +4817,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -4813,7 +4849,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setVideoNightvisionImageAdjustment(device, enabled) {
@@ -4822,10 +4858,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4845,7 +4881,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setVideoColorNightvision(device, enabled) {
@@ -4854,10 +4890,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4877,7 +4913,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoCalibration(device, enabled) {
@@ -4886,10 +4922,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: enabled
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, enabled);
@@ -4909,7 +4945,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     isRTSPLiveStreaming(device) {
@@ -4951,10 +4987,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceLockCalibration
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!this.hasCommand(types_1.CommandName.DeviceLockCalibration)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending calibrate lock command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -4976,7 +5012,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
     }
     convertAdvancedLockSettingValue(property, value) {
@@ -5064,10 +5100,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const propertyMetadata = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(propertyMetadata, value);
@@ -5086,11 +5122,11 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
             else {
                 this.log.warn(`Internal lock property for property ${property} not identified for ${device.getSerial()}`, { p2pParamName: p2pParamName });
-                throw new error_2.InvalidPropertyError(`Internal lock property for property ${property} not identified for ${device.getSerial()}`);
+                throw new error_2.InvalidPropertyError("Internal lock property for property not identified for this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
             }
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLoiteringDetection(device, value) {
@@ -5099,10 +5135,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5125,7 +5161,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLoiteringDetectionRange(device, value) {
@@ -5134,10 +5170,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5160,7 +5196,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLoiteringDetectionLength(device, value) {
@@ -5169,10 +5205,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5195,15 +5231,15 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async _setMotionDetectionSensitivity(device, propertyData, mode, blocklist) {
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5227,7 +5263,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     _getMotionDetectionSensitivityAdvanced(device) {
@@ -5337,10 +5373,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     async _setLoiteringCustomResponse(device, propertyData, voiceID, autoVoiceResponse, homebaseAlert, pushNotification, startTime, endTime) {
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5376,7 +5412,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLoiteringCustomResponseAutoVoiceResponse(device, value) {
@@ -5427,10 +5463,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5454,7 +5490,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardPackageGuarding(device, value) {
@@ -5463,10 +5499,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5489,7 +5525,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardPackageGuardingVoiceResponseVoice(device, value) {
@@ -5498,10 +5534,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5525,15 +5561,15 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardPackageGuardingActivatedTime(device, propertyData, startTime, endTime) {
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5559,7 +5595,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardPackageGuardingActivatedTimeFrom(device, value) {
@@ -5582,10 +5618,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5608,7 +5644,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardUncollectedPackageAlertTimeToCheck(device, value) {
@@ -5617,10 +5653,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5644,7 +5680,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDeliveryGuardPackageLiveCheckAssistance(device, value) {
@@ -5653,10 +5689,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5679,7 +5715,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDualCamWatchViewMode(device, value) {
@@ -5688,10 +5724,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5715,15 +5751,15 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async _setRingAutoResponse(device, propertyData, enabled, voiceID, autoVoiceResponse, startTime, endTime) {
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, propertyData.value);
@@ -5757,7 +5793,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setRingAutoResponse(device, value) {
@@ -5801,10 +5837,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5827,7 +5863,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async calibrate(device) {
@@ -5835,10 +5871,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceCalibrate
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceCalibrate)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending calibrate command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isPanAndTiltCamera()) {
@@ -5853,7 +5889,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
     }
     async setContinuousRecording(device, value) {
@@ -5862,10 +5898,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5896,10 +5932,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5930,10 +5966,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5957,10 +5993,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -5983,10 +6019,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceSetDefaultAngle
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceSetDefaultAngle)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending set default angle command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithStringPayload({
@@ -6007,10 +6043,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceSetPrivacyAngle
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceSetPrivacyAngle)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending set privacy angle command to station ${this.getSerial()} for device ${device.getSerial()}`);
         await this.p2pSession.sendCommandWithStringPayload({
@@ -6032,10 +6068,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -6055,10 +6091,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -6081,13 +6117,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceStartTalkback
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceStartTalkback)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!this.isLiveStreaming(device)) {
-            throw new error_2.LivestreamNotRunningError(`Livestream for device ${device.getSerial()} is not running`);
+            throw new error_2.LivestreamNotRunningError("Livestream for device is not running", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending start talkback command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE() || device.isWallLightCam() || device.isGarageCamera()) {
@@ -6127,13 +6163,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceStopTalkback
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceStopTalkback)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!this.isLiveStreaming(device)) {
-            throw new error_2.LivestreamNotRunningError(`Livestream for device ${device.getSerial()} is not running`);
+            throw new error_2.LivestreamNotRunningError("Livestream for device is not running", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending stop talkback command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isIndoorCamera() || device.isSoloCamera() || device.isFloodLight() || device.isWiredDoorbell() || device.isSmartDrop() || device.isStarlight4GLTE() || device.isWallLightCam() || device.isGarageCamera()) {
@@ -6188,10 +6224,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending scramble passcode command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6204,7 +6240,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setSmartSafeParams(device, types_1.PropertyName.DeviceScramblePasscode, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setWrongTryProtection(device, value) {
@@ -6213,10 +6249,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending wrong try protection command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6229,7 +6265,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setSmartSafeParams(device, types_1.PropertyName.DeviceWrongTryProtection, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setWrongTryAttempts(device, value) {
@@ -6238,10 +6274,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending wrong try attempts command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6254,7 +6290,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setSmartSafeParams(device, types_1.PropertyName.DeviceWrongTryAttempts, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setWrongTryLockdownTime(device, value) {
@@ -6263,10 +6299,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending wrong try lockdown time command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6279,7 +6315,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setSmartSafeParams(device, types_1.PropertyName.DeviceWrongTryLockdownTime, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async _sendSmartSafeCommand(device, command, data, customData) {
@@ -6292,10 +6328,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const propertyMetadata = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(propertyMetadata, value);
@@ -6348,7 +6384,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 case types_1.PropertyName.DeviceRemoteUnlockMasterPIN:
                     {
                         if (!this.pinVerified && value === true) {
-                            throw new error_1.PinNotVerifiedError(`You need to call verifyPIN with correct PIN first to enable this property`);
+                            throw new error_1.PinNotVerifiedError("You need to call verifyPIN with correct PIN first to enable this property", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
                         }
                         let newValue = 2;
                         const remoteUnlock = property === types_1.PropertyName.DeviceRemoteUnlock ? value : device.getPropertyValue(types_1.PropertyName.DeviceRemoteUnlock);
@@ -6411,7 +6447,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this._sendSmartSafeCommand(device, command, payload, { property: propertyData });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async unlock(device) {
@@ -6419,10 +6455,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceUnlock
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceUnlock)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         const payload = device_1.SmartSafe.encodeCmdUnlock(this.rawStation.member.admin_user_id);
         this.log.debug(`Sending trigger device unlock command to station ${this.getSerial()} for device ${device.getSerial()}`, { payload: payload.toString("hex") });
@@ -6433,13 +6469,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceVerifyPIN
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceVerifyPIN)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!/^[1-6]{4,8}$/.test(pin)) {
-            throw new error_1.InvalidCommandValueError(`PIN should contain only numbers (1-6) and be between 4 and 8 long`);
+            throw new error_1.InvalidCommandValueError("PIN should contain only numbers (1-6) and be between 4 and 8 long", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         const payload = device_1.SmartSafe.encodeCmdVerifyPIN(this.rawStation.member.admin_user_id, pin);
         this.log.debug(`Sending device verify pin command to station ${this.getSerial()} for device ${device.getSerial()}`, { payload: payload.toString("hex") });
@@ -6469,10 +6505,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -6506,10 +6542,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceSnooze)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending snooze command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
         if (device.isDoorbell()) {
@@ -6552,13 +6588,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceAddUser)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!/^\d{4,8}$/.test(passcode)) {
-            throw new error_1.InvalidCommandValueError(`Passcode should contain only numbers and be between 4 and 8 long`);
+            throw new error_1.InvalidCommandValueError("Passcode should contain only numbers and be between 4 and 8 long", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending add user command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6596,7 +6632,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
     }
     async deleteUser(device, username, shortUserId) {
@@ -6608,10 +6644,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceDeleteUser)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending delete user command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6634,7 +6670,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
     }
     async updateUserSchedule(device, username, shortUserId, schedule) {
@@ -6647,10 +6683,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceUpdateUserSchedule)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending update user schedule command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6678,7 +6714,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
     }
     async updateUserPasscode(device, username, shortUserId, passcode) {
@@ -6691,13 +6727,13 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceUpdateUserPasscode)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commonValue: commandData.value } });
         }
         if (passcode.length < 4 || passcode.length > 8 || !/^\d+$/.test(passcode)) {
-            throw new error_1.InvalidCommandValueError(`Passcode should contain only numbers and be between 4 and 8 long`);
+            throw new error_1.InvalidCommandValueError("Passcode should contain only numbers and be between 4 and 8 long", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         this.log.debug(`Sending update user passcode command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6721,7 +6757,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
     }
     async setLockV12Params(device, property, value) {
@@ -6730,10 +6766,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const propertyMetadata = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(propertyMetadata, value);
@@ -6785,7 +6821,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoLock(device, value) {
@@ -6794,10 +6830,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending auto lock command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6807,7 +6843,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceAutoLock, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoLockSchedule(device, value) {
@@ -6816,10 +6852,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending auto lock schedule command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6829,7 +6865,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceAutoLockSchedule, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoLockScheduleStartTime(device, value) {
@@ -6838,10 +6874,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending auto lock schedule start time command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6851,7 +6887,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceAutoLockScheduleStartTime, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoLockScheduleEndTime(device, value) {
@@ -6860,10 +6896,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending auto lock schedule end time command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6873,7 +6909,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceAutoLockScheduleEndTime, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setAutoLockTimer(device, value) {
@@ -6882,10 +6918,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending auto lock timer command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6895,7 +6931,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceAutoLockTimer, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setOneTouchLocking(device, value) {
@@ -6904,10 +6940,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending one touch locking command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6917,7 +6953,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceOneTouchLocking, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setSound(device, value) {
@@ -6926,10 +6962,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending sound command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
@@ -6939,7 +6975,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             await this.setLockV12Params(device, types_1.PropertyName.DeviceSound, value);
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotification(device, value) {
@@ -6948,17 +6984,17 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending notification command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
             await this.setAdvancedLockParams(device, types_1.PropertyName.DeviceNotification, value);
         }
         else if (device.isLockWifiR10() || device.isLockWifiR20()) {
-            //TODO: Implmenet LockWifiR10 / LockWifiR20 commnand
+            //TODO: Implement LockWifiR10 / LockWifiR20 commnand
         }
         else if (device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
@@ -6973,7 +7009,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationLocked(device, value) {
@@ -6982,20 +7018,20 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending notification locked command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
             await this.setAdvancedLockParams(device, types_1.PropertyName.DeviceNotificationLocked, value);
         }
         else if (device.isLockWifiR10() || device.isLockWifiR20()) {
-            //TODO: Implmenet LockWifiR10 / LockWifiR20 commnand
+            //TODO: Implement LockWifiR10 / LockWifiR20 commnand
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setNotificationUnlocked(device, value) {
@@ -7004,20 +7040,20 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         this.log.debug(`Sending notification unlocked command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockWifi() || device.isLockWifiNoFinger()) {
             await this.setAdvancedLockParams(device, types_1.PropertyName.DeviceNotificationUnlocked, value);
         }
         else if (device.isLockWifiR10() || device.isLockWifiR20()) {
-            //TODO: Implmenet LockWifiR10 / LockWifiR20 commnand
+            //TODO: Implement LockWifiR10 / LockWifiR20 commnand
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async _sendLockV12P2PCommand(command, customData) {
@@ -7029,10 +7065,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceQueryAllUserId
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending query all user id command to station ${this.getSerial()} for device ${device.getSerial()}`);
         if (device.isLockBleNoFinger() || device.isLockBle()) {
@@ -7094,7 +7130,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });*/
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
     }
     async chimeHomebase(value) {
@@ -7103,12 +7139,12 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (!this.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, station: this.getSerial() } });
         }
         if (this.rawStation.devices !== undefined) {
             this.rawStation.devices.forEach((device) => {
                 if (device_1.Device.isDoorbell(device.device_type)) {
-                    throw new error_1.NotSupportedError(`This functionality is only supported on stations without registered Doorbells on it (${this.getSerial()})`);
+                    throw new error_1.NotSupportedError("This functionality is only supported on stations without registered Doorbells on it", { context: { commandName: commandData.name, station: this.getSerial() } });
                 }
             });
         }
@@ -7130,7 +7166,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, commandValue: commandData.value, station: this.getSerial() } });
         }
     }
     onImageDownload(file, image) {
@@ -7142,7 +7178,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: cover_path
         };
         if (!this.hasCommand(types_1.CommandName.StationDownloadImage)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, commandValue: commandData.value, station: this.getSerial() } });
         }
         this.log.debug(`Sending download image command to station ${this.getSerial()} for file ${cover_path}`);
         await this.p2pSession.sendCommandWithStringPayload({
@@ -7168,7 +7204,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.StationDatabaseQueryLatestInfo,
         };
         if (!this.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, station: this.getSerial() } });
         }
         this.log.debug(`Sending database query latest info command to station ${this.getSerial()}`);
         await this.p2pSession.sendCommandWithStringPayload({
@@ -7199,7 +7235,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (!this.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, commandValue: commandData.value, station: this.getSerial() } });
         }
         this.log.debug(`Sending database query local command to station ${this.getSerial()}`, { serialNumbers: serialNumbers, startDate: startDate, endDate: endDate, eventType: eventType, detectionType: detectionType, storageType: storageType });
         const devices = [];
@@ -7243,7 +7279,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: ids
         };
         if (!this.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, commandValue: commandData.value, station: this.getSerial() } });
         }
         this.log.debug(`Sending database delete command to station ${this.getSerial()}`, { ids: ids });
         const lids = [];
@@ -7278,7 +7314,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (!this.hasCommand(commandData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${this.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported", { context: { commandName: commandData.name, commandValue: commandData.value, station: this.getSerial() } });
         }
         this.log.debug(`Sending database count by date command to station ${this.getSerial()}`, { startDate: startDate, endDate: endDate });
         await this.p2pSession.sendCommandWithStringPayload({
@@ -7324,10 +7360,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7345,7 +7381,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setMotionDetectionTypeAllOtherMotions(device, value) {
@@ -7354,10 +7390,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7375,8 +7411,121 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
+    }
+    async _setLightSettingsLightingActiveMode(device, propertyName, value, type) {
+        const propertyData = {
+            name: propertyName,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting ${type} lighting active mode command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
+        if (device.isWallLightCam()) {
+            switch (value) {
+                case types_1.LightingActiveMode.DAILY: {
+                    let currentProperty = types_1.PropertyName.DeviceLightSettingsManualDailyLighting;
+                    if (type === "schedule") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsScheduleDailyLighting;
+                    }
+                    else if (type === "motion") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsMotionDailyLighting;
+                    }
+                    let currentPropertyValue = device.getPropertyValue(currentProperty);
+                    if (!(currentPropertyValue in types_1.DailyLightingType)) {
+                        currentPropertyValue = types_1.DailyLightingType.COLD;
+                    }
+                    //TODO: Force cloud api refresh or updateProperty of currentPropertyValue?
+                    await this.p2pSession.sendCommandWithStringPayload({
+                        commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                        value: JSON.stringify({
+                            "commandType": type === "manual" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DAILY_LIGHTING : type === "schedule" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DAILY_LIGHTING : types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DAILY_LIGHTING,
+                            "data": currentPropertyValue,
+                        }),
+                        channel: device.getChannel()
+                    }, {
+                        property: propertyData,
+                        onSuccess: () => {
+                            device.updateProperty(currentProperty, currentPropertyValue);
+                        }
+                    });
+                    break;
+                }
+                case types_1.LightingActiveMode.COLORED: {
+                    let currentProperty = types_1.PropertyName.DeviceLightSettingsManualColoredLighting;
+                    if (type === "schedule") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsScheduleColoredLighting;
+                    }
+                    else if (type === "motion") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsMotionColoredLighting;
+                    }
+                    let currentPropertyValue = device.getPropertyValue(currentProperty);
+                    const colors = device.getPropertyValue(types_1.PropertyName.DeviceLightSettingsColoredLightingColors);
+                    if (!colors.some(color => color.red === currentPropertyValue.red && color.green === currentPropertyValue.green && color.blue === currentPropertyValue.blue)) {
+                        currentPropertyValue = colors[0];
+                    }
+                    //TODO: Force cloud api refresh or updateProperty of currentPropertyValue?
+                    await this.p2pSession.sendCommandWithStringPayload({
+                        commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                        value: JSON.stringify({
+                            "commandType": type === "manual" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_COLORED_LIGHTING : type === "schedule" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_COLORED_LIGHTING : types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING,
+                            "data": {
+                                "rgb_color": (0, utils_2.RGBColorToDecimal)(currentPropertyValue)
+                            },
+                        }),
+                        channel: device.getChannel()
+                    }, {
+                        property: propertyData,
+                        onSuccess: () => {
+                            device.updateProperty(currentProperty, currentPropertyValue);
+                        }
+                    });
+                    break;
+                }
+                case types_1.LightingActiveMode.DYNAMIC: {
+                    let currentProperty = types_1.PropertyName.DeviceLightSettingsManualDynamicLighting;
+                    if (type === "schedule") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsScheduleDynamicLighting;
+                    }
+                    else if (type === "motion") {
+                        currentProperty = types_1.PropertyName.DeviceLightSettingsMotionDynamicLighting;
+                    }
+                    let currentPropertyValue = device.getPropertyValue(currentProperty);
+                    const range = device.getPropertyValue(types_1.PropertyName.DeviceLightSettingsDynamicLightingThemes).length;
+                    if (currentPropertyValue < 0 || currentPropertyValue >= range) {
+                        currentPropertyValue = 0;
+                    }
+                    //TODO: Force cloud api refresh or updateProperty of currentPropertyValue?
+                    await this.p2pSession.sendCommandWithStringPayload({
+                        commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                        value: JSON.stringify({
+                            "commandType": type === "manual" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_DYNAMIC_LIGHTING : type === "schedule" ? types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_DYNAMIC_LIGHTING : types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_DYNAMIC_LIGHTING,
+                            "data": currentPropertyValue,
+                        }),
+                        channel: device.getChannel()
+                    }, {
+                        property: propertyData,
+                        onSuccess: () => {
+                            device.updateProperty(currentProperty, currentPropertyValue);
+                        }
+                    });
+                    break;
+                }
+            }
+        }
+        else {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+    }
+    async setLightSettingsManualLightingActiveMode(device, value) {
+        await this._setLightSettingsLightingActiveMode(device, types_1.PropertyName.DeviceLightSettingsManualLightingActiveMode, value, "manual");
     }
     async setLightSettingsManualDailyLighting(device, value) {
         const propertyData = {
@@ -7384,10 +7533,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7401,11 +7550,14 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsManualLightingActiveMode, types_1.LightingActiveMode.DAILY);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsManualColoredLighting(device, value) {
@@ -7414,30 +7566,37 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
-        this.log.debug(`Sending light setting manual colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        const colors = device.getPropertyValue(types_1.PropertyName.DeviceLightSettingsColoredLightingColors);
+        if (!colors.some(color => color.red === value.red && color.green === value.green && color.blue === value.blue)) {
+            throw new error_1.InvalidPropertyValueError("Invalid value for this property", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        this.log.debug(`Sending light setting manual colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
         if (device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
                     "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MANUAL_COLORED_LIGHTING,
                     "data": {
-                        "rgb_color": value
+                        "rgb_color": (0, utils_2.RGBColorToDecimal)(value)
                     },
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsManualLightingActiveMode, types_1.LightingActiveMode.COLORED);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsManualDynamicLighting(device, value) {
@@ -7446,10 +7605,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7463,12 +7622,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsManualLightingActiveMode, types_1.LightingActiveMode.DYNAMIC);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
+    }
+    async setLightSettingsMotionLightingActiveMode(device, value) {
+        await this._setLightSettingsLightingActiveMode(device, types_1.PropertyName.DeviceLightSettingsMotionLightingActiveMode, value, "motion");
     }
     async setLightSettingsMotionDailyLighting(device, value) {
         const propertyData = {
@@ -7476,10 +7641,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7493,11 +7658,14 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsMotionActivationMode, types_1.LightingActiveMode.DAILY);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsMotionColoredLighting(device, value) {
@@ -7506,30 +7674,37 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
-        this.log.debug(`Sending light setting motion colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        const colors = device.getPropertyValue(types_1.PropertyName.DeviceLightSettingsColoredLightingColors);
+        if (!colors.some(color => color.red === value.red && color.green === value.green && color.blue === value.blue)) {
+            throw new error_1.InvalidPropertyValueError("Invalid value for this property", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        this.log.debug(`Sending light setting motion colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
         if (device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
                     "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_MOTION_COLORED_LIGHTING,
                     "data": {
-                        "rgb_color": value
+                        "rgb_color": (0, utils_2.RGBColorToDecimal)(value)
                     },
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsMotionActivationMode, types_1.LightingActiveMode.COLORED);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsMotionDynamicLighting(device, value) {
@@ -7538,10 +7713,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7555,12 +7730,18 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsMotionActivationMode, types_1.LightingActiveMode.DYNAMIC);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
+    }
+    async setLightSettingsScheduleLightingActiveMode(device, value) {
+        await this._setLightSettingsLightingActiveMode(device, types_1.PropertyName.DeviceLightSettingsScheduleLightingActiveMode, value, "schedule");
     }
     async setLightSettingsScheduleDailyLighting(device, value) {
         const propertyData = {
@@ -7568,10 +7749,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7585,11 +7766,14 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsScheduleLightingActiveMode, types_1.LightingActiveMode.DAILY);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsScheduleColoredLighting(device, value) {
@@ -7598,30 +7782,37 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
-        this.log.debug(`Sending light setting schedule colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
+        const colors = device.getPropertyValue(types_1.PropertyName.DeviceLightSettingsColoredLightingColors);
+        if (!colors.some(color => color.red === value.red && color.green === value.green && color.blue === value.blue)) {
+            throw new error_1.InvalidPropertyValueError("Invalid value for this property", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        this.log.debug(`Sending light setting schedule colored lighting command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
         if (device.isWallLightCam()) {
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
                     "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_SCHEDULE_COLORED_LIGHTING,
                     "data": {
-                        "rgb_color": value
+                        "rgb_color": (0, utils_2.RGBColorToDecimal)(value)
                     },
                 }),
                 channel: device.getChannel()
             }, {
-                property: propertyData
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsScheduleLightingActiveMode, types_1.LightingActiveMode.COLORED);
+                }
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setLightSettingsScheduleDynamicLighting(device, value) {
@@ -7630,10 +7821,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7647,11 +7838,126 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 }),
                 channel: device.getChannel()
             }, {
+                property: propertyData,
+                onSuccess: () => {
+                    device.updateProperty(types_1.PropertyName.DeviceLightSettingsScheduleLightingActiveMode, types_1.LightingActiveMode.DYNAMIC);
+                }
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+    }
+    async setLightSettingsColoredLightingColors(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsColoredLightingColors,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting colored lighting colors command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
+        if (device.isWallLightCam()) {
+            const colors = [{ "color": 16760832 }, { "color": 16744448 }, { "color": 16728320 }, { "color": 16720384 }, { "color": 16711696 }, { "color": 3927961 }, { "color": 1568995 }, { "color": 485368 }, { "color": 9983 }, { "color": 4664060 }];
+            if (value.length > 0 && value.length <= 15) {
+                let count = 0;
+                for (let i = 0; i < colors.length; i++) {
+                    if ((0, utils_2.RGBColorToDecimal)(value[i]) === colors[i].color) {
+                        count++;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if (value.length - count + colors.length > 15) {
+                    throw new error_1.InvalidPropertyValueError("This property can contain a maximum of 15 items, of which the first 10 are fixed. You can either deliver the first 10 static items with the maximum 5 freely selectable items or only the maximum 5 freely selectable items.", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+                }
+                else {
+                    for (let i = count; i < value.length - count + 10; i++) {
+                        colors.push({ color: (0, utils_2.RGBColorToDecimal)(value[i]) });
+                    }
+                }
+            }
+            else {
+                throw new error_1.InvalidPropertyValueError("This property can contain a maximum of 15 items, of which the first 10 are fixed. You can either deliver the first 10 static items with the maximum 5 freely selectable items or only the maximum 5 freely selectable items.", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+            }
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_COLORED_LIGHTING_COLORS,
+                    "data": colors,
+                }),
+                channel: device.getChannel()
+            }, {
                 property: propertyData
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+    }
+    async setLightSettingsDynamicLightingThemes(device, value) {
+        const propertyData = {
+            name: types_1.PropertyName.DeviceLightSettingsDynamicLightingThemes,
+            value: value
+        };
+        if (device.getStationSerial() !== this.getSerial()) {
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        if (!device.hasProperty(propertyData.name)) {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+        }
+        const property = device.getPropertyMetadata(propertyData.name);
+        (0, utils_3.validValue)(property, value);
+        this.log.debug(`Sending light setting dynamic lighting themes command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${JSON.stringify(value)}`);
+        if (device.isWallLightCam()) {
+            const themes = [{ "name": "Aurora", "mode": 1, "id": 0, "speed": 4000, "colors": [65321, 65468, 28671, 9215, 42239] }, { "name": "Warmth", "mode": 1, "id": 1, "speed": 4000, "colors": [16758528, 16744448, 16732160, 16719360, 16742144] }, { "name": "Let's Party", "mode": 2, "id": 2, "speed": 500, "colors": [16718080, 16756736, 65298, 40703, 4980991] }];
+            if (value.length > 0 && value.length <= 23) {
+                let count = 0;
+                for (let i = 0; i < themes.length; i++) {
+                    if (value[i].name === themes[i].name) {
+                        count++;
+                    }
+                    else {
+                        break;
+                    }
+                }
+                if (value.length - count + themes.length > 23) {
+                    throw new error_1.InvalidPropertyValueError("This property can contain a maximum of 23 items, of which the first 3 are fixed. You can either deliver the first 3 static items with the maximum 20 freely selectable items or only the maximum 20 freely selectable items.", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+                }
+                else {
+                    for (let i = count; i < value.length - count + 3; i++) {
+                        themes.push({
+                            id: i,
+                            colors: value[i].colors.map((color) => (0, utils_2.RGBColorToDecimal)(color)),
+                            mode: value[i].mode,
+                            name: value[i].name,
+                            speed: value[i].speed
+                        });
+                    }
+                }
+            }
+            else {
+                throw new error_1.InvalidPropertyValueError("This property can contain a maximum of 23 items, of which the first 3 are fixed. You can either deliver the first 3 static items with the maximum 20 freely selectable items or only the maximum 20 freely selectable items.", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
+            }
+            await this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "commandType": types_2.CommandType.CMD_WALL_LIGHT_SETTINGS_DYNAMIC_LIGHTING_THEMES,
+                    "data": themes,
+                }),
+                channel: device.getChannel()
+            }, {
+                property: propertyData
+            });
+        }
+        else {
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async setDoorControlWarning(device, value) {
@@ -7660,10 +7966,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: value
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7684,7 +7990,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     async openDoor(device, value, doorId = 1) {
@@ -7696,10 +8002,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         if (!device.hasProperty(propertyData.name)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
@@ -7723,7 +8029,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), propertyName: propertyData.name, propertyValue: propertyData.value } });
         }
     }
     onGarageDoorStatus(channel, doorId, status) {
@@ -7734,10 +8040,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             name: types_1.CommandName.DeviceCalibrateGarageDoor
         };
         if (device.getStationSerial() !== this.getSerial()) {
-            throw new error_1.WrongStationError(`Device ${device.getSerial()} is not managed by this station ${this.getSerial()}`);
+            throw new error_1.WrongStationError("Device is not managed by this station", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         if (!device.hasCommand(types_1.CommandName.DeviceCalibrateGarageDoor)) {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
         this.log.debug(`Sending calibrate garage door command to station ${this.getSerial()} for device ${device.getSerial()} doorId ${doorId} type ${types_2.CalibrateGarageType[type]}`);
         if (device.isGarageCamera()) {
@@ -7756,11 +8062,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else {
-            throw new error_1.NotSupportedError(`This functionality is not implemented or supported by ${device.getSerial()}`);
+            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
     }
 }
-Station.CHANNEL = 255;
-Station.CHANNEL_INDOOR = 1000;
 exports.Station = Station;
 //# sourceMappingURL=station.js.map

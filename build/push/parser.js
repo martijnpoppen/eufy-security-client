@@ -30,16 +30,20 @@ const ts_log_1 = require("ts-log");
 const protobufjs_1 = require("protobufjs");
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const models_1 = require("./models");
+const error_1 = require("../error");
+const error_2 = require("./error");
 class PushClientParser extends tiny_typed_emitter_1.TypedEmitter {
+    static proto = null;
+    state = models_1.ProcessingState.MCS_VERSION_TAG_AND_SIZE;
+    data = Buffer.alloc(0);
+    isWaitingForData = true;
+    sizePacketSoFar = 0;
+    messageSize = 0;
+    messageTag = 0;
+    handshakeComplete = false;
+    log;
     constructor(log = ts_log_1.dummyLogger) {
         super();
-        this.state = models_1.ProcessingState.MCS_VERSION_TAG_AND_SIZE;
-        this.data = Buffer.alloc(0);
-        this.isWaitingForData = true;
-        this.sizePacketSoFar = 0;
-        this.messageSize = 0;
-        this.messageTag = 0;
-        this.handshakeComplete = false;
         this.log = log;
     }
     resetState() {
@@ -97,7 +101,7 @@ class PushClientParser extends tiny_typed_emitter_1.TypedEmitter {
         const version = this.data.readInt8(0);
         this.data = this.data.slice(1);
         if (version < 41 && version !== 38) {
-            throw new Error(`Got wrong version: ${version}`);
+            throw new error_2.MCSProtocolVersionError("Got wrong protocol version", { context: { version: version } });
         }
         // Process the LoginResponse message tag.
         this.onGotMessageTag();
@@ -113,12 +117,13 @@ class PushClientParser extends tiny_typed_emitter_1.TypedEmitter {
         try {
             this.messageSize = reader.int32();
         }
-        catch (error) {
+        catch (err) {
+            const error = (0, error_1.ensureError)(err);
             if (error instanceof Error && error.message.startsWith("index out of range:")) {
                 incompleteSizePacket = true;
             }
             else {
-                throw new Error(error);
+                throw error;
             }
         }
         if (incompleteSizePacket) {
@@ -185,7 +190,7 @@ class PushClientParser extends tiny_typed_emitter_1.TypedEmitter {
             case models_1.ProcessingState.MCS_PROTO_BYTES:
                 return this.messageSize;
             default:
-                throw new Error(`Unknown state: ${this.state}`);
+                throw new error_2.MCSProtocolProcessingStateError("Unknown protocol processing state", { context: { state: this.state } });
         }
     }
     buildProtobufFromTag(messageTag) {
@@ -207,10 +212,9 @@ class PushClientParser extends tiny_typed_emitter_1.TypedEmitter {
             case models_1.MessageTag.StreamErrorStanza:
                 return PushClientParser.proto.lookupType("mcs_proto.StreamErrorStanza");
             default:
-                throw new Error(`Unknown tag: ${this.messageTag}`);
+                throw new error_2.MCSProtocolMessageTagError("Unknown protocol message tag", { context: { messageTag: this.messageTag } });
         }
     }
 }
-PushClientParser.proto = null;
 exports.PushClientParser = PushClientParser;
 //# sourceMappingURL=parser.js.map

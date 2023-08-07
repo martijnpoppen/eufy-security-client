@@ -30,9 +30,9 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private refreshEufySecurityCloudTimeout?;
     private refreshEufySecurityP2PTimeout;
     private deviceSnoozeTimeout;
-    private stationsLoaded;
-    private devicesLoaded;
     private loadingEmitter;
+    private stationsLoaded?;
+    private devicesLoaded?;
     private constructor();
     static initialize(config: EufySecurityConfig, log?: Logger): Promise<EufySecurity>;
     protected _initializeInternals(): Promise<void>;

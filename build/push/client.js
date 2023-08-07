@@ -36,18 +36,27 @@ const ts_log_1 = require("ts-log");
 const models_1 = require("./models");
 const parser_1 = require("./parser");
 const utils_1 = require("../utils");
+const error_1 = require("./error");
+const error_2 = require("../error");
 class PushClient extends tiny_typed_emitter_1.TypedEmitter {
+    HOST = "mtalk.google.com";
+    PORT = 5228;
+    MCS_VERSION = 41;
+    HEARTBEAT_INTERVAL = 5 * 60 * 1000;
+    loggedIn = false;
+    streamId = 0;
+    lastStreamIdReported = -1;
+    currentDelay = 0;
+    client;
+    heartbeatTimeout;
+    reconnectTimeout;
+    persistentIds = [];
+    static proto = null;
+    pushClientParser;
+    auth;
+    log;
     constructor(pushClientParser, auth, log = ts_log_1.dummyLogger) {
         super();
-        this.HOST = "mtalk.google.com";
-        this.PORT = 5228;
-        this.MCS_VERSION = 41;
-        this.HEARTBEAT_INTERVAL = 5 * 60 * 1000;
-        this.loggedIn = false;
-        this.streamId = 0;
-        this.lastStreamIdReported = -1;
-        this.currentDelay = 0;
-        this.persistentIds = [];
         this.log = log;
         this.pushClientParser = pushClientParser;
         this.auth = auth;
@@ -115,7 +124,7 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         };
         const errorMessage = LoginRequestType.verify(loginRequest);
         if (errorMessage) {
-            throw new Error(errorMessage);
+            throw new error_1.BuildLoginRequestError(errorMessage, { context: { loginRequest: loginRequest } });
         }
         const buffer = LoginRequestType.encodeDelimited(loginRequest).finish();
         return Buffer.concat([Buffer.from([this.MCS_VERSION, models_1.MessageTag.LoginRequest]), buffer]);
@@ -129,7 +138,7 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         const HeartbeatPingRequestType = PushClient.proto.lookupType("mcs_proto.HeartbeatPing");
         const errorMessage = HeartbeatPingRequestType.verify(heartbeatPingRequest);
         if (errorMessage) {
-            throw new Error(errorMessage);
+            throw new error_1.BuildHeartbeatPingRequestError(errorMessage, { context: { heartbeatPingRequest: heartbeatPingRequest } });
         }
         const buffer = HeartbeatPingRequestType.encodeDelimited(heartbeatPingRequest).finish();
         return Buffer.concat([Buffer.from([models_1.MessageTag.HeartbeatPing]), buffer]);
@@ -150,7 +159,7 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         const HeartbeatAckRequestType = PushClient.proto.lookupType("mcs_proto.HeartbeatAck");
         const errorMessage = HeartbeatAckRequestType.verify(heartbeatAckRequest);
         if (errorMessage) {
-            throw new Error(errorMessage);
+            throw new error_1.BuildHeartbeatAckRequestError(errorMessage, { context: { heartbeatAckRequest: heartbeatAckRequest } });
         }
         const buffer = HeartbeatAckRequestType.encodeDelimited(heartbeatAckRequest).finish();
         return Buffer.concat([Buffer.from([models_1.MessageTag.HeartbeatAck]), buffer]);
@@ -170,8 +179,9 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
         this.emit("close");
         this.scheduleReconnect();
     }
-    onSocketError(error) {
-        this.log.error(`onSocketError:`, error);
+    onSocketError(err) {
+        const error = (0, error_2.ensureError)(err);
+        this.log.error(`onSocketError`, error);
     }
     handleParsedMessage(message) {
         this.resetCurrentDelay();
@@ -310,6 +320,5 @@ class PushClient extends tiny_typed_emitter_1.TypedEmitter {
             this.emit("close");
     }
 }
-PushClient.proto = null;
 exports.PushClient = PushClient;
 //# sourceMappingURL=client.js.map

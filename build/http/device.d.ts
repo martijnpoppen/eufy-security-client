@@ -95,6 +95,9 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isGarageCamera(type: number): boolean;
     static isIntegratedDeviceBySn(sn: string): boolean;
     static isSoloCameraBySn(sn: string): boolean;
+    static isSmartTrackCard(type: number): boolean;
+    static isSmartTrackLink(type: number): boolean;
+    static isSmartTrack(type: number): boolean;
     isCamera(): boolean;
     isFloodLight(): boolean;
     isFloodLightT8420X(): boolean;
@@ -146,6 +149,9 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isSmartSafe(): boolean;
     isGarageCamera(): boolean;
     isIntegratedDevice(): boolean;
+    isSmartTrack(): boolean;
+    isSmartTrackCard(): boolean;
+    isSmartTrackLink(): boolean;
     hasBattery(): boolean;
     getDeviceKey(): string;
     getDeviceType(): number;
@@ -252,6 +258,7 @@ export declare class WallLightCam extends Camera {
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    getPropertiesMetadata(hidden?: boolean): IndexedProperty;
     processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class GarageCamera extends Camera {
