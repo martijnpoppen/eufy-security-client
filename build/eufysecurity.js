@@ -79,8 +79,8 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     refreshEufySecurityP2PTimeout = {};
     deviceSnoozeTimeout = {};
     loadingEmitter = new events_1.default();
-    stationsLoaded;
-    devicesLoaded;
+    stationsLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "stations loaded");
+    devicesLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "devices loaded");
     constructor(config, log = ts_log_1.dummyLogger) {
         super();
         this.config = config;
@@ -430,7 +430,8 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 this.updateStation(hub);
             }
             else {
-                this.stationsLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "stations loaded");
+                if (this.stationsLoaded === undefined)
+                    this.stationsLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "stations loaded");
                 let ipAddress;
                 if (this.config.stationIPAddresses !== undefined) {
                     ipAddress = this.config.stationIPAddresses[hub.station_sn];
@@ -513,7 +514,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     }
     onStationConnect(station) {
         this.emit("station connect", station);
-        if ((device_1.Device.isCamera(station.getDeviceType()) && !device_1.Device.isWiredDoorbell(station.getDeviceType()) || device_1.Device.isSmartSafe(station.getDeviceType()))) {
+        if (station_1.Station.isStation(station.getDeviceType()) || (device_1.Device.isCamera(station.getDeviceType()) && !device_1.Device.isWiredDoorbell(station.getDeviceType()) || device_1.Device.isSmartSafe(station.getDeviceType()))) {
             station.getCameraInfo().catch(err => {
                 const error = (0, error_1.ensureError)(err);
                 this.log.error(`Error during station ${station.getSerial()} p2p data refreshing`, error);
@@ -559,7 +560,8 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 this.updateDevice(device);
             }
             else {
-                this.devicesLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "devices loaded");
+                if (this.devicesLoaded === undefined)
+                    this.devicesLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "devices loaded");
                 let new_device;
                 if (device_1.Device.isIndoorCamera(device.device_type)) {
                     new_device = device_1.IndoorCamera.getInstance(this.api, device);
