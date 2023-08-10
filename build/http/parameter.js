@@ -12,8 +12,6 @@ class ParameterHelper {
                 type === types_2.ParamType.CAMERA_MOTION_ZONES ||
                 type === types_1.CommandType.CMD_SET_DOORSENSOR_ALWAYS_OPEN_DELAY ||
                 type === types_1.CommandType.CMD_SET_DOORSENSOR_ALWAYS_OPEN ||
-                type === types_1.CommandType.CMD_GET_BATTERY ||
-                type === types_1.CommandType.CMD_GET_BATTERY_TEMP ||
                 type === types_1.CommandType.ARM_DELAY_HOME ||
                 type === types_1.CommandType.ARM_DELAY_AWAY ||
                 type === types_1.CommandType.ARM_DELAY_CUS1 ||
