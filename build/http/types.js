@@ -54,6 +54,7 @@ var DeviceType;
     DeviceType[DeviceType["SOLO_CAMERA_SPOTLIGHT_1080"] = 60] = "SOLO_CAMERA_SPOTLIGHT_1080";
     DeviceType[DeviceType["SOLO_CAMERA_SPOTLIGHT_2K"] = 61] = "SOLO_CAMERA_SPOTLIGHT_2K";
     DeviceType[DeviceType["SOLO_CAMERA_SPOTLIGHT_SOLAR"] = 62] = "SOLO_CAMERA_SPOTLIGHT_SOLAR";
+    DeviceType[DeviceType["SOLO_CAMERA_SOLAR"] = 63] = "SOLO_CAMERA_SOLAR";
     DeviceType[DeviceType["SMART_DROP"] = 90] = "SMART_DROP";
     DeviceType[DeviceType["BATTERY_DOORBELL_PLUS"] = 91] = "BATTERY_DOORBELL_PLUS";
     DeviceType[DeviceType["DOORBELL_SOLO"] = 93] = "DOORBELL_SOLO";
@@ -5321,6 +5322,44 @@ exports.DeviceProperties = {
         [PropertyName.DeviceSnoozeStartTime]: exports.DeviceSnoozeStartTimeProperty,
         [PropertyName.DevicePersonName]: exports.DevicePersonNameProperty,
     },
+    [DeviceType.SOLO_CAMERA_SOLAR]: {
+        ...exports.GenericDeviceProperties,
+        [PropertyName.DeviceEnabled]: exports.DeviceEnabledSoloProperty,
+        [PropertyName.DeviceBattery]: exports.DeviceBatteryProperty,
+        [PropertyName.DeviceBatteryTemp]: exports.DeviceBatteryTempProperty,
+        [PropertyName.DeviceNightvision]: exports.DeviceNightvisionProperty,
+        [PropertyName.DeviceMotionDetection]: exports.DeviceMotionDetectionIndoorSoloFloodProperty,
+        [PropertyName.DeviceWatermark]: exports.DeviceWatermarkSoloWiredDoorbellProperty,
+        [PropertyName.DeviceMotionDetected]: exports.DeviceMotionDetectedProperty,
+        [PropertyName.DevicePersonDetected]: exports.DevicePersonDetectedProperty,
+        [PropertyName.DeviceStatusLed]: exports.DeviceStatusLedProperty,
+        [PropertyName.DevicePicture]: exports.DevicePictureProperty,
+        [PropertyName.DevicePictureUrl]: exports.DevicePictureUrlProperty,
+        [PropertyName.DeviceMicrophone]: exports.DeviceMicrophoneProperty,
+        [PropertyName.DeviceSpeaker]: exports.DeviceSpeakerProperty,
+        [PropertyName.DeviceSpeakerVolume]: exports.DeviceSpeakerVolumeSoloProperty,
+        [PropertyName.DeviceAudioRecording]: exports.DeviceAudioRecordingProperty,
+        [PropertyName.DeviceMotionDetectionType]: exports.DeviceMotionDetectionTypeProperty,
+        [PropertyName.DevicePowerWorkingMode]: exports.DevicePowerWorkingModeProperty,
+        [PropertyName.DeviceRecordingClipLength]: exports.DeviceRecordingClipLengthProperty,
+        [PropertyName.DeviceRecordingRetriggerInterval]: exports.DeviceRecordingRetriggerIntervalProperty,
+        [PropertyName.DeviceRecordingEndClipMotionStops]: exports.DeviceRecordingEndClipMotionStopsProperty,
+        [PropertyName.DeviceVideoStreamingQuality]: exports.DeviceVideoStreamingQualitySoloProperty,
+        [PropertyName.DeviceVideoRecordingQuality]: exports.DeviceVideoRecordingQualityProperty,
+        [PropertyName.DeviceWifiRSSI]: exports.DeviceWifiRSSIProperty,
+        [PropertyName.DeviceWifiSignalLevel]: exports.DeviceWifiSignalLevelProperty,
+        [PropertyName.DeviceMotionDetectionSensitivity]: exports.DeviceMotionDetectionSensitivitySoloProperty,
+        [PropertyName.DeviceLastChargingDays]: exports.DeviceLastChargingDaysProperty,
+        [PropertyName.DeviceLastChargingRecordedEvents]: exports.DeviceLastChargingRecordedEventsProperty,
+        [PropertyName.DeviceLastChargingTotalEvents]: exports.DeviceLastChargingTotalEventsProperty,
+        [PropertyName.DeviceBatteryUsageLastWeek]: exports.DeviceBatteryUsageLastWeekProperty,
+        [PropertyName.DeviceState]: exports.DeviceStateProperty,
+        [PropertyName.DeviceChargingStatus]: exports.DeviceChargingStatusProperty,
+        [PropertyName.DeviceSnooze]: exports.DeviceSnoozeProperty,
+        [PropertyName.DeviceSnoozeTime]: exports.DeviceSnoozeTimeProperty,
+        [PropertyName.DeviceSnoozeStartTime]: exports.DeviceSnoozeStartTimeProperty,
+        [PropertyName.DevicePersonName]: exports.DevicePersonNameProperty,
+    },
     [DeviceType.KEYPAD]: {
         ...exports.GenericDeviceProperties,
         [PropertyName.DeviceBatteryLow]: exports.DeviceBatteryLowKeypadProperty,
@@ -6393,6 +6432,16 @@ exports.StationProperties = {
         [PropertyName.StationAlarm]: exports.StationAlarmProperty,
         [PropertyName.StationAlarmType]: exports.StationAlarmTypeProperty,
     },
+    [DeviceType.SOLO_CAMERA_SOLAR]: {
+        ...exports.BaseStationProperties,
+        [PropertyName.StationLANIpAddress]: exports.StationLanIpAddressStandaloneProperty,
+        [PropertyName.StationMacAddress]: exports.StationMacAddressProperty,
+        [PropertyName.StationGuardMode]: exports.StationGuardModeProperty,
+        [PropertyName.StationCurrentMode]: exports.StationCurrentModeProperty,
+        [PropertyName.StationTimeFormat]: exports.StationTimeFormatProperty,
+        [PropertyName.StationAlarm]: exports.StationAlarmProperty,
+        [PropertyName.StationAlarmType]: exports.StationAlarmTypeProperty,
+    },
     [DeviceType.FLOODLIGHT]: {
         ...exports.BaseStationProperties,
         [PropertyName.StationLANIpAddress]: exports.StationLanIpAddressStandaloneProperty,
@@ -6782,6 +6831,15 @@ exports.DeviceCommands = {
         CommandName.DeviceStopTalkback,
         CommandName.DeviceSnooze,
     ],
+    [DeviceType.SOLO_CAMERA_SOLAR]: [
+        CommandName.DeviceStartLivestream,
+        CommandName.DeviceStopLivestream,
+        CommandName.DeviceStartDownload,
+        CommandName.DeviceCancelDownload,
+        CommandName.DeviceStartTalkback,
+        CommandName.DeviceStopTalkback,
+        CommandName.DeviceSnooze,
+    ],
     [DeviceType.FLOODLIGHT]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
@@ -7058,6 +7116,15 @@ exports.StationCommands = {
         CommandName.StationDatabaseDelete,
     ],
     [DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR]: [
+        CommandName.StationReboot,
+        CommandName.StationTriggerAlarmSound,
+        CommandName.StationDownloadImage,
+        CommandName.StationDatabaseQueryLatestInfo,
+        CommandName.StationDatabaseQueryLocal,
+        CommandName.StationDatabaseCountByDate,
+        CommandName.StationDatabaseDelete,
+    ],
+    [DeviceType.SOLO_CAMERA_SOLAR]: [
         CommandName.StationReboot,
         CommandName.StationTriggerAlarmSound,
         CommandName.StationDownloadImage,
