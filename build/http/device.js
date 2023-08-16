@@ -987,12 +987,16 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     static isSoloCameraSpotlightSolar(type) {
         return types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR == type;
     }
+    static isSoloCameraSolar(type) {
+        return types_1.DeviceType.SOLO_CAMERA_SOLAR == type;
+    }
     static isSoloCameras(type) {
         return Device.isSoloCamera(type) ||
             Device.isSoloCameraPro(type) ||
             Device.isSoloCameraSpotlight1080(type) ||
             Device.isSoloCameraSpotlight2k(type) ||
-            Device.isSoloCameraSpotlightSolar(type);
+            Device.isSoloCameraSpotlightSolar(type) ||
+            Device.isSoloCameraSolar(type);
     }
     static isStarlight4GLTE(type) {
         return types_1.DeviceType.CAMERA_FG == type;
@@ -1186,6 +1190,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isSoloCameraSpotlightSolar() {
         return Device.isSoloCameraSpotlightSolar(this.rawDevice.device_type);
+    }
+    isSoloCameraSolar() {
+        return Device.isSoloCameraSolar(this.rawDevice.device_type);
     }
     isStarlight4GLTE() {
         return Device.isStarlight4GLTE(this.rawDevice.device_type);

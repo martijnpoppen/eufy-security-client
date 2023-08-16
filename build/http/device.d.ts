@@ -74,6 +74,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isSoloCameraSpotlight1080(type: number): boolean;
     static isSoloCameraSpotlight2k(type: number): boolean;
     static isSoloCameraSpotlightSolar(type: number): boolean;
+    static isSoloCameraSolar(type: number): boolean;
     static isSoloCameras(type: number): boolean;
     static isStarlight4GLTE(type: number): boolean;
     static isIndoorOutdoorCamera1080p(type: number): boolean;
@@ -126,6 +127,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isSoloCameraSpotlight1080(): boolean;
     isSoloCameraSpotlight2k(): boolean;
     isSoloCameraSpotlightSolar(): boolean;
+    isSoloCameraSolar(): boolean;
     isStarlight4GLTE(): boolean;
     isIndoorOutdoorCamera1080p(): boolean;
     isIndoorOutdoorCamera1080pNoLight(): boolean;
