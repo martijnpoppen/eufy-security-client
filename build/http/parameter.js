@@ -41,8 +41,6 @@ class ParameterHelper {
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_STRAND_TIME ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_RING_AUTO_RESPONSE ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_TIME ||
-                type === types_1.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_DISTANCE ||
-                type === types_1.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_TIME ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_DELIVERY_GUARD_SWITCH ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_VOICE ||
                 type === types_1.CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS) {

@@ -40,8 +40,6 @@ export class ParameterHelper {
                 type === CommandType.CMD_DOORBELL_DUAL_PACKAGE_STRAND_TIME ||
                 type === CommandType.CMD_DOORBELL_DUAL_RING_AUTO_RESPONSE ||
                 type === CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_TIME ||
-                type === CommandType.CMD_DOORBELL_DUAL_RADAR_WD_DISTANCE ||
-                type === CommandType.CMD_DOORBELL_DUAL_RADAR_WD_TIME ||
                 type === CommandType.CMD_DOORBELL_DUAL_DELIVERY_GUARD_SWITCH ||
                 type === CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_VOICE ||
                 type === CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS) {
