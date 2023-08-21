@@ -117,7 +117,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     getRawStation() {
         return this.rawStation;
     }
-    update(station, cloudOnlyProperties = false) {
+    update(station) {
         this.rawStation = station;
         this.p2pSession.updateRawStation(station);
         const metadata = this.getPropertiesMetadata(true);
@@ -129,9 +129,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 this.updateProperty(property.name, property.default);
             }
         }
-        if (!cloudOnlyProperties && this.rawStation.params) {
+        if (this.rawStation.params) {
             this.rawStation.params.forEach(param => {
-                this.updateRawProperty(param.param_type, param.param_value);
+                this.updateRawProperty(param.param_type, param.param_value, "http");
             });
         }
         this.log.debug("Normalized Properties", { stationSN: this.getSerial(), properties: this.properties });
@@ -161,7 +161,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     updateRawProperties(values) {
         Object.keys(values).forEach(paramtype => {
             const param_type = Number.parseInt(paramtype);
-            this.updateRawProperty(param_type, values[param_type]);
+            this.updateRawProperty(param_type, values[param_type].value, values[param_type].source);
         });
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -189,13 +189,16 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }*/
         }
     }
-    updateRawProperty(type, value) {
+    updateRawProperty(type, value, source) {
         const parsedValue = parameter_1.ParameterHelper.readValue(type, value, this.log);
-        if (parsedValue !== undefined && ((this.rawProperties[type] !== undefined && this.rawProperties[type] !== parsedValue)
-            || this.rawProperties[type] === undefined)) {
-            this.rawProperties[type] = parsedValue;
+        if (parsedValue !== undefined &&
+            ((this.rawProperties[type] !== undefined && this.rawProperties[type].value !== parsedValue && (0, utils_1.isPrioritySourceType)(this.rawProperties[type].source, source)) || this.rawProperties[type] === undefined)) {
+            this.rawProperties[type] = {
+                value: parsedValue,
+                source: source
+            };
             if (this.ready) {
-                this.emit("raw property changed", this, type, this.rawProperties[type]);
+                this.emit("raw property changed", this, type, this.rawProperties[type].value);
                 try {
                     if (type === types_1.ParamType.GUARD_MODE) {
                         this.emit("guard mode", this, Number.parseInt(parsedValue));
@@ -213,7 +216,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             for (const property of Object.values(metadata)) {
                 if (property.key === type) {
                     try {
-                        this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawProperties[type]));
+                        this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawProperties[type].value));
                     }
                     catch (err) {
                         const error = (0, error_1.ensureError)(err);
@@ -364,7 +367,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         return this.getPropertyValue(name) !== undefined;
     }
     getRawProperty(type) {
-        return this.rawProperties[type];
+        return this.rawProperties[type].value;
     }
     getRawProperties() {
         return this.rawProperties;
@@ -477,9 +480,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 this.log.info("Received push notification for changing guard mode", { guard_mode: message.station_guard_mode, current_mode: message.station_current_mode, stationSN: message.station_sn });
                 try {
                     if (message.station_guard_mode !== undefined)
-                        this.updateRawProperty(types_1.ParamType.GUARD_MODE, message.station_guard_mode.toString());
+                        this.updateRawProperty(types_1.ParamType.GUARD_MODE, message.station_guard_mode.toString(), "push");
                     if (message.station_current_mode !== undefined)
-                        this.updateRawProperty(types_2.CommandType.CMD_GET_ALARM_MODE, message.station_current_mode.toString());
+                        this.updateRawProperty(types_2.CommandType.CMD_GET_ALARM_MODE, message.station_current_mode.toString(), "push");
                 }
                 catch (err) {
                     const error = (0, error_1.ensureError)(err);
@@ -494,7 +497,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         }
         else if (message.msg_type === types_3.CusPushEvent.TFCARD && message.station_sn === this.getSerial() && message.tfcard_status !== undefined) {
-            this.updateRawProperty(types_2.CommandType.CMD_GET_TFCARD_STATUS, message.tfcard_status.toString());
+            this.updateRawProperty(types_2.CommandType.CMD_GET_TFCARD_STATUS, message.tfcard_status.toString(), "push");
         }
     }
     isConnected() {
@@ -550,7 +553,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const params = {};
         const parsedValue = parameter_1.ParameterHelper.readValue(param, value, this.log);
         if (parsedValue !== undefined) {
-            params[param] = parsedValue;
+            params[param] = {
+                value: parsedValue,
+                source: "p2p"
+            };
             this.emit("raw device property changed", this._getDeviceSerial(channel), params);
         }
     }
@@ -679,7 +685,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     async onAlarmMode(mode) {
         this.log.info(`Alarm mode for station ${this.getSerial()} changed to: ${types_1.AlarmMode[mode]}`);
-        this.updateRawProperty(types_2.CommandType.CMD_GET_ALARM_MODE, mode.toString());
+        this.updateRawProperty(types_2.CommandType.CMD_GET_ALARM_MODE, mode.toString(), "p2p");
         const armDelay = this.getArmDelay(mode);
         if (armDelay > 0) {
             this.emit("alarm arm delay event", this, armDelay);
@@ -793,7 +799,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const devices = {};
         cameraInfo.params.forEach(param => {
             if (param.dev_type === Station.CHANNEL || param.dev_type === Station.CHANNEL_INDOOR || this.isIntegratedDevice()) {
-                this.updateRawProperty(param.param_type, param.param_value);
+                this.updateRawProperty(param.param_type, param.param_value, "p2p");
                 if (param.param_type === types_2.CommandType.CMD_GET_ALARM_MODE) {
                     if (this.getDeviceType() !== types_1.DeviceType.STATION && this.getDeviceType() !== types_1.DeviceType.HB3)
                         // Trigger refresh Guard Mode
@@ -806,7 +812,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     }
                     const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
                     if (parsedValue !== undefined) {
-                        devices[device_sn][param.param_type] = parsedValue;
+                        devices[device_sn][param.param_type] = {
+                            value: parsedValue,
+                            source: "p2p"
+                        };
                     }
                 }
             }
@@ -818,7 +827,10 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     }
                     const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
                     if (parsedValue !== undefined) {
-                        devices[device_sn][param.param_type] = parsedValue;
+                        devices[device_sn][param.param_type] = {
+                            value: parsedValue,
+                            source: "p2p"
+                        };
                     }
                 }
             }
@@ -7197,7 +7209,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         });
     }
     onTFCardStatus(channel, status) {
-        this.updateRawProperty(types_2.CommandType.CMD_GET_TFCARD_STATUS, status.toString());
+        this.updateRawProperty(types_2.CommandType.CMD_GET_TFCARD_STATUS, status.toString(), "p2p");
     }
     async databaseQueryLatestInfo() {
         const commandData = {

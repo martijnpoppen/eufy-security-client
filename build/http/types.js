@@ -73,6 +73,7 @@ var DeviceType;
     DeviceType[DeviceType["SMART_TRACK_LINK"] = 157] = "SMART_TRACK_LINK";
     DeviceType[DeviceType["SMART_TRACK_CARD"] = 159] = "SMART_TRACK_CARD";
     DeviceType[DeviceType["LOCK_8502"] = 180] = "LOCK_8502";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     DeviceType[DeviceType["LOCK_8506"] = 180] = "LOCK_8506";
     DeviceType[DeviceType["WALL_LIGHT_CAM_81A0"] = 10005] = "WALL_LIGHT_CAM_81A0";
 })(DeviceType || (exports.DeviceType = DeviceType = {}));
@@ -173,8 +174,8 @@ var ResponseErrorCode;
 (function (ResponseErrorCode) {
     ResponseErrorCode[ResponseErrorCode["CODE_CONNECT_ERROR"] = 997] = "CODE_CONNECT_ERROR";
     ResponseErrorCode[ResponseErrorCode["CODE_ERROR_PIN"] = 36006] = "CODE_ERROR_PIN";
-    ResponseErrorCode[ResponseErrorCode["CODE_IS_OPEN"] = 25074] = "CODE_IS_OPEN";
-    ResponseErrorCode[ResponseErrorCode["CODE_IS_OPEN_OTHERS"] = 25080] = "CODE_IS_OPEN_OTHERS";
+    //CODE_IS_OPEN = 25074,
+    //CODE_IS_OPEN_OTHERS = 25080,
     ResponseErrorCode[ResponseErrorCode["CODE_MULTI_ALARM"] = 36002] = "CODE_MULTI_ALARM";
     ResponseErrorCode[ResponseErrorCode["CODE_NEED_VERIFY_CODE"] = 26052] = "CODE_NEED_VERIFY_CODE";
     ResponseErrorCode[ResponseErrorCode["CODE_NETWORK_ERROR"] = 998] = "CODE_NETWORK_ERROR";
@@ -721,8 +722,10 @@ var PropertyName;
     PropertyName["StationCurrentMode"] = "currentMode";
     PropertyName["StationTimeFormat"] = "timeFormat";
     //StationTimezone = "timezone", //Supported also by T8520
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     PropertyName["StationAlarmVolume"] = "alarmVolume";
     PropertyName["StationAlarmTone"] = "alarmTone";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     PropertyName["StationPromptVolume"] = "promptVolume";
     PropertyName["StationNotificationSwitchModeSchedule"] = "notificationSwitchModeSchedule";
     PropertyName["StationNotificationSwitchModeGeofence"] = "notificationSwitchModeGeofence";

@@ -3,7 +3,7 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { Logger } from "ts-log";
 import { HTTPApi } from "./api";
-import { CommandName, DeviceEvent } from "./types";
+import { CommandName, DeviceEvent, SourceType } from "./types";
 import { DeviceListResponse } from "./models";
 import { DeviceEvents, PropertyValue, PropertyValues, PropertyMetadataAny, IndexedProperty, RawValues, Schedule, Voices } from "./interfaces";
 import { PushMessage } from "../push/models";
@@ -20,11 +20,11 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     protected initializeState(): void;
     initialize(): void;
     getRawDevice(): DeviceListResponse;
-    update(device: DeviceListResponse, cloudOnlyProperties?: boolean): void;
+    update(device: DeviceListResponse): void;
     updateProperty(name: string, value: PropertyValue, force?: boolean): boolean;
     updateRawProperties(values: RawValues): void;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
-    updateRawProperty(type: number, value: string): boolean;
+    updateRawProperty(type: number, value: string, source: SourceType): boolean;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     getPropertyMetadata(name: string, hidden?: boolean): PropertyMetadataAny;
     getPropertyValue(name: string): PropertyValue;

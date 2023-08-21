@@ -38,7 +38,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     getRawDevice() {
         return this.rawDevice;
     }
-    update(device, cloudOnlyProperties = false) {
+    update(device) {
         this.rawDevice = device;
         const metadata = this.getPropertiesMetadata(true);
         for (const property of Object.values(metadata)) {
@@ -49,9 +49,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                 this.updateProperty(property.name, property.default);
             }
         }
-        if (!cloudOnlyProperties && this.rawDevice.params) {
+        if (this.rawDevice.params) {
             this.rawDevice.params.forEach(param => {
-                this.updateRawProperty(param.param_type, param.param_value);
+                this.updateRawProperty(param.param_type, param.param_value, "http");
             });
         }
         this.log.debug("Normalized Properties", { deviceSN: this.getSerial(), properties: this.properties });
@@ -81,7 +81,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     updateRawProperties(values) {
         Object.keys(values).forEach(paramtype => {
             const param_type = Number.parseInt(paramtype);
-            this.updateRawProperty(param_type, values[param_type]);
+            this.updateRawProperty(param_type, values[param_type].value, values[param_type].source);
         });
     }
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -123,18 +123,21 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             this.log.error(`Device handlePropertyChange error`, error, { metadata: metadata, oldValue: oldValue, newValue: newValue });
         }
     }
-    updateRawProperty(type, value) {
+    updateRawProperty(type, value, source) {
         const parsedValue = parameter_1.ParameterHelper.readValue(type, value, this.log);
-        if (parsedValue !== undefined && ((this.rawProperties[type] !== undefined && this.rawProperties[type] !== parsedValue)
-            || this.rawProperties[type] === undefined)) {
-            this.rawProperties[type] = parsedValue;
+        if (parsedValue !== undefined &&
+            ((this.rawProperties[type] !== undefined && this.rawProperties[type].value !== parsedValue && (0, utils_1.isPrioritySourceType)(this.rawProperties[type].source, source)) || this.rawProperties[type] === undefined)) {
+            this.rawProperties[type] = {
+                value: parsedValue,
+                source: source
+            };
             if (this.ready)
-                this.emit("raw property changed", this, type, this.rawProperties[type]);
+                this.emit("raw property changed", this, type, this.rawProperties[type].value);
             const metadata = this.getPropertiesMetadata(true);
             for (const property of Object.values(metadata)) {
                 if (property.key === type) {
                     try {
-                        this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawProperties[type]));
+                        this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawProperties[type].value));
                     }
                     catch (err) {
                         const error = (0, error_2.ensureError)(err);
@@ -659,7 +662,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return this.getPropertyValue(name) !== undefined;
     }
     getRawProperty(type) {
-        return this.rawProperties[type];
+        return this.rawProperties[type].value;
     }
     getRawProperties() {
         return this.rawProperties;
@@ -2444,7 +2447,7 @@ class EntrySensor extends Sensor {
             if (message.event_type === types_3.CusPushEvent.DOOR_SENSOR && message.device_sn === this.getSerial()) {
                 try {
                     if (message.sensor_open !== undefined) {
-                        this.updateRawProperty(types_2.CommandType.CMD_ENTRY_SENSOR_STATUS, message.sensor_open ? "1" : "0");
+                        this.updateRawProperty(types_2.CommandType.CMD_ENTRY_SENSOR_STATUS, message.sensor_open ? "1" : "0", "push");
                     }
                 }
                 catch (err) {
@@ -2584,23 +2587,23 @@ class Lock extends Device {
     processPushNotification(message, eventDurationSeconds) {
         super.processPushNotification(message, eventDurationSeconds);
         if (message.event_type !== undefined) {
-            this.processNotification(message.event_type, message.event_time, message.device_sn, eventDurationSeconds);
+            this.processNotification(message.event_type, message.event_time, message.device_sn, eventDurationSeconds, "push");
         }
     }
     processMQTTNotification(message, eventDurationSeconds) {
         if (message.eventType === types_3.LockPushEvent.STATUS_CHANGE) {
             // Lock state event
             const cmdType = this.isLockBle() || this.isLockBleNoFinger() ? types_2.CommandType.CMD_DOORLOCK_GET_STATE : types_2.CommandType.CMD_SMARTLOCK_QUERY_STATUS;
-            this.updateRawProperty(cmdType, message.lockState);
+            this.updateRawProperty(cmdType, message.lockState, "mqtt");
         }
         else if (message.eventType === types_3.LockPushEvent.OTA_STATUS) {
             // OTA Status - ignore event
         }
         else {
-            this.processNotification(message.eventType, message.eventTime, this.getSerial(), eventDurationSeconds);
+            this.processNotification(message.eventType, message.eventTime, this.getSerial(), eventDurationSeconds, "mqtt");
         }
     }
-    processNotification(eventType, eventTime, deviceSN, eventDurationSeconds) {
+    processNotification(eventType, eventTime, deviceSN, eventDurationSeconds, source) {
         if (deviceSN === this.getSerial()) {
             try {
                 switch (eventType) {
@@ -2613,7 +2616,7 @@ class Lock extends Device {
                     case types_3.LockPushEvent.TEMPORARY_PW_LOCK:
                         {
                             const cmdType = this.isLockBle() || this.isLockBleNoFinger() ? types_2.CommandType.CMD_DOORLOCK_GET_STATE : types_2.CommandType.CMD_SMARTLOCK_QUERY_STATUS;
-                            this.updateRawProperty(cmdType, "4");
+                            this.updateRawProperty(cmdType, "4", source);
                             break;
                         }
                     case types_3.LockPushEvent.APP_UNLOCK:
@@ -2624,7 +2627,7 @@ class Lock extends Device {
                     case types_3.LockPushEvent.TEMPORARY_PW_UNLOCK:
                         {
                             const cmdType = this.isLockBle() || this.isLockBleNoFinger() ? types_2.CommandType.CMD_DOORLOCK_GET_STATE : types_2.CommandType.CMD_SMARTLOCK_QUERY_STATUS;
-                            this.updateRawProperty(cmdType, "3");
+                            this.updateRawProperty(cmdType, "3", source);
                             break;
                         }
                     case types_3.LockPushEvent.LOCK_MECHANICAL_ANOMALY:
@@ -2633,7 +2636,7 @@ class Lock extends Device {
                     case types_3.LockPushEvent.MULTIPLE_ERRORS:
                         {
                             const cmdType = this.isLockBle() || this.isLockBleNoFinger() ? types_2.CommandType.CMD_DOORLOCK_GET_STATE : types_2.CommandType.CMD_SMARTLOCK_QUERY_STATUS;
-                            this.updateRawProperty(cmdType, "5");
+                            this.updateRawProperty(cmdType, "5", source);
                             break;
                         }
                     case types_3.LockPushEvent.LOW_POWER:
@@ -3091,7 +3094,7 @@ class SmartSafe extends Device {
                             {
                                 const eventValues = message.event_value;
                                 if (eventValues.action === 0) {
-                                    this.updateRawProperty(types_2.CommandType.CMD_SMARTSAFE_LOCK_STATUS, "0");
+                                    this.updateRawProperty(types_2.CommandType.CMD_SMARTSAFE_LOCK_STATUS, "0", "push");
                                     /*
                                         type values:
                                             1: Unlocked by PIN
@@ -3102,7 +3105,7 @@ class SmartSafe extends Device {
                                     */
                                 }
                                 else if (eventValues.action === 1) {
-                                    this.updateRawProperty(types_2.CommandType.CMD_SMARTSAFE_LOCK_STATUS, "1");
+                                    this.updateRawProperty(types_2.CommandType.CMD_SMARTSAFE_LOCK_STATUS, "1", "push");
                                 }
                                 else if (eventValues.action === 2) {
                                     this.jammedEvent(eventDurationSeconds);

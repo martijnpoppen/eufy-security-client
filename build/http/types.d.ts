@@ -1,4 +1,5 @@
 import { Commands, IndexedProperty, Properties, PropertyMetadataBoolean, PropertyMetadataNumeric, PropertyMetadataObject, PropertyMetadataString } from "./interfaces";
+export type SourceType = "p2p" | "http" | "push" | "mqtt";
 export declare enum DeviceType {
     STATION = 0,
     CAMERA = 1,
@@ -153,8 +154,6 @@ export declare enum GuardMode {
 export declare enum ResponseErrorCode {
     CODE_CONNECT_ERROR = 997,
     CODE_ERROR_PIN = 36006,
-    CODE_IS_OPEN = 25074,
-    CODE_IS_OPEN_OTHERS = 25080,
     CODE_MULTI_ALARM = 36002,
     CODE_NEED_VERIFY_CODE = 26052,
     CODE_NETWORK_ERROR = 998,

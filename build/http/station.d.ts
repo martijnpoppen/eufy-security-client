@@ -1,6 +1,6 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
-import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode } from "./types";
+import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode, SourceType } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
 import { DynamicLighting, RGBColor } from "../p2p/interfaces";
@@ -30,11 +30,11 @@ export declare class Station extends TypedEmitter<StationEvents> {
     getStateID(state: string, level?: number): string;
     getStateChannel(): string;
     getRawStation(): StationListResponse;
-    update(station: StationListResponse, cloudOnlyProperties?: boolean): void;
+    update(station: StationListResponse): void;
     updateProperty(name: string, value: PropertyValue, force?: boolean): boolean;
     updateRawProperties(values: RawValues): void;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
-    updateRawProperty(type: number, value: string): boolean;
+    updateRawProperty(type: number, value: string, source: SourceType): boolean;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     getPropertyMetadata(name: string, hidden?: boolean): PropertyMetadataAny;
     getPropertyValue(name: string): PropertyValue;

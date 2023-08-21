@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
-import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes } from "./types";
+import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType } from "./types";
 import { HTTPApi } from "./api";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
@@ -44,3 +44,4 @@ export declare const getImageKey: (serialnumber: string, p2pDid: string, code: s
 export declare const decodeImage: (p2pDid: string, data: Buffer) => Buffer;
 export declare const getImagePath: (path: string) => string;
 export declare const getImage: (api: HTTPApi, serial: string, url: string) => Promise<Picture>;
+export declare const isPrioritySourceType: (current: SourceType | undefined, update: SourceType) => boolean;

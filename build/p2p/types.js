@@ -417,6 +417,7 @@ var CommandType;
     CommandType[CommandType["P2P_CALIBRATE_LOCK"] = 1960] = "P2P_CALIBRATE_LOCK";
     CommandType[CommandType["P2P_DELETE_FINGER"] = 1953] = "P2P_DELETE_FINGER";
     CommandType[CommandType["P2P_DELETE_USER"] = 1951] = "P2P_DELETE_USER";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     CommandType[CommandType["P2P_ENTER_OTA"] = 1238] = "P2P_ENTER_OTA";
     CommandType[CommandType["P2P_GET_FINGER_PW_USAGE"] = 1963] = "P2P_GET_FINGER_PW_USAGE";
     CommandType[CommandType["P2P_GET_LOCK_PARAM"] = 1959] = "P2P_GET_LOCK_PARAM";
@@ -425,6 +426,7 @@ var CommandType;
     CommandType[CommandType["P2P_PULL_BLE"] = 1962] = "P2P_PULL_BLE";
     CommandType[CommandType["P2P_QUERY_PW"] = 1954] = "P2P_QUERY_PW";
     CommandType[CommandType["P2P_QUERY_STATUS_IN_LOCK"] = 1955] = "P2P_QUERY_STATUS_IN_LOCK";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     CommandType[CommandType["P2P_RESET"] = 1040] = "P2P_RESET";
     CommandType[CommandType["P2P_SET_LOCK_PARAM"] = 1958] = "P2P_SET_LOCK_PARAM";
     CommandType[CommandType["P2P_UPDATE_PW"] = 1957] = "P2P_UPDATE_PW";
@@ -501,6 +503,7 @@ var CommandType;
     CommandType[CommandType["CMD_SMARTSAFE_REMOTE_OPEN_TYPE"] = 1946165266] = "CMD_SMARTSAFE_REMOTE_OPEN_TYPE";
     CommandType[CommandType["CMD_SMARTSAFE_RSSI"] = 1946165259] = "CMD_SMARTSAFE_RSSI";
     CommandType[CommandType["CMD_SMARTSAFE_VOLUME"] = 1946165249] = "CMD_SMARTSAFE_VOLUME";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     CommandType[CommandType["CMD_SMARTSAFE_PARAM_BASE"] = 1946165248] = "CMD_SMARTSAFE_PARAM_BASE";
     CommandType[CommandType["CMD_SMARTSAFE_SETTINGS"] = 1946157056] = "CMD_SMARTSAFE_SETTINGS";
     CommandType[CommandType["CMD_SMARTSAFE_STATUS_UPDATE"] = 1946157057] = "CMD_SMARTSAFE_STATUS_UPDATE";
@@ -1050,6 +1053,7 @@ var FilterDetectType;
     FilterDetectType[FilterDetectType["SOUND"] = 128] = "SOUND";
     FilterDetectType[FilterDetectType["CRYING"] = 256] = "CRYING";
     FilterDetectType[FilterDetectType["PACKAGE"] = 512] = "PACKAGE";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     FilterDetectType[FilterDetectType["PACKAGE_PICK_UP"] = 512] = "PACKAGE_PICK_UP";
     FilterDetectType[FilterDetectType["PACKAGE_DELIVERED"] = 1024] = "PACKAGE_DELIVERED";
 })(FilterDetectType || (exports.FilterDetectType = FilterDetectType = {}));

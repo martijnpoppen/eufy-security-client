@@ -55,8 +55,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
     connected = false;
     requestEufyCloud;
     throttle = (0, p_throttle_1.default)({
-        limit: 6,
-        interval: 10000,
+        limit: 5,
+        interval: 1000,
     });
     devices = {};
     hubs = {};
@@ -181,7 +181,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 beforeRetry: [
                     (options, error, retryCount) => {
                         // This will be called on `retryWithMergedOptions(...)`
-                        this.log.debug(`Retrying [${retryCount}]: ${error?.code} (${error?.request?.requestUrl})`, { options: options });
+                        const statusCode = error?.response?.statusCode || 0;
+                        const { method, url, prefixUrl } = options;
+                        const shortUrl = (0, utils_2.getShortUrl)(url, prefixUrl);
+                        const body = error?.response?.body ? error?.response?.body : error?.message;
+                        this.log.debug(`Retrying [${retryCount}]: ${error?.code} (${error?.request?.requestUrl})\n${statusCode} ${method} ${shortUrl}\n${body}`);
                         // Retrying [1]: ERR_NON_2XX_3XX_RESPONSE
                     }
                 ],
