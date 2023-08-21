@@ -505,7 +505,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
         if (p2pcommand.value === undefined || typeof p2pcommand.value !== "number")
             throw new TypeError("value must be a number");
 
-        const payload = buildIntStringCommandPayload(p2pcommand.value, p2pcommand.valueSub === undefined ? 0 : p2pcommand.valueSub, p2pcommand.strValue === undefined ? "" : p2pcommand.strValue , p2pcommand.strValueSub === undefined ? "" : p2pcommand.strValueSub, p2pcommand.channel);
+        const payload = buildIntStringCommandPayload(this.rawStation.station_sn, this.rawStation.p2p_did, p2pcommand.commandType, p2pcommand.value, p2pcommand.valueSub === undefined ? 0 : p2pcommand.valueSub, p2pcommand.strValue === undefined ? "" : p2pcommand.strValue , p2pcommand.strValueSub === undefined ? "" : p2pcommand.strValueSub, p2pcommand.channel);
         if (p2pcommand.commandType === CommandType.CMD_NAS_TEST) {
             this.currentMessageState[P2PDataType.DATA].rtspStream[p2pcommand.channel] = p2pcommand.value === 1 ? true : false;
         }
@@ -518,7 +518,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
         if (p2pcommand.value === undefined || typeof p2pcommand.value !== "number")
             throw new TypeError("value must be a number");
 
-        const payload = buildIntCommandPayload(p2pcommand.value, p2pcommand.strValue === undefined ? "" : p2pcommand.strValue, p2pcommand.channel);
+        const payload = buildIntCommandPayload(this.rawStation.station_sn, this.rawStation.p2p_did, p2pcommand.commandType, p2pcommand.value, p2pcommand.strValue === undefined ? "" : p2pcommand.strValue, p2pcommand.channel);
         this.sendCommand(p2pcommand.commandType, payload, p2pcommand.channel, undefined, customData);
     }
 
@@ -528,7 +528,6 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
         if (p2pcommand.value === undefined || typeof p2pcommand.value !== "string")
             throw new TypeError("value must be a string");
 
-        const payload = buildCommandWithStringTypePayload(p2pcommand.value, p2pcommand.channel);
         let nested_commandType = undefined;
 
         this.log.debug(`sendCommandWithStringPayload:`, { p2pcommand: p2pcommand, customData: customData });
@@ -550,7 +549,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
                 this.log.error(`CMD_DOORBELL_SET_PAYLOAD - Station ${this.rawStation.station_sn} - Error`, error);
             }
         }
-
+        const payload = buildCommandWithStringTypePayload(this.rawStation.station_sn, this.rawStation.p2p_did, p2pcommand.commandType, p2pcommand.value, p2pcommand.channel);
         this.sendCommand(p2pcommand.commandType, payload, p2pcommand.channel, nested_commandType, customData);
     }
 
@@ -562,7 +561,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
         if (p2pcommand.strValueSub === undefined)
             throw new TypeError("strValueSub must be defined");
 
-        const payload = buildStringTypeCommandPayload(p2pcommand.strValue, p2pcommand.strValueSub, p2pcommand.channel);
+        const payload = buildStringTypeCommandPayload(this.rawStation.station_sn, this.rawStation.p2p_did, p2pcommand.commandType, p2pcommand.strValue, p2pcommand.strValueSub, p2pcommand.channel);
         this.sendCommand(p2pcommand.commandType, payload, p2pcommand.channel, p2pcommand.commandType, customData);
     }
 
