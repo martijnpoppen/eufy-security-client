@@ -662,7 +662,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return this.getPropertyValue(name) !== undefined;
     }
     getRawProperty(type) {
-        return this.rawProperties[type].value;
+        return this.rawProperties[type]?.value;
     }
     getRawProperties() {
         return this.rawProperties;

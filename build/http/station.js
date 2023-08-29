@@ -367,7 +367,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         return this.getPropertyValue(name) !== undefined;
     }
     getRawProperty(type) {
-        return this.rawProperties[type].value;
+        return this.rawProperties[type]?.value;
     }
     getRawProperties() {
         return this.rawProperties;
@@ -1756,6 +1756,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         (0, utils_3.validValue)(property, value);
         this.log.debug(`Sending motion detection type homebase 3 command to station ${this.getSerial()} for device ${device.getSerial()} with value: ${value}`);
         try {
+            const aiDetectionType = device.getRawProperty(device.getPropertyMetadata(propertyData.name).key) !== undefined ? device.getRawProperty(device.getPropertyMetadata(propertyData.name).key) : "0";
             await this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -1764,7 +1765,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "mChannel": 0,
                     "mValue3": 0,
                     "payload": {
-                        "ai_detect_type": (0, utils_1.getHB3DetectionMode)(Number.parseInt(device.getRawProperty(device.getPropertyMetadata(propertyData.name).key)), type, value),
+                        "ai_detect_type": (0, utils_1.getHB3DetectionMode)(Number.parseInt(aiDetectionType), type, value),
                         "channel": device.getChannel(),
                     }
                 }),

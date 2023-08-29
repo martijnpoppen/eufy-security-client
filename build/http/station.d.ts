@@ -39,7 +39,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     getPropertyMetadata(name: string, hidden?: boolean): PropertyMetadataAny;
     getPropertyValue(name: string): PropertyValue;
     hasPropertyValue(name: string): boolean;
-    getRawProperty(type: number): string;
+    getRawProperty(type: number): string | undefined;
     getRawProperties(): RawValues;
     getProperties(): PropertyValues;
     getPropertiesMetadata(hidden?: boolean): IndexedProperty;
