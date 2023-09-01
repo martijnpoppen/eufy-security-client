@@ -1,7 +1,7 @@
 import { Socket } from "dgram";
 import NodeRSA from "node-rsa";
 import { P2PMessageParts, P2PMessageState, P2PQueueMessage, RGBColor } from "./interfaces";
-import { CommandType, ESLCommand, LockV12P2PCommand, SmartSafeCommandCode, VideoCodec } from "./types";
+import { CommandType, ESLCommand, LockV12P2PCommand, SmartSafeCommandCode, VideoCodec, EncryptionType } from "./types";
 import { Address, LockP2PCommandType, SmartSafeNotificationResponse, SmartSafeP2PCommandType } from "./models";
 import { DeviceType } from "../http/types";
 export declare const MAGIC_WORD = "XZYH";
@@ -17,16 +17,16 @@ export declare const buildLookupWithKeyPayload2: (p2pDid: string, dskKey: string
 export declare const buildLookupWithKeyPayload3: (p2pDid: string, address: Address, data: Buffer) => Buffer;
 export declare const buildCheckCamPayload: (p2pDid: string) => Buffer;
 export declare const buildCheckCamPayload2: (p2pDid: string, data: Buffer) => Buffer;
-export declare const buildIntCommandPayload: (serialNumber: string, p2pDid: string, commandType: CommandType, value: number, strValue?: string, channel?: number) => Buffer;
-export declare const buildStringTypeCommandPayload: (serialNumber: string, p2pDid: string, commandType: CommandType, strValue: string, strValueSub: string, channel?: number) => Buffer;
-export declare const buildIntStringCommandPayload: (serialNumber: string, p2pDid: string, commandType: CommandType, value: number, valueSub?: number, strValue?: string, strValueSub?: string, channel?: number) => Buffer;
+export declare const buildIntCommandPayload: (encryptionType: EncryptionType, encryptionKey: Buffer | undefined, serialNumber: string, p2pDid: string, commandType: CommandType, value: number, strValue?: string, channel?: number) => Buffer;
+export declare const buildStringTypeCommandPayload: (encryptionType: EncryptionType, encryptionKey: Buffer | undefined, serialNumber: string, p2pDid: string, commandType: CommandType, strValue: string, strValueSub: string, channel?: number) => Buffer;
+export declare const buildIntStringCommandPayload: (encryptionType: EncryptionType, encryptionKey: Buffer | undefined, serialNumber: string, p2pDid: string, commandType: CommandType, value: number, valueSub?: number, strValue?: string, strValueSub?: string, channel?: number) => Buffer;
 export declare const sendMessage: (socket: Socket, address: {
     host: string;
     port: number;
 }, msgID: Buffer, payload?: Buffer) => Promise<number>;
 export declare const hasHeader: (msg: Buffer, searchedType: Buffer) => boolean;
 export declare const buildCommandHeader: (seqNumber: number, commandType: CommandType, p2pDataTypeHeader?: Buffer | null) => Buffer;
-export declare const buildCommandWithStringTypePayload: (serialNumber: string, p2pDid: string, commandType: CommandType, value: string, channel?: number) => Buffer;
+export declare const buildCommandWithStringTypePayload: (encryptionType: EncryptionType, encryptionKey: Buffer | undefined, serialNumber: string, p2pDid: string, commandType: CommandType, value: string, channel?: number) => Buffer;
 export declare const sortP2PMessageParts: (messages: P2PMessageParts) => Buffer;
 export declare const getRSAPrivateKey: (pem: string) => NodeRSA;
 export declare const getNewRSAPrivateKey: () => NodeRSA;
@@ -61,3 +61,4 @@ export declare const getLockP2PCommand: (deviceSN: string, user_id: string, comm
 export declare const getLockV12P2PCommand: (deviceSN: string, user_id: string, command: CommandType | ESLCommand, channel: number, lockPublicKey: string, sequence: number, data: Buffer) => LockV12P2PCommand;
 export declare const DecimalToRGBColor: (color: number) => RGBColor;
 export declare const RGBColorToDecimal: (color: RGBColor) => number;
+export declare const getNullTerminatedString: (data: Buffer, encoding?: BufferEncoding) => string;

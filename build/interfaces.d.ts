@@ -116,3 +116,7 @@ export interface EufySecurityEvents {
     "user schedule updated": (device: Device, username: string, schedule: Schedule) => void;
     "user passcode updated": (device: Device, username: string) => void;
 }
+export interface ErrorObject {
+    message: string;
+    stacktrace?: string;
+}

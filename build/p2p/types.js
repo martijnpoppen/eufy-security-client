@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
+exports.InternalP2PCommandType = exports.EncryptionType = exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
 exports.RequestMessageType = {
     STUN: Buffer.from([0xF1, 0x00]),
     LOOKUP: Buffer.from([0xF1, 0x20]),
@@ -1063,4 +1063,18 @@ var CalibrateGarageType;
     CalibrateGarageType[CalibrateGarageType["SECTIONAL_DOOR"] = 2] = "SECTIONAL_DOOR";
     CalibrateGarageType[CalibrateGarageType["TILT_DOOR"] = 3] = "TILT_DOOR";
 })(CalibrateGarageType || (exports.CalibrateGarageType = CalibrateGarageType = {}));
+var EncryptionType;
+(function (EncryptionType) {
+    EncryptionType[EncryptionType["NONE"] = 0] = "NONE";
+    EncryptionType[EncryptionType["LEVEL_1"] = 1] = "LEVEL_1";
+    EncryptionType[EncryptionType["LEVEL_2"] = 2] = "LEVEL_2";
+})(EncryptionType || (exports.EncryptionType = EncryptionType = {}));
+var InternalP2PCommandType;
+(function (InternalP2PCommandType) {
+    InternalP2PCommandType[InternalP2PCommandType["WithIntString"] = 0] = "WithIntString";
+    InternalP2PCommandType[InternalP2PCommandType["WithInt"] = 1] = "WithInt";
+    InternalP2PCommandType[InternalP2PCommandType["WithStringPayload"] = 2] = "WithStringPayload";
+    InternalP2PCommandType[InternalP2PCommandType["WithString"] = 3] = "WithString";
+    InternalP2PCommandType[InternalP2PCommandType["WithoutData"] = 4] = "WithoutData";
+})(InternalP2PCommandType || (exports.InternalP2PCommandType = InternalP2PCommandType = {}));
 //# sourceMappingURL=types.js.map

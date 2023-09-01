@@ -1,8 +1,9 @@
 /// <reference types="node" />
 import { Logger } from "ts-log";
 import EventEmitter from "events";
-import { EufySecurityPersistentData } from "./interfaces";
+import { ErrorObject, EufySecurityPersistentData } from "./interfaces";
 import { PropertyMetadataAny } from "./http/interfaces";
+export declare const getError: (error: Error) => ErrorObject;
 export declare const removeLastChar: (text: string, char: string) => string;
 export declare const generateUDID: () => string;
 export declare const generateSerialnumber: (length: number) => string;

@@ -25,7 +25,7 @@ class ParameterHelper {
                 type === types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_COLORED_LIGHTING_COLORS ||
                 type === types_1.CommandType.CMD_WALL_LIGHT_SETTINGS_DYNAMIC_LIGHTING_THEMES) {
                 if (typeof value === "string") {
-                    const parsedValue = (0, utils_2.parseJSON)((0, utils_1.decodeBase64)(value).toString("utf8"), log);
+                    const parsedValue = (0, utils_2.parseJSON)((0, utils_1.getNullTerminatedString)((0, utils_1.decodeBase64)(value), "utf-8"), log);
                     if (parsedValue === undefined) {
                         log.warn("Non-parsable parameter value received from eufy cloud. Will be ignored.", { type: type, value: value });
                     }

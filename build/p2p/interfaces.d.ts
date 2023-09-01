@@ -7,7 +7,7 @@ import { SortedMap } from "sweet-collections";
 import { AlarmMode, DeviceType, MicStatus, TriggerType, VideoType } from "../http/types";
 import { Address, CmdCameraInfoResponse, CommandResult, CustomData } from "./models";
 import { TalkbackStream } from "./talkback";
-import { AlarmEvent, AudioCodec, ChargingType, CommandType, DatabaseReturnCode, IndoorSoloSmartdropCommandType, P2PDataType, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, P2PStorageType, TFCardStatus, VideoCodec } from "./types";
+import { AlarmEvent, AudioCodec, ChargingType, CommandType, DatabaseReturnCode, IndoorSoloSmartdropCommandType, P2PDataType, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, P2PStorageType, TFCardStatus, VideoCodec, InternalP2PCommandType } from "./types";
 export interface P2PClientProtocolEvents {
     "alarm mode": (mode: AlarmMode) => void;
     "camera info": (cameraInfo: CmdCameraInfoResponse) => void;
@@ -51,10 +51,9 @@ export interface P2PClientProtocolEvents {
     "garage door status": (channel: number, doorId: number, status: number) => void;
 }
 export interface P2PQueueMessage {
-    commandType: CommandType;
+    p2pCommandType: InternalP2PCommandType;
+    p2pCommand: P2PCommand;
     nestedCommandType?: CommandType;
-    channel: number;
-    payload: Buffer;
     timestamp: number;
     customData?: CustomData;
 }
