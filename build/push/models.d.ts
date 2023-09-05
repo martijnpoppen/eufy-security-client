@@ -12,7 +12,7 @@ export interface CusPushData {
     click_action?: string;
     create_time?: number;
     device_name?: string;
-    e?: string;
+    e?: number;
     event_time?: number;
     event_type?: number;
     f?: string;
