@@ -717,6 +717,7 @@ export declare const DeviceAntitheftDetectionProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionWiredDoorbellProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionWalllightProperty: PropertyMetadataBoolean;
+export declare const DeviceAutoNightvisionSoloProperty: PropertyMetadataBoolean;
 export declare const DeviceNightvisionProperty: PropertyMetadataNumeric;
 export declare const DeviceWifiRSSIProperty: PropertyMetadataNumeric;
 export declare const DeviceWifiSignalLevelProperty: PropertyMetadataNumeric;
@@ -849,6 +850,7 @@ export declare const DeviceVideoRecordingQualityWalllightProperty: PropertyMetad
 export declare const DeviceVideoRecordingQualityT8200XProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityCamera2CProProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityCamera3Property: PropertyMetadataNumeric;
+export declare const DeviceVideoRecordingQualitySoloProperty: PropertyMetadataNumeric;
 export declare const DeviceWDRProperty: PropertyMetadataBoolean;
 export declare const DeviceChimeIndoorBatteryDoorbellProperty: PropertyMetadataBoolean;
 export declare const DeviceChimeIndoorWiredDoorbellProperty: PropertyMetadataBoolean;

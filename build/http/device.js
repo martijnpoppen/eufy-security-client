@@ -827,6 +827,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_2K ||
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR ||
+            type == types_1.DeviceType.SOLO_CAMERA_SOLAR ||
             type == types_1.DeviceType.LOCK_WIFI ||
             type == types_1.DeviceType.LOCK_WIFI_NO_FINGER ||
             type == types_1.DeviceType.LOCK_8503 ||
