@@ -6631,6 +6631,14 @@ exports.StationProperties = {
         [PropertyName.StationCurrentMode]: exports.StationCurrentModeProperty,
         [PropertyName.StationTimeFormat]: exports.StationTimeFormatProperty,
     },
+    [DeviceType.BATTERY_DOORBELL_PLUS_E340]: {
+        ...exports.BaseStationProperties,
+        [PropertyName.StationLANIpAddress]: exports.StationLanIpAddressStandaloneProperty,
+        [PropertyName.StationMacAddress]: exports.StationMacAddressProperty,
+        [PropertyName.StationGuardMode]: exports.StationGuardModeProperty,
+        [PropertyName.StationCurrentMode]: exports.StationCurrentModeProperty,
+        [PropertyName.StationTimeFormat]: exports.StationTimeFormatProperty,
+    },
     [DeviceType.CAMERA_FG]: {
         ...exports.BaseStationProperties,
         [PropertyName.StationLANIpAddress]: exports.StationLanIpAddressStandaloneProperty,
