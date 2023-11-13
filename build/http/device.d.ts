@@ -3,7 +3,7 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { Logger } from "ts-log";
 import { HTTPApi } from "./api";
-import { CommandName, DeviceEvent, SourceType } from "./types";
+import { CommandName, DeviceEvent, SourceType, TrackerType } from "./types";
 import { DeviceListResponse } from "./models";
 import { DeviceEvents, PropertyValue, PropertyValues, PropertyMetadataAny, IndexedProperty, RawValues, Schedule, Voices } from "./interfaces";
 import { PushMessage } from "../push/models";
@@ -67,6 +67,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isBatteryDoorbell1(type: number): boolean;
     static isBatteryDoorbell2(type: number): boolean;
     static isBatteryDoorbellDual(type: number): boolean;
+    static isBatteryDoorbellDualE340(type: number): boolean;
     static isDoorbellDual(type: number): boolean;
     static isBatteryDoorbell(type: number): boolean;
     static isSoloCamera(type: number): boolean;
@@ -120,6 +121,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isBatteryDoorbell1(): boolean;
     isBatteryDoorbell2(): boolean;
     isBatteryDoorbellDual(): boolean;
+    isBatteryDoorbellDualE340(): boolean;
     isDoorbellDual(): boolean;
     isBatteryDoorbell(): boolean;
     isSoloCamera(): boolean;
@@ -381,6 +383,14 @@ export declare class SmartSafe extends Device {
     getBatteryValue(): PropertyValue;
     getWifiRssi(): PropertyValue;
     isLocked(): boolean;
+}
+export declare class Tracker extends Device {
+    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Tracker>;
+    getStateChannel(): string;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    setFindPhone(value: boolean): Promise<boolean>;
+    setLeftBehindAlarm(value: boolean): Promise<boolean>;
+    setTrackerType(value: TrackerType): Promise<boolean>;
 }
 export declare class UnknownDevice extends Device {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<UnknownDevice>;

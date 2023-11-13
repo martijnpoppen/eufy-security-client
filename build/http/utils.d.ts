@@ -45,3 +45,4 @@ export declare const decodeImage: (p2pDid: string, data: Buffer) => Buffer;
 export declare const getImagePath: (path: string) => string;
 export declare const getImage: (api: HTTPApi, serial: string, url: string) => Promise<Picture>;
 export declare const isPrioritySourceType: (current: SourceType | undefined, update: SourceType) => boolean;
+export declare const decryptTrackerData: (data: Buffer, key: Buffer) => Buffer;

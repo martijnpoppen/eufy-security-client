@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UnknownDevice = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.GarageCamera = exports.WallLightCam = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
+exports.UnknownDevice = exports.Tracker = exports.SmartSafe = exports.Keypad = exports.Lock = exports.MotionSensor = exports.EntrySensor = exports.Sensor = exports.GarageCamera = exports.WallLightCam = exports.FloodlightCamera = exports.BatteryDoorbellCamera = exports.WiredDoorbellCamera = exports.DoorbellCamera = exports.IndoorCamera = exports.SoloCamera = exports.Camera = exports.Device = void 0;
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const types_1 = require("./types");
 const parameter_1 = require("./parameter");
@@ -124,7 +124,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         }
     }
     updateRawProperty(type, value, source) {
-        const parsedValue = parameter_1.ParameterHelper.readValue(type, value, this.log);
+        const parsedValue = parameter_1.ParameterHelper.readValue(this.getStationSerial(), type, value, this.log);
         if (parsedValue !== undefined &&
             ((this.rawProperties[type] !== undefined && this.rawProperties[type].value !== parsedValue && (0, utils_1.isPrioritySourceType)(this.rawProperties[type].source, source)) || this.rawProperties[type] === undefined)) {
             this.rawProperties[type] = {
@@ -263,7 +263,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             }
             else if (property.key === types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK_SCHEDULE_STARTTIME || property.key === types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK_SCHEDULE_ENDTIME) {
                 const tmpBuffer = Buffer.from(value, "hex");
-                return `${tmpBuffer.slice(0, 1).readInt8().toString().padStart(2, "0")}:${tmpBuffer.slice(1).readInt8().toString().padStart(2, "0")}`;
+                return `${tmpBuffer.subarray(0, 1).readInt8().toString().padStart(2, "0")}:${tmpBuffer.subarray(1).readInt8().toString().padStart(2, "0")}`;
             }
             else if (property.key === types_2.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_DETECTION_SENSITIVITY) {
                 const numericProperty = property;
@@ -781,6 +781,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL ||
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
             type == types_1.DeviceType.DOORBELL_SOLO ||
             type == types_1.DeviceType.CAMERA2C_PRO ||
             type == types_1.DeviceType.CAMERA2_PRO ||
@@ -818,6 +819,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL ||
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
             type == types_1.DeviceType.CAMERA2C_PRO ||
             type == types_1.DeviceType.CAMERA2_PRO ||
             type == types_1.DeviceType.CAMERA3 ||
@@ -846,7 +848,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return false;
     }
     static isStation(type) {
-        if (type == types_1.DeviceType.STATION)
+        if (type == types_1.DeviceType.STATION || type === types_1.DeviceType.MINIBASE_CHIME)
             return true;
         return false;
     }
@@ -864,6 +866,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL ||
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
             type == types_1.DeviceType.DOORBELL_SOLO)
             return true;
         return false;
@@ -966,13 +969,17 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     static isBatteryDoorbellDual(type) {
         return types_1.DeviceType.BATTERY_DOORBELL_PLUS == type;
     }
+    static isBatteryDoorbellDualE340(type) {
+        return types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 == type;
+    }
     static isDoorbellDual(type) {
         return types_1.DeviceType.DOORBELL_SOLO == type;
     }
     static isBatteryDoorbell(type) {
         if (type == types_1.DeviceType.BATTERY_DOORBELL ||
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
-            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS)
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340)
             return true;
         return false;
     }
@@ -1172,7 +1179,10 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return Device.isBatteryDoorbell2(this.rawDevice.device_type);
     }
     isBatteryDoorbellDual() {
-        return Device.isBatteryDoorbellDual(this.rawDevice.device_type);
+        return Device.isBatteryDoorbellDual(this.rawDevice.device_type) || Device.isBatteryDoorbellDualE340(this.rawDevice.device_type);
+    }
+    isBatteryDoorbellDualE340() {
+        return Device.isBatteryDoorbellDualE340(this.rawDevice.device_type);
     }
     isDoorbellDual() {
         return Device.isDoorbellDual(this.rawDevice.device_type);
@@ -3201,6 +3211,87 @@ class SmartSafe extends Device {
     }
 }
 exports.SmartSafe = SmartSafe;
+class Tracker extends Device {
+    static async getInstance(api, device) {
+        return new Tracker(api, device);
+    }
+    getStateChannel() {
+        return "tracker";
+    }
+    convertRawPropertyValue(property, value) {
+        try {
+            switch (property.key) {
+                case types_2.TrackerCommandType.COMMAND_NEW_LOCATION:
+                    {
+                        if (value !== undefined && typeof value === "string") {
+                            const items = value.split(",");
+                            if (items.length === 3) {
+                                switch (property.name) {
+                                    case types_1.PropertyName.DeviceLocationCoordinates:
+                                        return `${items[1]},${items[0]}`;
+                                    case types_1.PropertyName.DeviceLocationLastUpdate:
+                                        return Number.parseInt(items[2]);
+                                    default: break;
+                                }
+                            }
+                        }
+                        break;
+                    }
+            }
+        }
+        catch (err) {
+            const error = (0, error_2.ensureError)(err);
+            this.log.error("Tracker convert raw property - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), property: property, value: value });
+        }
+        return super.convertRawPropertyValue(property, value);
+    }
+    async setFindPhone(value) {
+        try {
+            const property = this.getPropertyMetadata(types_1.PropertyName.DeviceFindPhone);
+            (0, utils_3.validValue)(property, value);
+            return await this.setParameters([{
+                    paramType: types_2.TrackerCommandType.COMMAND_TYPE_FINDMYPHONE,
+                    paramValue: value ? "1" : "0"
+                }]);
+        }
+        catch (err) {
+            const error = (0, error_2.ensureError)(err);
+            this.log.error("Tracker set find phone - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), value: value });
+        }
+        return false;
+    }
+    async setLeftBehindAlarm(value) {
+        try {
+            const property = this.getPropertyMetadata(types_1.PropertyName.DeviceLeftBehindAlarm);
+            (0, utils_3.validValue)(property, value);
+            return await this.setParameters([{
+                    paramType: types_2.TrackerCommandType.COMMAND_ANTILOST,
+                    paramValue: value ? "1" : "0"
+                }]);
+        }
+        catch (err) {
+            const error = (0, error_2.ensureError)(err);
+            this.log.error("Tracker set left behind alarm - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), value: value });
+        }
+        return false;
+    }
+    async setTrackerType(value) {
+        try {
+            const property = this.getPropertyMetadata(types_1.PropertyName.DeviceTrackerType);
+            (0, utils_3.validValue)(property, value);
+            return await this.setParameters([{
+                    paramType: types_2.TrackerCommandType.TYPE_ICON_INDEX,
+                    paramValue: value.toString()
+                }]);
+        }
+        catch (err) {
+            const error = (0, error_2.ensureError)(err);
+            this.log.error("Tracker set tracker type - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), value: value });
+        }
+        return false;
+    }
+}
+exports.Tracker = Tracker;
 class UnknownDevice extends Device {
     static async getInstance(api, device) {
         return new UnknownDevice(api, device);

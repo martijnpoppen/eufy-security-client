@@ -16,6 +16,7 @@ export declare enum DeviceType {
     CAMERA2C_PRO = 15,
     BATTERY_DOORBELL_2 = 16,
     HB3 = 18,
+    MINIBASE_CHIME = 25,
     CAMERA3 = 19,
     CAMERA3C = 23,
     INDOOR_CAMERA = 30,
@@ -46,6 +47,7 @@ export declare enum DeviceType {
     SMART_DROP = 90,
     BATTERY_DOORBELL_PLUS = 91,
     DOORBELL_SOLO = 93,
+    BATTERY_DOORBELL_PLUS_E340 = 94,
     INDOOR_COST_DOWN_CAMERA = 100,
     CAMERA_GUN = 101,
     CAMERA_SNAIL = 102,
@@ -61,7 +63,7 @@ export declare enum DeviceType {
     SMART_TRACK_LINK = 157,
     SMART_TRACK_CARD = 159,
     LOCK_8502 = 180,
-    LOCK_8506 = 180,
+    LOCK_8506 = 184,
     WALL_LIGHT_CAM_81A0 = 10005
 }
 export declare enum ParamType {
@@ -382,6 +384,18 @@ export declare enum GarageDoorState {
     B_UNKNOWN = 32,
     UNKNOWN = 0
 }
+export declare enum TrackerType {
+    TRACKER = 0,
+    KEY = 1,
+    WALLET = 2,
+    BAG = 3,
+    REMOTE = 4,
+    CAMERA = 5,
+    HEADPHONES = 6,
+    TOY = 7,
+    SUITCASE = 8,
+    HANDBAG = 9
+}
 export interface EventFilterType {
     deviceSN?: string;
     stationSN?: string;
@@ -664,6 +678,12 @@ export declare enum PropertyName {
     DeviceDoorSensor2LowBattery = "doorSensor2LowBattery",
     DeviceDoorSensor1BatteryLevel = "doorSensor1BatteryLevel",
     DeviceDoorSensor2BatteryLevel = "doorSensor2BatteryLevel",
+    DeviceLocationCoordinates = "locationCoordinates",
+    DeviceLocationAddress = "locationAddress",
+    DeviceLocationLastUpdate = "locationLastUpdate",
+    DeviceTrackerType = "trackerType",
+    DeviceLeftBehindAlarm = "leftBehindAlarm",
+    DeviceFindPhone = "findPhone",
     DeviceHiddenMotionDetectionSensitivity = "hidden-motionDetectionSensitivity",
     DeviceHiddenMotionDetectionMode = "hidden-motionDetectionMode",
     StationLANIpAddress = "lanIpAddress",
@@ -708,6 +728,7 @@ export declare const BaseDeviceProperties: IndexedProperty;
 export declare const GenericDeviceProperties: IndexedProperty;
 export declare const DeviceBatteryProperty: PropertyMetadataNumeric;
 export declare const DeviceBatteryLockProperty: PropertyMetadataNumeric;
+export declare const DeviceBatteryTrackerProperty: PropertyMetadataNumeric;
 export declare const DeviceBatteryLowMotionSensorProperty: PropertyMetadataBoolean;
 export declare const DeviceBatteryLowKeypadProperty: PropertyMetadataBoolean;
 export declare const DeviceBatteryLowSensorProperty: PropertyMetadataBoolean;
@@ -737,6 +758,7 @@ export declare const DeviceEnabledSoloProperty: PropertyMetadataBoolean;
 export declare const DeviceStatusLedProperty: PropertyMetadataBoolean;
 export declare const DeviceStatusLedIndoorFloodProperty: PropertyMetadataBoolean;
 export declare const DeviceStatusLedBatteryDoorbellProperty: PropertyMetadataBoolean;
+export declare const DeviceStatusLedBatteryDoorbellDualProperty: PropertyMetadataNumeric;
 export declare const DeviceStatusLedDoorbellProperty: PropertyMetadataBoolean;
 export declare const DeviceStatusLedT8200XProperty: PropertyMetadataBoolean;
 export declare const DeviceMotionDetectionProperty: PropertyMetadataBoolean;
@@ -1047,6 +1069,12 @@ export declare const DeviceDoorSensor1LowBatteryProperty: PropertyMetadataBoolea
 export declare const DeviceDoorSensor2LowBatteryProperty: PropertyMetadataBoolean;
 export declare const DeviceDoorSensor1BatteryLevelProperty: PropertyMetadataNumeric;
 export declare const DeviceDoorSensor2BatteryLevelProperty: PropertyMetadataNumeric;
+export declare const DeviceLocationCoordinatesProperty: PropertyMetadataString;
+export declare const DeviceLocationAddressProperty: PropertyMetadataString;
+export declare const DeviceLocationLastUpdateProperty: PropertyMetadataNumeric;
+export declare const DeviceTrackerTypeProperty: PropertyMetadataNumeric;
+export declare const DeviceLeftBehindAlarmProperty: PropertyMetadataBoolean;
+export declare const DeviceFindPhoneProperty: PropertyMetadataBoolean;
 export declare const FloodlightT8420XDeviceProperties: IndexedProperty;
 export declare const WiredDoorbellT8200XDeviceProperties: IndexedProperty;
 export declare const DeviceProperties: Properties;

@@ -28,7 +28,9 @@ const crypto = __importStar(require("crypto"));
 const error_1 = require("./error");
 const getError = function (error) {
     return {
+        cause: error.cause,
         message: `${error.name}: ${error.message}`,
+        context: error.context,
         stacktrace: error.stack
     };
 };
@@ -155,7 +157,7 @@ const parseJSON = function (data, log) {
     }
     catch (err) {
         const error = (0, error_1.ensureError)(err);
-        log.error("JSON parse error", { error: (0, exports.getError)(error), data: data });
+        log.debug("JSON parse error", { error: (0, exports.getError)(error), data: data });
     }
     return undefined;
 };

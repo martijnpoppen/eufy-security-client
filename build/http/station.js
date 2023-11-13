@@ -191,7 +191,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         }
     }
     updateRawProperty(type, value, source) {
-        const parsedValue = parameter_1.ParameterHelper.readValue(type, value, this.log);
+        const parsedValue = parameter_1.ParameterHelper.readValue(this.getSerial(), type, value, this.log);
         if (parsedValue !== undefined &&
             ((this.rawProperties[type] !== undefined && this.rawProperties[type].value !== parsedValue && (0, utils_1.isPrioritySourceType)(this.rawProperties[type].source, source)) || this.rawProperties[type] === undefined)) {
             this.rawProperties[type] = {
@@ -421,7 +421,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         return Station.isStation(type) === true ? (device_1.Device.isIndoorCamera(type) ? Station.CHANNEL_INDOOR : Station.CHANNEL) : 0;
     }
     static isStation(type) {
-        return type === types_1.DeviceType.STATION || type === types_1.DeviceType.HB3;
+        return type === types_1.DeviceType.STATION || type === types_1.DeviceType.HB3 || type === types_1.DeviceType.MINIBASE_CHIME;
     }
     isStation() {
         return Station.isStation(this.rawStation.device_type);
@@ -552,7 +552,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     onParameter(channel, param, value) {
         const params = {};
-        const parsedValue = parameter_1.ParameterHelper.readValue(param, value, this.log);
+        const parsedValue = parameter_1.ParameterHelper.readValue(this.getSerial(), param, value, this.log);
         if (parsedValue !== undefined) {
             params[param] = {
                 value: parsedValue,
@@ -811,7 +811,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     if (!devices[device_sn]) {
                         devices[device_sn] = {};
                     }
-                    const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    const parsedValue = parameter_1.ParameterHelper.readValue(device_sn, param.param_type, param.param_value, this.log);
                     if (parsedValue !== undefined) {
                         devices[device_sn][param.param_type] = {
                             value: parsedValue,
@@ -826,7 +826,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     if (!devices[device_sn]) {
                         devices[device_sn] = {};
                     }
-                    const parsedValue = parameter_1.ParameterHelper.readValue(param.param_type, param.param_value, this.log);
+                    const parsedValue = parameter_1.ParameterHelper.readValue(device_sn, param.param_type, param.param_value, this.log);
                     if (parsedValue !== undefined) {
                         devices[device_sn][param.param_type] = {
                             value: parsedValue,
@@ -1464,7 +1464,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.log.debug(`Station switch light - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), value: value });
         if (device.isFloodLight() || device.isSoloCameraSpotlight1080() || device.isSoloCameraSpotlight2k() ||
             device.isSoloCameraSpotlightSolar() || device.isCamera2C() || device.isCamera2CPro() ||
-            device.isIndoorOutdoorCamera1080p() || device.isIndoorOutdoorCamera2k() || device.isCamera3() || device.isCamera3C()) {
+            device.isIndoorOutdoorCamera1080p() || device.isIndoorOutdoorCamera2k() || device.isCamera3() || device.isCamera3C() || device.isBatteryDoorbellDualE340()) {
             await this.p2pSession.sendCommandWithIntString({
                 commandType: types_2.CommandType.CMD_SET_FLOODLIGHT_MANUAL_SWITCH,
                 value: value === true ? 1 : 0,
@@ -3869,7 +3869,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     mValue3: types_2.CommandType.CMD_DOWNLOAD_VIDEO,
                     payload: {
                         filepath: path,
-                        key: rsa_key?.exportKey("components-public").n.slice(1).toString("hex").toUpperCase(),
+                        key: rsa_key?.exportKey("components-public").n.subarray(1).toString("hex").toUpperCase(),
                     }
                 }),
                 channel: device.getChannel()
@@ -3878,7 +3878,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             });
         }
         else if (cipher_id !== undefined) {
-            const cipher = await this.api.getCipher(cipher_id, this.rawStation.member.admin_user_id);
+            const cipher = await this.api.getCipher(/*this.rawStation.station_sn, */ cipher_id, this.rawStation.member.admin_user_id);
             if (Object.keys(cipher).length > 0) {
                 this.p2pSession.setDownloadRSAPrivateKeyPem(cipher.private_key);
                 await this.p2pSession.sendCommandWithString({
@@ -3903,16 +3903,26 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             }
         }
         else {
+            await this.p2pSession.sendCommandWithString({
+                commandType: types_2.CommandType.CMD_DOWNLOAD_VIDEO,
+                strValue: path,
+                strValueSub: this.rawStation.member.admin_user_id,
+                channel: device.getChannel()
+            }, {
+                command: commandData
+            });
+        }
+        /* else {
             this.log.warn(`Cancelled download of video "${path}" from Station ${this.getSerial()}, because cipher_id is missing`);
             this.emit("command result", this, {
                 channel: device.getChannel(),
-                command_type: types_2.CommandType.CMD_DOWNLOAD_VIDEO,
-                return_code: types_2.ErrorCode.ERROR_INVALID_PARAM,
+                command_type: CommandType.CMD_DOWNLOAD_VIDEO,
+                return_code: ErrorCode.ERROR_INVALID_PARAM,
                 customData: {
                     command: commandData
                 }
             });
-        }
+        }*/
     }
     async cancelDownload(device) {
         const commandData = {
@@ -3958,7 +3968,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "commandType": types_1.ParamType.COMMAND_START_LIVESTREAM,
                     "data": {
                         "accountId": this.rawStation.member.admin_user_id,
-                        "encryptkey": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
+                        "encryptkey": rsa_key?.exportKey("components-public").n.subarray(1).toString("hex"),
                         "streamtype": videoCodec
                     }
                 }),
@@ -3975,7 +3985,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                     "commandType": types_1.ParamType.COMMAND_START_LIVESTREAM,
                     "data": {
                         "account_id": this.rawStation.member.admin_user_id,
-                        "encryptkey": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
+                        "encryptkey": rsa_key?.exportKey("components-public").n.subarray(1).toString("hex"),
                         "streamtype": videoCodec
                     }
                 }),
@@ -3990,7 +4000,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 await this.p2pSession.sendCommandWithInt({
                     commandType: types_2.CommandType.CMD_START_REALTIME_MEDIA,
                     value: device.getChannel(),
-                    strValue: rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
+                    strValue: rsa_key?.exportKey("components-public").n.subarray(1).toString("hex"),
                     channel: device.getChannel()
                 }, {
                     command: commandData
@@ -4006,7 +4016,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                         "mValue3": types_2.CommandType.CMD_START_REALTIME_MEDIA,
                         "payload": {
                             "ClientOS": "Android",
-                            "key": rsa_key?.exportKey("components-public").n.slice(1).toString("hex"),
+                            "key": rsa_key?.exportKey("components-public").n.subarray(1).toString("hex"),
                             "streamtype": videoCodec === types_2.VideoCodec.H264 ? 1 : 2,
                         }
                     }),

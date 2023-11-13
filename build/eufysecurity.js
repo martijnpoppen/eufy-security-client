@@ -602,6 +602,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 else if (device_1.Device.isSmartSafe(device.device_type)) {
                     new_device = device_1.SmartSafe.getInstance(this.api, device);
                 }
+                else if (device_1.Device.isSmartTrack(device.device_type)) {
+                    new_device = device_1.Tracker.getInstance(this.api, device);
+                }
                 else {
                     new_device = device_1.UnknownDevice.getInstance(this.api, device);
                 }
@@ -769,7 +772,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             clearTimeout(this.refreshEufySecurityCloudTimeout);
         this.connected = false;
         this.emit("close");
-        if (this.retries < 1) {
+        if (this.retries < 3) {
             this.retries++;
             await this.connect();
         }
@@ -1538,6 +1541,30 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             case types_1.PropertyName.DeviceDoor2Open:
                 await station.openDoor(device, value, 2);
                 break;
+            case types_1.PropertyName.DeviceLeftBehindAlarm: {
+                const tracker = device;
+                const result = await tracker.setLeftBehindAlarm(value);
+                if (result) {
+                    device.updateProperty(name, value);
+                }
+                break;
+            }
+            case types_1.PropertyName.DeviceFindPhone: {
+                const tracker = device;
+                const result = await tracker.setFindPhone(value);
+                if (result) {
+                    device.updateProperty(name, value);
+                }
+                break;
+            }
+            case types_1.PropertyName.DeviceTrackerType: {
+                const tracker = device;
+                const result = await tracker.setTrackerType(value);
+                if (result) {
+                    device.updateProperty(name, value);
+                }
+                break;
+            }
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
                     throw new error_1.ReadOnlyPropertyError("Property is read only", { context: { device: deviceSN, propertyName: name, propertyValue: value } });

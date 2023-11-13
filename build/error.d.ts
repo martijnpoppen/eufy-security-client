@@ -10,7 +10,7 @@ export declare class BaseError extends Error {
         context?: Jsonable;
     });
 }
-export declare function ensureError(value: unknown): Error;
+export declare function ensureError(value: unknown): BaseError;
 export declare class InvalidCountryCodeError extends BaseError {
     constructor(message: string, options?: {
         cause?: Error;

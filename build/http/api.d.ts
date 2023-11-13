@@ -51,9 +51,9 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
         paramType: number;
         paramValue: any;
     }[]): Promise<boolean>;
-    getCiphers(cipherIDs: Array<number>, userID: string): Promise<Ciphers>;
+    getCiphers(/*stationSN: string, */ cipherIDs: Array<number>, userID: string): Promise<Ciphers>;
     getVoices(deviceSN: string): Promise<Voices>;
-    getCipher(cipherID: number, userID: string): Promise<Cipher>;
+    getCipher(/*stationSN: string, */ cipherID: number, userID: string): Promise<Cipher>;
     getLog(): Logger;
     getDevices(): FullDevices;
     getHubs(): Hubs;
