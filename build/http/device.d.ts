@@ -177,7 +177,6 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isEnabled(): PropertyValue;
 }
 export declare class Camera extends Device {
-    private _isStreaming;
     protected constructor(api: HTTPApi, device: DeviceListResponse);
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Camera>;
     getStateChannel(): string;
@@ -185,11 +184,8 @@ export declare class Camera extends Device {
     getLastCameraImageURL(): PropertyValue;
     getMACAddress(): string;
     startDetection(): Promise<void>;
-    startStream(): Promise<string>;
     stopDetection(): Promise<void>;
-    stopStream(): Promise<void>;
     getState(): PropertyValue;
-    isStreaming(): boolean;
     close(): Promise<void>;
     getLastChargingDays(): number;
     getLastChargingFalseEvents(): number;

@@ -18,7 +18,6 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private readonly P2P_REFRESH_INTERVAL_MIN;
     private cameraMaxLivestreamSeconds;
     private cameraStationLivestreamTimeout;
-    private cameraCloudLivestreamTimeout;
     private pushService;
     private mqttService;
     private pushCloudRegistered;
@@ -73,9 +72,7 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onAPIConnect;
     private onAPIConnectionError;
     startStationLivestream(deviceSN: string): Promise<void>;
-    startCloudLivestream(deviceSN: string): Promise<void>;
     stopStationLivestream(deviceSN: string): Promise<void>;
-    stopCloudLivestream(deviceSN: string): Promise<void>;
     private writePersistentData;
     private saveCloudToken;
     private savePushCredentials;

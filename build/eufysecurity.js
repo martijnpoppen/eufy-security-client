@@ -57,7 +57,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     P2P_REFRESH_INTERVAL_MIN = 720;
     cameraMaxLivestreamSeconds = 30;
     cameraStationLivestreamTimeout = new Map();
-    cameraCloudLivestreamTimeout = new Map();
     pushService;
     mqttService;
     pushCloudRegistered = false;
@@ -250,9 +249,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 device.processMQTTNotification(message.data.data, this.config.eventDurationSeconds);
             }).catch((err) => {
                 const error = (0, error_1.ensureError)(err);
-                if (error instanceof error_1.DeviceNotFoundError) {
-                }
-                else {
+                if (!(error instanceof error_1.DeviceNotFoundError)) {
                     this.log.error("Lock MQTT Message Error", { error: (0, utils_1.getError)(error) });
                 }
             }).finally(() => {
@@ -306,7 +303,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         try {
             const station = await this.getStation(stationSerial);
             if (station.isStation() || (station.hasProperty(types_1.PropertyName.StationSdStatus) && station.getPropertyValue(types_1.PropertyName.StationSdStatus) !== undefined && station.getPropertyValue(types_1.PropertyName.StationSdStatus) !== types_2.TFCardStatus.REMOVE)) {
-                await station.getStorageInfoEx();
+                station.getStorageInfoEx();
             }
         }
         catch (err) {
@@ -404,7 +401,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         const station = await this.getStation(stationSN);
         if (station.isP2PConnectableDevice()) {
             station.setConnectionType(p2pConnectionType);
-            station.connect();
+            await station.connect();
         }
     }
     async isStationConnected(stationSN) {
@@ -515,22 +512,14 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     onStationConnect(station) {
         this.emit("station connect", station);
         if (station_1.Station.isStation(station.getDeviceType()) || (device_1.Device.isCamera(station.getDeviceType()) && !device_1.Device.isWiredDoorbell(station.getDeviceType()) || device_1.Device.isSmartSafe(station.getDeviceType()))) {
-            station.getCameraInfo().catch(err => {
-                const error = (0, error_1.ensureError)(err);
-                this.log.error(`Error during station p2p data refreshing`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial() });
-            });
+            station.getCameraInfo();
             if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
                 clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
                 delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
             }
-            //if (!station.isEnergySavingDevice()) {
             this.refreshEufySecurityP2PTimeout[station.getSerial()] = setTimeout(() => {
-                station.getCameraInfo().catch(err => {
-                    const error = (0, error_1.ensureError)(err);
-                    this.log.error(`Error during scheduled station p2p data refreshing`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial() });
-                });
+                station.getCameraInfo();
             }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
-            //}
         }
     }
     onStationConnectionError(station, error) {
@@ -697,9 +686,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         for (const device_sn of this.cameraStationLivestreamTimeout.keys()) {
             this.stopStationLivestream(device_sn);
         }
-        for (const device_sn of this.cameraCloudLivestreamTimeout.keys()) {
-            this.stopCloudLivestream(device_sn);
-        }
         if (this.refreshEufySecurityCloudTimeout !== undefined)
             clearTimeout(this.refreshEufySecurityCloudTimeout);
         Object.keys(this.refreshEufySecurityP2PTimeout).forEach(station_sn => {
@@ -805,7 +791,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceStartLivestream } });
         const camera = device;
         if (!station.isLiveStreaming(camera)) {
-            await station.startLivestream(camera);
+            station.startLivestream(camera);
             if (this.cameraMaxLivestreamSeconds > 0) {
                 this.cameraStationLivestreamTimeout.set(deviceSN, setTimeout(() => {
                     this.log.info(`Stopping the station stream for the device ${deviceSN}, because we have reached the configured maximum stream timeout (${this.cameraMaxLivestreamSeconds} seconds)`);
@@ -817,38 +803,13 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.log.warn(`The station stream for the device ${deviceSN} cannot be started, because it is already streaming!`);
         }
     }
-    async startCloudLivestream(deviceSN) {
-        const device = await this.getDevice(deviceSN);
-        const station = await this.getStation(device.getStationSerial());
-        if (!device.hasCommand(types_1.CommandName.DeviceStartLivestream))
-            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceStartLivestream } });
-        const camera = device;
-        if (!camera.isStreaming()) {
-            const url = await camera.startStream();
-            if (url !== "") {
-                if (this.cameraMaxLivestreamSeconds > 0) {
-                    this.cameraCloudLivestreamTimeout.set(deviceSN, setTimeout(() => {
-                        this.log.info(`Stopping the station stream for the device ${deviceSN}, because we have reached the configured maximum stream timeout (${this.cameraMaxLivestreamSeconds} seconds)`);
-                        this.stopCloudLivestream(deviceSN);
-                    }, this.cameraMaxLivestreamSeconds * 1000));
-                }
-                this.emit("cloud livestream start", station, camera, url);
-            }
-            else {
-                this.log.error(`Failed to start cloud stream for the device ${deviceSN}`);
-            }
-        }
-        else {
-            this.log.warn(`The cloud stream for the device ${deviceSN} cannot be started, because it is already streaming!`);
-        }
-    }
     async stopStationLivestream(deviceSN) {
         const device = await this.getDevice(deviceSN);
         const station = await this.getStation(device.getStationSerial());
         if (!device.hasCommand(types_1.CommandName.DeviceStopLivestream))
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceStopLivestream } });
         if (station.isConnected() && station.isLiveStreaming(device)) {
-            await station.stopLivestream(device);
+            station.stopLivestream(device);
         }
         else {
             this.log.warn(`The station stream for the device ${deviceSN} cannot be stopped, because it isn't streaming!`);
@@ -857,25 +818,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         if (timeout) {
             clearTimeout(timeout);
             this.cameraStationLivestreamTimeout.delete(deviceSN);
-        }
-    }
-    async stopCloudLivestream(deviceSN) {
-        const device = await this.getDevice(deviceSN);
-        const station = await this.getStation(device.getStationSerial());
-        if (!device.hasCommand(types_1.CommandName.DeviceStopLivestream))
-            throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceStopLivestream } });
-        const camera = device;
-        if (camera.isStreaming()) {
-            await camera.stopStream();
-            this.emit("cloud livestream stop", station, camera);
-        }
-        else {
-            this.log.warn(`The cloud stream for the device ${deviceSN} cannot be stopped, because it isn't streaming!`);
-        }
-        const timeout = this.cameraCloudLivestreamTimeout.get(deviceSN);
-        if (timeout) {
-            clearTimeout(timeout);
-            this.cameraCloudLivestreamTimeout.delete(deviceSN);
         }
     }
     writePersistentData() {
@@ -1051,7 +993,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         if (!device.hasCommand(types_1.CommandName.DeviceCancelDownload))
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceCancelDownload } });
         if (station.isConnected() && station.isDownloading(device)) {
-            await station.cancelDownload(device);
+            station.cancelDownload(device);
         }
         else {
             this.log.warn(`The station isn't downloading a video for the device ${deviceSN}!`);
@@ -1067,379 +1009,379 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         value = (0, utils_1.parseValue)(metadata, value);
         switch (name) {
             case types_1.PropertyName.DeviceEnabled:
-                await station.enableDevice(device, value);
+                station.enableDevice(device, value);
                 break;
             case types_1.PropertyName.DeviceStatusLed:
-                await station.setStatusLed(device, value);
+                station.setStatusLed(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoNightvision:
-                await station.setAutoNightVision(device, value);
+                station.setAutoNightVision(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetection:
-                await station.setMotionDetection(device, value);
+                station.setMotionDetection(device, value);
                 break;
             case types_1.PropertyName.DeviceSoundDetection:
-                await station.setSoundDetection(device, value);
+                station.setSoundDetection(device, value);
                 break;
             case types_1.PropertyName.DevicePetDetection:
-                await station.setPetDetection(device, value);
+                station.setPetDetection(device, value);
                 break;
             case types_1.PropertyName.DeviceRTSPStream:
-                await station.setRTSPStream(device, value);
+                station.setRTSPStream(device, value);
                 break;
             case types_1.PropertyName.DeviceAntitheftDetection:
-                await station.setAntiTheftDetection(device, value);
+                station.setAntiTheftDetection(device, value);
                 break;
             case types_1.PropertyName.DeviceLocked:
-                await station.lockDevice(device, value);
+                station.lockDevice(device, value);
                 break;
             case types_1.PropertyName.DeviceWatermark:
-                await station.setWatermark(device, value);
+                station.setWatermark(device, value);
                 break;
             case types_1.PropertyName.DeviceLight:
-                await station.switchLight(device, value);
+                station.switchLight(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsEnable:
-                await station.setFloodlightLightSettingsEnable(device, value);
+                station.setFloodlightLightSettingsEnable(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsBrightnessManual:
-                await station.setFloodlightLightSettingsBrightnessManual(device, value);
+                station.setFloodlightLightSettingsBrightnessManual(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsBrightnessMotion:
-                await station.setFloodlightLightSettingsBrightnessMotion(device, value);
+                station.setFloodlightLightSettingsBrightnessMotion(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsBrightnessSchedule:
-                await station.setFloodlightLightSettingsBrightnessSchedule(device, value);
+                station.setFloodlightLightSettingsBrightnessSchedule(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionTriggered:
-                await station.setFloodlightLightSettingsMotionTriggered(device, value);
+                station.setFloodlightLightSettingsMotionTriggered(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionTriggeredDistance:
-                await station.setFloodlightLightSettingsMotionTriggeredDistance(device, value);
+                station.setFloodlightLightSettingsMotionTriggeredDistance(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionTriggeredTimer:
-                await station.setFloodlightLightSettingsMotionTriggeredTimer(device, value);
+                station.setFloodlightLightSettingsMotionTriggeredTimer(device, value);
                 break;
             case types_1.PropertyName.DeviceMicrophone:
-                await station.setMicMute(device, value);
+                station.setMicMute(device, value);
                 break;
             case types_1.PropertyName.DeviceSpeaker:
-                await station.enableSpeaker(device, value);
+                station.enableSpeaker(device, value);
                 break;
             case types_1.PropertyName.DeviceSpeakerVolume:
-                await station.setSpeakerVolume(device, value);
+                station.setSpeakerVolume(device, value);
                 break;
             case types_1.PropertyName.DeviceAudioRecording:
-                await station.setAudioRecording(device, value);
+                station.setAudioRecording(device, value);
                 break;
             case types_1.PropertyName.DevicePowerSource:
-                await station.setPowerSource(device, value);
+                station.setPowerSource(device, value);
                 break;
             case types_1.PropertyName.DevicePowerWorkingMode:
-                await station.setPowerWorkingMode(device, value);
+                station.setPowerWorkingMode(device, value);
                 break;
             case types_1.PropertyName.DeviceRecordingEndClipMotionStops:
-                await station.setRecordingEndClipMotionStops(device, value);
+                station.setRecordingEndClipMotionStops(device, value);
                 break;
             case types_1.PropertyName.DeviceRecordingClipLength:
-                await station.setRecordingClipLength(device, value);
+                station.setRecordingClipLength(device, value);
                 break;
             case types_1.PropertyName.DeviceRecordingRetriggerInterval:
-                await station.setRecordingRetriggerInterval(device, value);
+                station.setRecordingRetriggerInterval(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoStreamingQuality:
-                await station.setVideoStreamingQuality(device, value);
+                station.setVideoStreamingQuality(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoRecordingQuality:
-                await station.setVideoRecordingQuality(device, value);
+                station.setVideoRecordingQuality(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivity:
-                await station.setMotionDetectionSensitivity(device, value);
+                station.setMotionDetectionSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionTracking:
-                await station.setMotionTracking(device, value);
+                station.setMotionTracking(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionType:
-                await station.setMotionDetectionType(device, value);
+                station.setMotionDetectionType(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionZone:
-                await station.setMotionZone(device, value);
+                station.setMotionZone(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoWDR:
-                await station.setWDR(device, value);
+                station.setWDR(device, value);
                 break;
             case types_1.PropertyName.DeviceRingtoneVolume:
-                await station.setRingtoneVolume(device, value);
+                station.setRingtoneVolume(device, value);
                 break;
             case types_1.PropertyName.DeviceChimeIndoor:
-                await station.enableIndoorChime(device, value);
+                station.enableIndoorChime(device, value);
                 break;
             case types_1.PropertyName.DeviceChimeHomebase:
-                await station.enableHomebaseChime(device, value);
+                station.enableHomebaseChime(device, value);
                 break;
             case types_1.PropertyName.DeviceChimeHomebaseRingtoneVolume:
-                await station.setHomebaseChimeRingtoneVolume(device, value);
+                station.setHomebaseChimeRingtoneVolume(device, value);
                 break;
             case types_1.PropertyName.DeviceChimeHomebaseRingtoneType:
-                await station.setHomebaseChimeRingtoneType(device, value);
+                station.setHomebaseChimeRingtoneType(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationType:
-                await station.setNotificationType(device, value);
+                station.setNotificationType(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationPerson:
-                await station.setNotificationPerson(device, value);
+                station.setNotificationPerson(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationPet:
-                await station.setNotificationPet(device, value);
+                station.setNotificationPet(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationAllOtherMotion:
-                await station.setNotificationAllOtherMotion(device, value);
+                station.setNotificationAllOtherMotion(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationAllSound:
-                await station.setNotificationAllSound(device, value);
+                station.setNotificationAllSound(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationCrying:
-                await station.setNotificationCrying(device, value);
+                station.setNotificationCrying(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationMotion:
-                await station.setNotificationMotion(device, value);
+                station.setNotificationMotion(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationRing:
-                await station.setNotificationRing(device, value);
+                station.setNotificationRing(device, value);
                 break;
             case types_1.PropertyName.DeviceChirpVolume:
-                await station.setChirpVolume(device, value);
+                station.setChirpVolume(device, value);
                 break;
             case types_1.PropertyName.DeviceChirpTone:
-                await station.setChirpTone(device, value);
+                station.setChirpTone(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoHDR:
-                await station.setHDR(device, value);
+                station.setHDR(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoDistortionCorrection:
-                await station.setDistortionCorrection(device, value);
+                station.setDistortionCorrection(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoRingRecord:
-                await station.setRingRecord(device, value);
+                station.setRingRecord(device, value);
                 break;
             case types_1.PropertyName.DeviceRotationSpeed:
-                await station.setPanAndTiltRotationSpeed(device, value);
+                station.setPanAndTiltRotationSpeed(device, value);
                 break;
             case types_1.PropertyName.DeviceNightvision:
-                await station.setNightVision(device, value);
+                station.setNightVision(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionRange:
-                await station.setMotionDetectionRange(device, value);
+                station.setMotionDetectionRange(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionRangeStandardSensitivity:
-                await station.setMotionDetectionRangeStandardSensitivity(device, value);
+                station.setMotionDetectionRangeStandardSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionRangeAdvancedLeftSensitivity:
-                await station.setMotionDetectionRangeAdvancedLeftSensitivity(device, value);
+                station.setMotionDetectionRangeAdvancedLeftSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionRangeAdvancedMiddleSensitivity:
-                await station.setMotionDetectionRangeAdvancedMiddleSensitivity(device, value);
+                station.setMotionDetectionRangeAdvancedMiddleSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionRangeAdvancedRightSensitivity:
-                await station.setMotionDetectionRangeAdvancedRightSensitivity(device, value);
+                station.setMotionDetectionRangeAdvancedRightSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTestMode:
-                await station.setMotionDetectionTestMode(device, value);
+                station.setMotionDetectionTestMode(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionTrackingSensitivity:
-                await station.setMotionTrackingSensitivity(device, value);
+                station.setMotionTrackingSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionAutoCruise:
-                await station.setMotionAutoCruise(device, value);
+                station.setMotionAutoCruise(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionOutOfViewDetection:
-                await station.setMotionOutOfViewDetection(device, value);
+                station.setMotionOutOfViewDetection(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsColorTemperatureManual:
-                await station.setLightSettingsColorTemperatureManual(device, value);
+                station.setLightSettingsColorTemperatureManual(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsColorTemperatureMotion:
-                await station.setLightSettingsColorTemperatureMotion(device, value);
+                station.setLightSettingsColorTemperatureMotion(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsColorTemperatureSchedule:
-                await station.setLightSettingsColorTemperatureSchedule(device, value);
+                station.setLightSettingsColorTemperatureSchedule(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionActivationMode:
-                await station.setLightSettingsMotionActivationMode(device, value);
+                station.setLightSettingsMotionActivationMode(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoNightvisionImageAdjustment:
-                await station.setVideoNightvisionImageAdjustment(device, value);
+                station.setVideoNightvisionImageAdjustment(device, value);
                 break;
             case types_1.PropertyName.DeviceVideoColorNightvision:
-                await station.setVideoColorNightvision(device, value);
+                station.setVideoColorNightvision(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoCalibration:
-                await station.setAutoCalibration(device, value);
+                station.setAutoCalibration(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoLock:
-                await station.setAutoLock(device, value);
+                station.setAutoLock(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoLockSchedule:
-                await station.setAutoLockSchedule(device, value);
+                station.setAutoLockSchedule(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoLockScheduleStartTime:
-                await station.setAutoLockScheduleStartTime(device, value);
+                station.setAutoLockScheduleStartTime(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoLockScheduleEndTime:
-                await station.setAutoLockScheduleEndTime(device, value);
+                station.setAutoLockScheduleEndTime(device, value);
                 break;
             case types_1.PropertyName.DeviceAutoLockTimer:
-                await station.setAutoLockTimer(device, value);
+                station.setAutoLockTimer(device, value);
                 break;
             case types_1.PropertyName.DeviceOneTouchLocking:
-                await station.setOneTouchLocking(device, value);
+                station.setOneTouchLocking(device, value);
                 break;
             case types_1.PropertyName.DeviceSound:
-                await station.setSound(device, value);
+                station.setSound(device, value);
                 break;
             case types_1.PropertyName.DeviceNotification:
-                await station.setNotification(device, value);
+                station.setNotification(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationLocked:
-                await station.setNotificationLocked(device, value);
+                station.setNotificationLocked(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationUnlocked:
-                await station.setNotificationUnlocked(device, value);
+                station.setNotificationUnlocked(device, value);
                 break;
             case types_1.PropertyName.DeviceScramblePasscode:
-                await station.setScramblePasscode(device, value);
+                station.setScramblePasscode(device, value);
                 break;
             case types_1.PropertyName.DeviceWrongTryProtection:
-                await station.setWrongTryProtection(device, value);
+                station.setWrongTryProtection(device, value);
                 break;
             case types_1.PropertyName.DeviceWrongTryAttempts:
-                await station.setWrongTryAttempts(device, value);
+                station.setWrongTryAttempts(device, value);
                 break;
             case types_1.PropertyName.DeviceWrongTryLockdownTime:
-                await station.setWrongTryLockdownTime(device, value);
+                station.setWrongTryLockdownTime(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringDetection:
-                await station.setLoiteringDetection(device, value);
+                station.setLoiteringDetection(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringDetectionRange:
-                await station.setLoiteringDetectionRange(device, value);
+                station.setLoiteringDetectionRange(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringDetectionLength:
-                await station.setLoiteringDetectionLength(device, value);
+                station.setLoiteringDetectionLength(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponseAutoVoiceResponse:
-                await station.setLoiteringCustomResponseAutoVoiceResponse(device, value);
+                station.setLoiteringCustomResponseAutoVoiceResponse(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponseHomeBaseNotification:
-                await station.setLoiteringCustomResponseHomeBaseNotification(device, value);
+                station.setLoiteringCustomResponseHomeBaseNotification(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponsePhoneNotification:
-                await station.setLoiteringCustomResponsePhoneNotification(device, value);
+                station.setLoiteringCustomResponsePhoneNotification(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponseAutoVoiceResponseVoice:
-                await station.setLoiteringCustomResponseAutoVoiceResponseVoice(device, value);
+                station.setLoiteringCustomResponseAutoVoiceResponseVoice(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponseTimeFrom:
-                await station.setLoiteringCustomResponseTimeFrom(device, value);
+                station.setLoiteringCustomResponseTimeFrom(device, value);
                 break;
             case types_1.PropertyName.DeviceLoiteringCustomResponseTimeTo:
-                await station.setLoiteringCustomResponseTimeTo(device, value);
+                station.setLoiteringCustomResponseTimeTo(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityMode:
-                await station.setMotionDetectionSensitivityMode(device, value);
+                station.setMotionDetectionSensitivityMode(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityStandard:
-                await station.setMotionDetectionSensitivityStandard(device, value);
+                station.setMotionDetectionSensitivityStandard(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedA:
-                await station.setMotionDetectionSensitivityAdvancedA(device, value);
+                station.setMotionDetectionSensitivityAdvancedA(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedB:
-                await station.setMotionDetectionSensitivityAdvancedB(device, value);
+                station.setMotionDetectionSensitivityAdvancedB(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedC:
-                await station.setMotionDetectionSensitivityAdvancedC(device, value);
+                station.setMotionDetectionSensitivityAdvancedC(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedD:
-                await station.setMotionDetectionSensitivityAdvancedD(device, value);
+                station.setMotionDetectionSensitivityAdvancedD(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedE:
-                await station.setMotionDetectionSensitivityAdvancedE(device, value);
+                station.setMotionDetectionSensitivityAdvancedE(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedF:
-                await station.setMotionDetectionSensitivityAdvancedF(device, value);
+                station.setMotionDetectionSensitivityAdvancedF(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedG:
-                await station.setMotionDetectionSensitivityAdvancedG(device, value);
+                station.setMotionDetectionSensitivityAdvancedG(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionSensitivityAdvancedH:
-                await station.setMotionDetectionSensitivityAdvancedH(device, value);
+                station.setMotionDetectionSensitivityAdvancedH(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuard:
-                await station.setDeliveryGuard(device, value);
+                station.setDeliveryGuard(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardPackageGuarding:
-                await station.setDeliveryGuardPackageGuarding(device, value);
+                station.setDeliveryGuardPackageGuarding(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardPackageGuardingVoiceResponseVoice:
-                await station.setDeliveryGuardPackageGuardingVoiceResponseVoice(device, value);
+                station.setDeliveryGuardPackageGuardingVoiceResponseVoice(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardPackageGuardingActivatedTimeFrom:
-                await station.setDeliveryGuardPackageGuardingActivatedTimeFrom(device, value);
+                station.setDeliveryGuardPackageGuardingActivatedTimeFrom(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardPackageGuardingActivatedTimeTo:
-                await station.setDeliveryGuardPackageGuardingActivatedTimeTo(device, value);
+                station.setDeliveryGuardPackageGuardingActivatedTimeTo(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardUncollectedPackageAlert:
-                await station.setDeliveryGuardUncollectedPackageAlert(device, value);
+                station.setDeliveryGuardUncollectedPackageAlert(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardPackageLiveCheckAssistance:
-                await station.setDeliveryGuardPackageLiveCheckAssistance(device, value);
+                station.setDeliveryGuardPackageLiveCheckAssistance(device, value);
                 break;
             case types_1.PropertyName.DeviceDualCamWatchViewMode:
-                await station.setDualCamWatchViewMode(device, value);
+                station.setDualCamWatchViewMode(device, value);
                 break;
             case types_1.PropertyName.DeviceRingAutoResponse:
-                await station.setRingAutoResponse(device, value);
+                station.setRingAutoResponse(device, value);
                 break;
             case types_1.PropertyName.DeviceRingAutoResponseVoiceResponse:
-                await station.setRingAutoResponseVoiceResponse(device, value);
+                station.setRingAutoResponseVoiceResponse(device, value);
                 break;
             case types_1.PropertyName.DeviceRingAutoResponseVoiceResponseVoice:
-                await station.setRingAutoResponseVoiceResponseVoice(device, value);
+                station.setRingAutoResponseVoiceResponseVoice(device, value);
                 break;
             case types_1.PropertyName.DeviceRingAutoResponseTimeFrom:
-                await station.setRingAutoResponseTimeFrom(device, value);
+                station.setRingAutoResponseTimeFrom(device, value);
                 break;
             case types_1.PropertyName.DeviceRingAutoResponseTimeTo:
-                await station.setRingAutoResponseTimeTo(device, value);
+                station.setRingAutoResponseTimeTo(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationRadarDetector:
-                await station.setNotificationRadarDetector(device, value);
+                station.setNotificationRadarDetector(device, value);
                 break;
             case types_1.PropertyName.DeviceSoundDetectionSensitivity:
-                await station.setSoundDetectionSensitivity(device, value);
+                station.setSoundDetectionSensitivity(device, value);
                 break;
             case types_1.PropertyName.DeviceContinuousRecording:
-                await station.setContinuousRecording(device, value);
+                station.setContinuousRecording(device, value);
                 break;
             case types_1.PropertyName.DeviceContinuousRecordingType:
-                await station.setContinuousRecordingType(device, value);
+                station.setContinuousRecordingType(device, value);
                 break;
             case types_1.PropertyName.DeviceDefaultAngle:
-                await station.enableDefaultAngle(device, value);
+                station.enableDefaultAngle(device, value);
                 break;
             case types_1.PropertyName.DeviceDefaultAngleIdleTime:
-                await station.setDefaultAngleIdleTime(device, value);
+                station.setDefaultAngleIdleTime(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationIntervalTime:
-                await station.setNotificationIntervalTime(device, value);
+                station.setNotificationIntervalTime(device, value);
                 break;
             case types_1.PropertyName.DeviceSoundDetectionRoundLook:
-                await station.setSoundDetectionRoundLook(device, value);
+                station.setSoundDetectionRoundLook(device, value);
                 break;
             case types_1.PropertyName.DeviceDeliveryGuardUncollectedPackageAlertTimeToCheck:
-                await station.setDeliveryGuardUncollectedPackageAlertTimeToCheck(device, value);
+                station.setDeliveryGuardUncollectedPackageAlertTimeToCheck(device, value);
                 break;
             case types_1.PropertyName.DeviceLeftOpenAlarm:
             case types_1.PropertyName.DeviceLeftOpenAlarmDuration:
@@ -1460,86 +1402,86 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             case types_1.PropertyName.DeviceNotificationDualLock:
             case types_1.PropertyName.DeviceNotificationWrongTryProtect:
             case types_1.PropertyName.DeviceNotificationJammed:
-                await station.setSmartSafeParams(device, name, value);
+                station.setSmartSafeParams(device, name, value);
                 break;
             case types_1.PropertyName.DeviceVideoTypeStoreToNAS:
-                await station.setVideoTypeStoreToNAS(device, value);
+                station.setVideoTypeStoreToNAS(device, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeHumanRecognition:
-                await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_RECOGNITION, value);
+                station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_RECOGNITION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeHuman:
                 if (device.isWallLightCam()) {
-                    await station.setMotionDetectionTypeHuman(device, value);
+                    station.setMotionDetectionTypeHuman(device, value);
                 }
                 else {
-                    await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
+                    station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
                 }
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypePet:
-                await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
+                station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeVehicle:
-                await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.VEHICLE_DETECTION, value);
+                station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.VEHICLE_DETECTION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions:
                 if (device.isWallLightCam()) {
-                    await station.setMotionDetectionTypeAllOtherMotions(device, value);
+                    station.setMotionDetectionTypeAllOtherMotions(device, value);
                 }
                 else {
-                    await station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);
+                    station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);
                 }
                 break;
             case types_1.PropertyName.DeviceLightSettingsManualLightingActiveMode:
-                await station.setLightSettingsManualLightingActiveMode(device, value);
+                station.setLightSettingsManualLightingActiveMode(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsManualDailyLighting:
-                await station.setLightSettingsManualDailyLighting(device, value);
+                station.setLightSettingsManualDailyLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsManualColoredLighting:
-                await station.setLightSettingsManualColoredLighting(device, value);
+                station.setLightSettingsManualColoredLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsManualDynamicLighting:
-                await station.setLightSettingsManualDynamicLighting(device, value);
+                station.setLightSettingsManualDynamicLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionLightingActiveMode:
-                await station.setLightSettingsMotionLightingActiveMode(device, value);
+                station.setLightSettingsMotionLightingActiveMode(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionDailyLighting:
-                await station.setLightSettingsMotionDailyLighting(device, value);
+                station.setLightSettingsMotionDailyLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionColoredLighting:
-                await station.setLightSettingsMotionColoredLighting(device, value);
+                station.setLightSettingsMotionColoredLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsMotionDynamicLighting:
-                await station.setLightSettingsMotionDynamicLighting(device, value);
+                station.setLightSettingsMotionDynamicLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsScheduleLightingActiveMode:
-                await station.setLightSettingsScheduleLightingActiveMode(device, value);
+                station.setLightSettingsScheduleLightingActiveMode(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsScheduleDailyLighting:
-                await station.setLightSettingsScheduleDailyLighting(device, value);
+                station.setLightSettingsScheduleDailyLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsScheduleColoredLighting:
-                await station.setLightSettingsScheduleColoredLighting(device, value);
+                station.setLightSettingsScheduleColoredLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsScheduleDynamicLighting:
-                await station.setLightSettingsScheduleDynamicLighting(device, value);
+                station.setLightSettingsScheduleDynamicLighting(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsColoredLightingColors:
-                await station.setLightSettingsColoredLightingColors(device, value);
+                station.setLightSettingsColoredLightingColors(device, value);
                 break;
             case types_1.PropertyName.DeviceLightSettingsDynamicLightingThemes:
-                await station.setLightSettingsDynamicLightingThemes(device, value);
+                station.setLightSettingsDynamicLightingThemes(device, value);
                 break;
             case types_1.PropertyName.DeviceDoorControlWarning:
-                await station.setDoorControlWarning(device, value);
+                station.setDoorControlWarning(device, value);
                 break;
             case types_1.PropertyName.DeviceDoor1Open:
-                await station.openDoor(device, value, 1);
+                station.openDoor(device, value, 1);
                 break;
             case types_1.PropertyName.DeviceDoor2Open:
-                await station.openDoor(device, value, 2);
+                station.openDoor(device, value, 2);
                 break;
             case types_1.PropertyName.DeviceLeftBehindAlarm: {
                 const tracker = device;
@@ -1577,43 +1519,43 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         value = (0, utils_1.parseValue)(metadata, value);
         switch (name) {
             case types_1.PropertyName.StationGuardMode:
-                await station.setGuardMode(value);
+                station.setGuardMode(value);
                 break;
             case types_1.PropertyName.StationAlarmTone:
-                await station.setStationAlarmTone(value);
+                station.setStationAlarmTone(value);
                 break;
             case types_1.PropertyName.StationAlarmVolume:
-                await station.setStationAlarmRingtoneVolume(value);
+                station.setStationAlarmRingtoneVolume(value);
                 break;
             case types_1.PropertyName.StationPromptVolume:
-                await station.setStationPromptVolume(value);
+                station.setStationPromptVolume(value);
                 break;
             case types_1.PropertyName.StationNotificationSwitchModeApp:
-                await station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.APP, value);
+                station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.APP, value);
                 break;
             case types_1.PropertyName.StationNotificationSwitchModeGeofence:
-                await station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.GEOFENCE, value);
+                station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.GEOFENCE, value);
                 break;
             case types_1.PropertyName.StationNotificationSwitchModeSchedule:
-                await station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.SCHEDULE, value);
+                station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.SCHEDULE, value);
                 break;
             case types_1.PropertyName.StationNotificationSwitchModeKeypad:
-                await station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.KEYPAD, value);
+                station.setStationNotificationSwitchMode(types_1.NotificationSwitchMode.KEYPAD, value);
                 break;
             case types_1.PropertyName.StationNotificationStartAlarmDelay:
-                await station.setStationNotificationStartAlarmDelay(value);
+                station.setStationNotificationStartAlarmDelay(value);
                 break;
             case types_1.PropertyName.StationTimeFormat:
-                await station.setStationTimeFormat(value);
+                station.setStationTimeFormat(value);
                 break;
             case types_1.PropertyName.StationSwitchModeWithAccessCode:
-                await station.setStationSwitchModeWithAccessCode(value);
+                station.setStationSwitchModeWithAccessCode(value);
                 break;
             case types_1.PropertyName.StationAutoEndAlarm:
-                await station.setStationAutoEndAlarm(value);
+                station.setStationAutoEndAlarm(value);
                 break;
             case types_1.PropertyName.StationTurnOffAlarmWithButton:
-                await station.setStationTurnOffAlarmWithButton(value);
+                station.setStationTurnOffAlarmWithButton(value);
                 break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
@@ -1639,10 +1581,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     }
     onErrorStationLivestream(station, channel, origError) {
         this.getStationDevice(station.getSerial(), channel).then((device) => {
-            station.stopLivestream(device).catch((err) => {
-                const error = (0, error_1.ensureError)(err);
-                this.log.error(`Station stop livestream error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), channel: channel, origError: (0, utils_1.getError)(origError) });
-            });
+            station.stopLivestream(device);
         }).catch((err) => {
             const error = (0, error_1.ensureError)(err);
             this.log.error(`Station livestream error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), channel: channel, origError: (0, utils_1.getError)(origError) });
@@ -2190,7 +2129,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceAddUser, username: username, passcode: "[redacted]", schedule: schedule } });
             const addUserResponse = await this.api.addUser(deviceSN, username, device.getStationSerial());
             if (addUserResponse !== null) {
-                await station.addUser(device, username, addUserResponse.short_user_id, passcode, schedule);
+                station.addUser(device, username, addUserResponse.short_user_id, passcode, schedule);
             }
             else {
                 this.emit("user error", device, username, new error_1.AddUserError("Error on creating user through cloud api call", { context: { deivce: deviceSN, username: username, passcode: "[redacted]", schedule: schedule } }));
@@ -2213,7 +2152,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        await station.deleteUser(device, user.user_name, user.short_user_id);
+                        station.deleteUser(device, user.user_name, user.short_user_id);
                         found = true;
                         break;
                     }
@@ -2278,7 +2217,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        await station.updateUserPasscode(device, user.user_name, user.short_user_id, passcode);
+                        station.updateUserPasscode(device, user.user_name, user.short_user_id, passcode);
                         found = true;
                     }
                 }
@@ -2307,7 +2246,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        await station.updateUserSchedule(device, user.user_name, user.short_user_id, schedule);
+                        station.updateUserSchedule(device, user.user_name, user.short_user_id, schedule);
                         found = true;
                     }
                 }
@@ -2379,7 +2318,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         device.update(raw);
                     }).catch((err) => {
                         const error = (0, error_1.ensureError)(err);
-                        this.log.error("onStationDatabaseQueryLatest Error", { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), returnCode: returnCode });
+                        if (!(error instanceof error_1.DeviceNotFoundError)) {
+                            this.log.error("onStationDatabaseQueryLatest Error", { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), returnCode: returnCode });
+                        }
                     });
                 }
             }

@@ -1350,7 +1350,6 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
 }
 exports.Device = Device;
 class Camera extends Device {
-    _isStreaming = false;
     constructor(api, device) {
         super(api, device);
         this.properties[types_1.PropertyName.DeviceMotionDetected] = false;
@@ -1390,90 +1389,15 @@ class Camera extends Device {
             this.log.error("Camera start detection - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial() });
         });
     }
-    async startStream() {
-        // Start the camera stream and return the RTSP URL.
-        //TODO: Deprecated. Will be removed!
-        try {
-            const response = await this.api.request({
-                method: "post",
-                endpoint: "v2/web/equipment/start_stream",
-                data: {
-                    device_sn: this.rawDevice.device_sn,
-                    station_sn: this.rawDevice.station_sn,
-                    proto: 2
-                }
-            });
-            this.log.debug("Camera start stream - Response", { data: response.data });
-            if (response.status == 200) {
-                const result = response.data;
-                if (result.code == 0) {
-                    const dataresult = this.api.decryptAPIData(result.data);
-                    this._isStreaming = true;
-                    this.log.info(`Livestream of camera ${this.rawDevice.device_sn} started`);
-                    //rtmp://p2p-vir-7.eufylife.com/hls/REDACTED==?time=1649675937&token=REDACTED
-                    return `rtmp://${dataresult.domain}/hls/${dataresult.stream_name}==?time=${dataresult.time}&token=${dataresult.token}`;
-                }
-                else {
-                    this.log.error("Camera start stream - Response code not ok", { code: result.code, msg: result.msg, data: response.data });
-                }
-            }
-            else {
-                this.log.error("Camera start stream - Status return code not 200", { status: response.status, statusText: response.statusText, data: response.data });
-            }
-        }
-        catch (err) {
-            const error = (0, error_2.ensureError)(err);
-            this.log.error("Camera start stream - Generic Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial() });
-        }
-        return "";
-    }
     async stopDetection() {
         // Stop camera detection.
         await this.setParameters([{ paramType: types_1.ParamType.DETECT_SWITCH, paramValue: 0 }]);
     }
-    async stopStream() {
-        // Stop the camera stream.
-        //TODO: Deprecated. Will be removed!
-        try {
-            const response = await this.api.request({
-                method: "post",
-                endpoint: "v2/web/equipment/stop_stream",
-                data: {
-                    device_sn: this.rawDevice.device_sn,
-                    station_sn: this.rawDevice.station_sn,
-                    proto: 2
-                }
-            });
-            this.log.debug("Camera stop stream - Response", { data: response.data });
-            if (response.status == 200) {
-                const result = response.data;
-                if (result.code == 0) {
-                    this._isStreaming = false;
-                    this.log.info(`Livestream of camera ${this.rawDevice.device_sn} stopped`);
-                }
-                else {
-                    this.log.error("Camera stop stream - Response code not ok", { code: result.code, msg: result.msg, data: response.data });
-                }
-            }
-            else {
-                this.log.error("Camera stop stream - Status return code not 200", { status: response.status, statusText: response.statusText, data: response.data });
-            }
-        }
-        catch (err) {
-            const error = (0, error_2.ensureError)(err);
-            this.log.error("Camera stop stream - Generic Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial() });
-        }
-    }
     getState() {
         return this.getPropertyValue(types_1.PropertyName.DeviceState);
     }
-    isStreaming() {
-        return this._isStreaming;
-    }
     async close() {
         //TODO: Stop other things if implemented such as detection feature
-        if (this._isStreaming)
-            await this.stopStream().catch();
     }
     getLastChargingDays() {
         return this.rawDevice.charging_days;
