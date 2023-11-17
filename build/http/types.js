@@ -31,6 +31,7 @@ var DeviceType;
     DeviceType[DeviceType["MINIBASE_CHIME"] = 25] = "MINIBASE_CHIME";
     DeviceType[DeviceType["CAMERA3"] = 19] = "CAMERA3";
     DeviceType[DeviceType["CAMERA3C"] = 23] = "CAMERA3C";
+    DeviceType[DeviceType["PROGESSIONAL_247"] = 24] = "PROGESSIONAL_247";
     DeviceType[DeviceType["INDOOR_CAMERA"] = 30] = "INDOOR_CAMERA";
     DeviceType[DeviceType["INDOOR_PT_CAMERA"] = 31] = "INDOOR_PT_CAMERA";
     DeviceType[DeviceType["SOLO_CAMERA"] = 32] = "SOLO_CAMERA";
@@ -4351,6 +4352,45 @@ exports.DeviceProperties = {
         [PropertyName.DeviceLightSettingsBrightnessManual]: exports.DeviceLightSettingsBrightnessManualCamera3Property,
         [PropertyName.DeviceLight]: exports.DeviceFloodlightLightProperty,
     },
+    [DeviceType.PROGESSIONAL_247]: {
+        ...exports.GenericDeviceProperties,
+        [PropertyName.DeviceWifiRSSI]: exports.DeviceWifiRSSIProperty,
+        [PropertyName.DeviceWifiSignalLevel]: exports.DeviceWifiSignalLevelProperty,
+        [PropertyName.DeviceEnabled]: exports.DeviceEnabledSoloProperty,
+        [PropertyName.DeviceNightvision]: exports.DeviceNightvisionProperty,
+        [PropertyName.DeviceStatusLed]: exports.DeviceStatusLedProperty,
+        [PropertyName.DeviceMotionDetection]: exports.DeviceMotionDetectionProperty,
+        [PropertyName.DeviceRTSPStream]: exports.DeviceRTSPStreamProperty,
+        [PropertyName.DeviceRTSPStreamUrl]: exports.DeviceRTSPStreamUrlProperty,
+        [PropertyName.DeviceWatermark]: exports.DeviceWatermarkProperty,
+        [PropertyName.DeviceState]: exports.DeviceStateProperty,
+        [PropertyName.DeviceMotionDetected]: exports.DeviceMotionDetectedProperty,
+        [PropertyName.DevicePersonDetected]: exports.DevicePersonDetectedProperty,
+        [PropertyName.DevicePicture]: exports.DevicePictureProperty,
+        [PropertyName.DevicePictureUrl]: exports.DevicePictureUrlProperty,
+        [PropertyName.DeviceMicrophone]: exports.DeviceMicrophoneProperty,
+        [PropertyName.DeviceSpeaker]: exports.DeviceSpeakerProperty,
+        [PropertyName.DeviceSpeakerVolume]: exports.DeviceSpeakerVolumeCamera3Property,
+        [PropertyName.DeviceAudioRecording]: exports.DeviceAudioRecordingProperty,
+        [PropertyName.DeviceMotionDetectionSensitivity]: exports.DeviceMotionDetectionSensitivityCamera2Property,
+        [PropertyName.DeviceMotionDetectionType]: exports.DeviceMotionDetectionTypeProperty,
+        [PropertyName.DevicePowerSource]: exports.DevicePowerSourceProperty,
+        [PropertyName.DevicePowerWorkingMode]: exports.DevicePowerWorkingModeProperty,
+        [PropertyName.DeviceChargingStatus]: exports.DeviceChargingStatusCamera3Property,
+        [PropertyName.DeviceRecordingClipLength]: exports.DeviceRecordingClipLengthProperty,
+        [PropertyName.DeviceRecordingRetriggerInterval]: exports.DeviceRecordingRetriggerIntervalProperty,
+        [PropertyName.DeviceRecordingEndClipMotionStops]: exports.DeviceRecordingEndClipMotionStopsProperty,
+        [PropertyName.DeviceNotificationType]: exports.DeviceNotificationTypeProperty,
+        [PropertyName.DeviceSnooze]: exports.DeviceSnoozeProperty,
+        [PropertyName.DeviceSnoozeTime]: exports.DeviceSnoozeTimeProperty,
+        [PropertyName.DeviceSnoozeStartTime]: exports.DeviceSnoozeStartTimeProperty,
+        [PropertyName.DevicePersonName]: exports.DevicePersonNameProperty,
+        [PropertyName.DeviceVideoStreamingQuality]: exports.DeviceVideoStreamingQualityCamera3Property,
+        [PropertyName.DeviceVideoRecordingQuality]: exports.DeviceVideoRecordingQualityCamera3Property,
+        [PropertyName.DeviceLightSettingsEnable]: exports.DeviceFloodlightLightSettingsEnableProperty,
+        [PropertyName.DeviceLightSettingsBrightnessManual]: exports.DeviceLightSettingsBrightnessManualCamera3Property,
+        [PropertyName.DeviceLight]: exports.DeviceFloodlightLightProperty,
+    },
     [DeviceType.CAMERA]: {
         ...exports.GenericDeviceProperties,
         [PropertyName.DeviceEnabled]: exports.DeviceEnabledProperty,
@@ -6948,6 +6988,16 @@ exports.DeviceCommands = {
         CommandName.DeviceSnooze,
     ],
     [DeviceType.CAMERA3C]: [
+        CommandName.DeviceStartLivestream,
+        CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
+        CommandName.DeviceStartDownload,
+        CommandName.DeviceCancelDownload,
+        CommandName.DeviceStartTalkback,
+        CommandName.DeviceStopTalkback,
+        CommandName.DeviceSnooze,
+    ],
+    [DeviceType.PROGESSIONAL_247]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
         CommandName.DeviceTriggerAlarmSound,

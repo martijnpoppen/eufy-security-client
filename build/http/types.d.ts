@@ -19,6 +19,7 @@ export declare enum DeviceType {
     MINIBASE_CHIME = 25,
     CAMERA3 = 19,
     CAMERA3C = 23,
+    PROGESSIONAL_247 = 24,
     INDOOR_CAMERA = 30,
     INDOOR_PT_CAMERA = 31,
     SOLO_CAMERA = 32,

@@ -787,6 +787,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.CAMERA2_PRO ||
             type == types_1.DeviceType.CAMERA3 ||
             type == types_1.DeviceType.CAMERA3C ||
+            type == types_1.DeviceType.PROGESSIONAL_247 ||
             type == types_1.DeviceType.INDOOR_CAMERA_1080 ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA_1080 ||
             type == types_1.DeviceType.SOLO_CAMERA ||
@@ -824,6 +825,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.CAMERA2_PRO ||
             type == types_1.DeviceType.CAMERA3 ||
             type == types_1.DeviceType.CAMERA3C ||
+            type == types_1.DeviceType.PROGESSIONAL_247 ||
             type == types_1.DeviceType.SOLO_CAMERA ||
             type == types_1.DeviceType.SOLO_CAMERA_PRO ||
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
@@ -1049,8 +1051,12 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     static isCamera3C(type) {
         return types_1.DeviceType.CAMERA3C == type;
     }
+    static isCameraProfessional247(type) {
+        // T8600 - E330
+        return types_1.DeviceType.PROGESSIONAL_247 == type;
+    }
     static isCamera3Product(type) {
-        return Device.isCamera3(type) || Device.isCamera3C(type);
+        return Device.isCamera3(type) || Device.isCamera3C(type) || Device.isCameraProfessional247(type);
     }
     static isEntrySensor(type) {
         //T8900
@@ -1246,6 +1252,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isCamera3C() {
         return Device.isCamera3C(this.rawDevice.device_type);
+    }
+    isCameraProfessional247() {
+        return Device.isCameraProfessional247(this.rawDevice.device_type);
     }
     isCamera3Product() {
         return Device.isCamera3Product(this.rawDevice.device_type);
