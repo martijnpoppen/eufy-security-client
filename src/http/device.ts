@@ -168,7 +168,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue {
         try {
             if (property.key === ParamType.PRIVATE_MODE || property.key === ParamType.OPEN_DEVICE || property.key === CommandType.CMD_DEVS_SWITCH) {
-                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === DeviceType.FLOODLIGHT_CAMERA_8424) {
+                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === DeviceType.FLOODLIGHT_CAMERA_8424 || this.isOutdoorPanAndTiltCamera()) {
                     return value !== undefined ? (value === "true" ? true : false) : false;
                 }
                 return value !== undefined ? (value === "0" ? true : false) : false;
@@ -762,6 +762,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             type == DeviceType.PROGESSIONAL_247 ||
             type == DeviceType.INDOOR_CAMERA_1080 ||
             type == DeviceType.INDOOR_PT_CAMERA_1080 ||
+            type == DeviceType.OUTDOOR_PT_CAMERA ||
             type == DeviceType.SOLO_CAMERA ||
             type == DeviceType.SOLO_CAMERA_PRO ||
             type == DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
@@ -874,6 +875,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             type == DeviceType.INDOOR_CAMERA_1080 ||
             type == DeviceType.INDOOR_PT_CAMERA ||
             type == DeviceType.INDOOR_PT_CAMERA_1080 ||
+            type == DeviceType.OUTDOOR_PT_CAMERA ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_1080P ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_2K ||
@@ -886,7 +888,14 @@ export class Device extends TypedEmitter<DeviceEvents> {
         if (type == DeviceType.INDOOR_PT_CAMERA ||
             type == DeviceType.INDOOR_PT_CAMERA_1080 ||
             type == DeviceType.FLOODLIGHT_CAMERA_8423 ||
-            type == DeviceType.INDOOR_COST_DOWN_CAMERA)
+            type == DeviceType.INDOOR_COST_DOWN_CAMERA ||
+            type == DeviceType.OUTDOOR_PT_CAMERA)
+            return true;
+        return false;
+    }
+
+    static isOutdoorPanAndTiltCamera(type: number): boolean {
+        if (type == DeviceType.OUTDOOR_PT_CAMERA)
             return true;
         return false;
     }
@@ -1355,6 +1364,10 @@ export class Device extends TypedEmitter<DeviceEvents> {
 
     public isPanAndTiltCamera(): boolean {
         return Device.isPanAndTiltCamera(this.rawDevice.device_type);
+    }
+
+    public isOutdoorPanAndTiltCamera(): boolean {
+        return Device.isOutdoorPanAndTiltCamera(this.rawDevice.device_type);
     }
 
     public isSmartDrop(): boolean {
