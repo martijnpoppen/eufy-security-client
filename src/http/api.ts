@@ -225,11 +225,8 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     }
 
     static async initialize(country: string, username: string, password: string, log: Logger = dummyLogger, persistentData?: HTTPApiPersistentData): Promise<HTTPApi> {
-        if (isValidCountry(country) && country.length === 2) {
-            const apiBase = await this.getApiBaseFromCloud(country);
-            return new HTTPApi(apiBase, country, username, password, log, persistentData);
-        }
-        throw new InvalidCountryCodeError("Invalid ISO 3166-1 Alpha-2 country code", { context: { countryCode: country } });
+        const apiBase = await this.getApiBaseFromCloud(country);
+        return new HTTPApi(apiBase, country, username, password, log, persistentData);
     }
 
     private clearScheduleRenewAuthToken(): void {

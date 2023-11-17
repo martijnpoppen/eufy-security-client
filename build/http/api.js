@@ -30,7 +30,6 @@ exports.HTTPApi = void 0;
 const got_1 = __importStar(require("got"));
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const ts_log_1 = require("ts-log");
-const i18n_iso_countries_1 = require("i18n-iso-countries");
 const i18n_iso_languages_1 = require("@cospired/i18n-iso-languages");
 const crypto_1 = require("crypto");
 const schedule = __importStar(require("node-schedule"));
@@ -230,11 +229,8 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         throw new error_2.ApiBaseLoadError("Error identifying API base from cloud", { context: { code: result.code, message: result.msg } });
     }
     static async initialize(country, username, password, log = ts_log_1.dummyLogger, persistentData) {
-        if ((0, i18n_iso_countries_1.isValid)(country) && country.length === 2) {
-            const apiBase = await this.getApiBaseFromCloud(country);
-            return new HTTPApi(apiBase, country, username, password, log, persistentData);
-        }
-        throw new error_1.InvalidCountryCodeError("Invalid ISO 3166-1 Alpha-2 country code", { context: { countryCode: country } });
+        const apiBase = await this.getApiBaseFromCloud(country);
+        return new HTTPApi(apiBase, country, username, password, log, persistentData);
     }
     clearScheduleRenewAuthToken() {
         if (this.renewAuthTokenJob !== undefined) {
