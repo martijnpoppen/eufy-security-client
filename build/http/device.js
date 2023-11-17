@@ -157,7 +157,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     convertRawPropertyValue(property, value) {
         try {
             if (property.key === types_1.ParamType.PRIVATE_MODE || property.key === types_1.ParamType.OPEN_DEVICE || property.key === types_2.CommandType.CMD_DEVS_SWITCH) {
-                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424) {
+                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || this.isOutdoorPanAndTiltCamera()) {
                     return value !== undefined ? (value === "true" ? true : false) : false;
                 }
                 return value !== undefined ? (value === "0" ? true : false) : false;
@@ -790,6 +790,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.PROGESSIONAL_247 ||
             type == types_1.DeviceType.INDOOR_CAMERA_1080 ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA_1080 ||
+            type == types_1.DeviceType.OUTDOOR_PT_CAMERA ||
             type == types_1.DeviceType.SOLO_CAMERA ||
             type == types_1.DeviceType.SOLO_CAMERA_PRO ||
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
@@ -893,6 +894,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.INDOOR_CAMERA_1080 ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA_1080 ||
+            type == types_1.DeviceType.OUTDOOR_PT_CAMERA ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_2K ||
@@ -904,7 +906,13 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         if (type == types_1.DeviceType.INDOOR_PT_CAMERA ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA_1080 ||
             type == types_1.DeviceType.FLOODLIGHT_CAMERA_8423 ||
-            type == types_1.DeviceType.INDOOR_COST_DOWN_CAMERA)
+            type == types_1.DeviceType.INDOOR_COST_DOWN_CAMERA ||
+            type == types_1.DeviceType.OUTDOOR_PT_CAMERA)
+            return true;
+        return false;
+    }
+    static isOutdoorPanAndTiltCamera(type) {
+        if (type == types_1.DeviceType.OUTDOOR_PT_CAMERA)
             return true;
         return false;
     }
@@ -1273,6 +1281,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isPanAndTiltCamera() {
         return Device.isPanAndTiltCamera(this.rawDevice.device_type);
+    }
+    isOutdoorPanAndTiltCamera() {
+        return Device.isOutdoorPanAndTiltCamera(this.rawDevice.device_type);
     }
     isSmartDrop() {
         return Device.isSmartDrop(this.rawDevice.device_type);

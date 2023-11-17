@@ -464,6 +464,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                 else if (device_1.Device.isIndoorCamera(normalized_message.type) ||
                     device_1.Device.isSoloCameras(normalized_message.type) ||
                     device_1.Device.isWallLightCam(normalized_message.type) ||
+                    device_1.Device.isOutdoorPanAndTiltCamera(normalized_message.type) ||
                     device_1.Device.isFloodLightT8420X(normalized_message.type, normalized_message.device_sn) ||
                     (device_1.Device.isFloodLight(normalized_message.type) && normalized_message.type !== types_1.DeviceType.FLOODLIGHT)) {
                     const push_data = message.payload.payload;

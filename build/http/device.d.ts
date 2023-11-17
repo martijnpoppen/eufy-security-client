@@ -51,6 +51,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isWiredDoorbellDual(type: number): boolean;
     static isIndoorCamera(type: number): boolean;
     static isPanAndTiltCamera(type: number): boolean;
+    static isOutdoorPanAndTiltCamera(type: number): boolean;
     static isFloodLight(type: number): boolean;
     static isFloodLightT8420X(type: number, serialnumber: string): boolean;
     static isWallLightCam(type: number): boolean;
@@ -151,6 +152,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isMotionSensor(): boolean;
     isIndoorCamera(): boolean;
     isPanAndTiltCamera(): boolean;
+    isOutdoorPanAndTiltCamera(): boolean;
     isSmartDrop(): boolean;
     isSmartSafe(): boolean;
     isGarageCamera(): boolean;
