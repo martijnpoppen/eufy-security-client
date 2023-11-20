@@ -164,4 +164,5 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onStationDatabaseDelete;
     private onStationSensorStatus;
     private onStationGarageDoorStatus;
+    private onStorageInfoHb3;
 }

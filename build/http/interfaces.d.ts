@@ -4,7 +4,7 @@ import { Readable } from "stream";
 import { Method } from "got";
 import { ImageType as ImageFileExtension } from "image-type";
 import { DatabaseCountByDate, DatabaseQueryLatestInfo, DatabaseQueryLocal, StreamMetadata } from "../p2p/interfaces";
-import { CommandResult } from "../p2p/models";
+import { CommandResult, StorageInfoBodyHB3 } from "../p2p/models";
 import { AlarmEvent, ChargingType, DatabaseReturnCode, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, TFCardStatus } from "../p2p/types";
 import { Camera, Device } from "./device";
 import { Cipher, Voice, Invite, DeviceListResponse, StationListResponse, HouseListResponse } from "./models";
@@ -197,6 +197,7 @@ export interface StationEvents {
     "database delete": (station: Station, returnCode: DatabaseReturnCode, failedIds: Array<unknown>) => void;
     "sensor status": (station: Station, channel: number, status: number) => void;
     "garage door status": (station: Station, channel: number, doorId: number, status: number) => void;
+    "storage info hb3": (station: Station, channel: number, storageInfo: StorageInfoBodyHB3) => void;
 }
 export interface DeviceEvents {
     "property changed": (device: Device, name: string, value: PropertyValue, ready: boolean) => void;

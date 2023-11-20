@@ -955,6 +955,7 @@ export class Station extends TypedEmitter<StationEvents> {
         this.log.info(`Disconnected from station ${this.getSerial()}`);
         this.emit("close", this);
         this.pinVerified = false;
+        console.log(`onDisconnect - ${this.getSerial()} - ${this.isEnergySavingDevice()} ${this.terminating}`)
         if (!this.isEnergySavingDevice() && !this.terminating)
             this.scheduleReconnect();
     }

@@ -81,6 +81,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.p2pSession.on("database delete", (returnCode, failedIds) => this.onDatabaseDelete(returnCode, failedIds));
         this.p2pSession.on("sensor status", (channel, status) => this.onSensorStatus(channel, status));
         this.p2pSession.on("garage door status", (channel, doorId, status) => this.onGarageDoorStatus(channel, doorId, status));
+        this.p2pSession.on("storage info hb3", (channel, storageInfo) => this.onStorageInfoHB3(channel, storageInfo));
     }
     initializeState() {
         this.update(this.rawStation);
@@ -676,8 +677,23 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
     }
     getStorageInfoEx() {
         this.log.debug(`Station send get storage info command`, { stationSN: this.getSerial() });
-        if (this.isStation() && (0, utils_1.isGreaterEqualMinVersion)("3.3.0.0", this.getSoftwareVersion())) {
+        if (this.isStation() && this.rawStation.device_type !== types_1.DeviceType.HB3 && (0, utils_1.isGreaterEqualMinVersion)("3.3.0.0", this.getSoftwareVersion())) {
             this.p2pSession.sendCommandWithoutData(types_2.CommandType.CMD_SDINFO_EX, Station.CHANNEL);
+        }
+        else if (this.rawStation.device_type === types_1.DeviceType.HB3) {
+            this.p2pSession.sendCommandWithStringPayload({
+                commandType: types_2.CommandType.CMD_SET_PAYLOAD,
+                value: JSON.stringify({
+                    "account_id": this.rawStation.member.admin_user_id,
+                    "cmd": types_2.CommandType.CMD_STORAGE_INFO_HB3,
+                    "mChannel": 0,
+                    "mValue3": 0,
+                    "payload": {
+                        "version": 0.0,
+                        "cmd": 11001.0,
+                    }
+                }),
+            });
         }
         else {
             this.p2pSession.sendCommandWithIntString({
@@ -876,6 +892,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         this.log.info(`Disconnected from station ${this.getSerial()}`);
         this.emit("close", this);
         this.pinVerified = false;
+        console.log(`onDisconnect - ${this.getSerial()} - ${this.isEnergySavingDevice()} ${this.terminating}`);
         if (!this.isEnergySavingDevice() && !this.terminating)
             this.scheduleReconnect();
     }
@@ -1418,7 +1435,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         if (!(direction in types_2.PanTiltDirection)) {
             throw new error_1.InvalidCommandValueError("Invalid value for this command", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
-        this.log.debug(`Station pan adn tilt - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), direction: types_2.PanTiltDirection[direction], command });
+        this.log.info(`Station pan adn tilt - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), direction: types_2.PanTiltDirection[direction], command });
         if (device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8423) {
             this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
@@ -3822,7 +3839,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         if ((device.isIndoorCamera() && !device.isIndoorCamMini()) || (device.isWiredDoorbell() && !device.isWiredDoorbellT8200X()) || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || device.isFloodLightT8420X())
             param_value = value === true ? 1 : 0;
         this.log.debug(`Station enable device - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), value: value });
-        if (device.isIndoorCamMini()) {
+        if (device.isIndoorCamMini() || device.isOutdoorPanAndTiltCamera()) {
             this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -8119,6 +8136,9 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         else {
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name } });
         }
+    }
+    onStorageInfoHB3(channel, storageInfo) {
+        this.emit("storage info hb3", this, channel, storageInfo);
     }
 }
 exports.Station = Station;

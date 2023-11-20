@@ -479,6 +479,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         station.on("database delete", (station, returnCode, failedIds) => this.onStationDatabaseDelete(station, returnCode, failedIds));
                         station.on("sensor status", (station, channel, status) => this.onStationSensorStatus(station, channel, status));
                         station.on("garage door status", (station, channel, doorId, status) => this.onStationGarageDoorStatus(station, channel, doorId, status));
+                        station.on("storage info hb3", (station, channel, storageInfo) => this.onStorageInfoHb3(station, channel, storageInfo));
                         this.addStation(station);
                         station.initialize();
                     }
@@ -2354,6 +2355,14 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             const error = (0, error_1.ensureError)(err);
             this.log.error(`Station garage door status error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), channel: channel });
         });
+    }
+    onStorageInfoHb3(station, channel, storageInfo) {
+        if (station.hasProperty(types_1.PropertyName.StationStorageInfoEmmc)) {
+            station.updateProperty(types_1.PropertyName.StationStorageInfoEmmc, storageInfo.emmc_info);
+        }
+        if (station.hasProperty(types_1.PropertyName.StationStorageInfoHdd)) {
+            station.updateProperty(types_1.PropertyName.StationStorageInfoHdd, storageInfo.hdd_info);
+        }
     }
 }
 exports.EufySecurity = EufySecurity;

@@ -1768,6 +1768,13 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                                     this.emit("garage door status", message.channel, payload.door_id, payload.type);
                                 }
                             }
+                            else if (json.cmd === types_1.CommandType.CMD_STORAGE_INFO_HB3) {
+                                const payload = json.payload;
+                                this.log.debug(`Handle DATA ${types_1.P2PDataType[message.dataType]} - CMD_NOTIFY_PAYLOAD StorageInfo HB3 update`, { stationSN: this.rawStation.station_sn, body: payload?.body });
+                                if (payload) {
+                                    this.emit("storage info hb3", message.channel, payload.body);
+                                }
+                            }
                             else {
                                 this.log.debug(`Handle DATA ${types_1.P2PDataType[message.dataType]} - CMD_NOTIFY_PAYLOAD - Not implemented`, { stationSN: this.rawStation.station_sn, commandIdName: types_1.CommandType[json.cmd], commandId: json.cmd, message: data.toString() });
                             }

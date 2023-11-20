@@ -5,7 +5,7 @@ import * as NodeRSA from "node-rsa";
 import { Readable } from "stream";
 import { SortedMap } from "sweet-collections";
 import { AlarmMode, DeviceType, MicStatus, TriggerType, VideoType } from "../http/types";
-import { Address, CmdCameraInfoResponse, CommandResult, CustomData } from "./models";
+import { Address, CmdCameraInfoResponse, CommandResult, CustomData, StorageInfoBodyHB3 } from "./models";
 import { TalkbackStream } from "./talkback";
 import { AlarmEvent, AudioCodec, ChargingType, CommandType, DatabaseReturnCode, IndoorSoloSmartdropCommandType, P2PDataType, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, P2PStorageType, TFCardStatus, VideoCodec, InternalP2PCommandType } from "./types";
 export interface P2PClientProtocolEvents {
@@ -49,6 +49,7 @@ export interface P2PClientProtocolEvents {
     "database delete": (returnCode: DatabaseReturnCode, failedIds: Array<unknown>) => void;
     "sensor status": (channel: number, status: number) => void;
     "garage door status": (channel: number, doorId: number, status: number) => void;
+    "storage info hb3": (channel: number, storageInfo: StorageInfoBodyHB3) => void;
 }
 export interface P2PQueueMessage {
     p2pCommandType: InternalP2PCommandType;

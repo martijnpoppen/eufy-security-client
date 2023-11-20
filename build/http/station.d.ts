@@ -326,4 +326,5 @@ export declare class Station extends TypedEmitter<StationEvents> {
     openDoor(device: Device, value: boolean, doorId?: number): void;
     private onGarageDoorStatus;
     calibrateGarageDoor(device: Device, doorId: number, type: CalibrateGarageType): void;
+    private onStorageInfoHB3;
 }

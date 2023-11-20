@@ -718,7 +718,9 @@ export declare enum PropertyName {
     StationAlarmDelayType = "alarmDelayType",
     StationSdStatus = "sdStatus",
     StationSdCapacity = "sdCapacity",
-    StationSdCapacityAvailable = "sdCapacityAvailable"
+    StationSdCapacityAvailable = "sdCapacityAvailable",
+    StationStorageInfoEmmc = "storageInfoEmmc",
+    StationStorageInfoHdd = "storageInfoHdd"
 }
 export declare const DeviceNameProperty: PropertyMetadataString;
 export declare const DeviceModelProperty: PropertyMetadataString;
@@ -1113,6 +1115,8 @@ export declare const StationAlarmDelayTypeProperty: PropertyMetadataNumeric;
 export declare const StationSdStatusProperty: PropertyMetadataNumeric;
 export declare const StationSdCapacityProperty: PropertyMetadataNumeric;
 export declare const StationSdAvailableCapacityProperty: PropertyMetadataNumeric;
+export declare const StationStorageInfoEmmcProperty: PropertyMetadataObject;
+export declare const StationStorageInfoHddProperty: PropertyMetadataObject;
 export declare const StationProperties: Properties;
 export declare enum CommandName {
     DeviceStartLivestream = "deviceStartLivestream",
