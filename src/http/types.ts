@@ -784,7 +784,8 @@ export enum PropertyName {
     StationSdStatus = "sdStatus",
     StationSdCapacity = "sdCapacity",
     StationSdCapacityAvailable = "sdCapacityAvailable",
-
+    StationStorageInfoEmmc = "storageInfoEmmc",
+    StationStorageInfoHdd = "storageInfoHdd",
 }
 
 export const DeviceNameProperty: PropertyMetadataString = {
@@ -3216,7 +3217,7 @@ export const DeviceDualCamWatchViewModeProperty: PropertyMetadataNumeric = {
         2: "Top-Left Picture-in-Picture",
         3: "Top-Right Picture-in-Picture",
         4: "Bottom-Left Picture-in-Picture",
-        5: "Bottom-Left Picture-in-Picture",
+        5: "Bottom-Right Picture-in-Picture",
         12: "Split-view",
     },
     default: 12,
@@ -6990,6 +6991,24 @@ export const StationSdAvailableCapacityProperty: PropertyMetadataNumeric = {
     default: undefined,
 }
 
+export const StationStorageInfoEmmcProperty: PropertyMetadataObject = {
+    key: "storage_info_emmc",
+    name: PropertyName.StationStorageInfoEmmc,
+    label: "Storage Info Emmc",
+    readable: true,
+    writeable: true,
+    type: "object",
+}
+
+export const StationStorageInfoHddProperty: PropertyMetadataObject = {
+    key: "storage_info_hdd",
+    name: PropertyName.StationStorageInfoHdd,
+    label: "Storage Info Hdd",
+    readable: true,
+    writeable: true,
+    type: "object",
+}
+
 export const StationProperties: Properties = {
     [DeviceType.STATION]: {
         ...BaseStationProperties,
@@ -7049,9 +7068,11 @@ export const StationProperties: Properties = {
         [PropertyName.StationAlarmArmDelay]: StationAlarmArmDelayProperty,
         [PropertyName.StationAlarmDelay]: StationAlarmDelayProperty,
         [PropertyName.StationAlarmDelayType]: StationAlarmDelayTypeProperty,
-        [PropertyName.StationSdStatus]: StationSdStatusProperty,
+        /*[PropertyName.StationSdStatus]: StationSdStatusProperty,
         [PropertyName.StationSdCapacity]: StationSdCapacityProperty,
-        [PropertyName.StationSdCapacityAvailable]: StationSdAvailableCapacityProperty,
+        [PropertyName.StationSdCapacityAvailable]: StationSdAvailableCapacityProperty,*/
+        [PropertyName.StationStorageInfoEmmc]: StationStorageInfoEmmcProperty,
+        [PropertyName.StationStorageInfoHdd]: StationStorageInfoHddProperty,
     },
     [DeviceType.MINIBASE_CHIME]: {
         ...BaseStationProperties,
