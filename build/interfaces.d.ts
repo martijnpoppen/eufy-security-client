@@ -20,6 +20,7 @@ export interface EufySecurityConfig {
     language?: string;
     trustedDeviceName?: string;
     persistentDir?: string;
+    persistentData?: string;
     p2pConnectionSetup: number;
     pollingIntervalMinutes: number;
     eventDurationSeconds: number;
@@ -105,6 +106,7 @@ export interface EufySecurityEvents {
     "connection error": (error: Error) => void;
     "tfa request": () => void;
     "captcha request": (id: string, captcha: string) => void;
+    "persistent data": (data: string) => void;
     "mqtt connect": () => void;
     "mqtt close": () => void;
     "mqtt lock message": (message: DeviceSmartLockMessage) => void;

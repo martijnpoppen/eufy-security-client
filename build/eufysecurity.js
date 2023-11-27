@@ -120,7 +120,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         else if (!fse.existsSync(this.config.persistentDir)) {
             this.config.persistentDir = path.resolve(__dirname, "../../..");
         }
-        this.persistentFile = path.join(this.config.persistentDir, "persistent.json");
+        if (this.config.persistentData) {
+            this.persistentData = JSON.parse(this.config.persistentData);
+        }
+        else {
+            this.persistentFile = path.join(this.config.persistentDir, "persistent.json");
+        }
         try {
             if (fse.statSync(this.persistentFile).isFile()) {
                 const fileContent = fse.readFileSync(this.persistentFile, "utf8");
@@ -825,7 +830,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         this.persistentData.httpApi = this.api?.getPersistentData();
         this.persistentData.country = this.api?.getCountry();
         try {
-            fse.writeFileSync(this.persistentFile, JSON.stringify(this.persistentData));
+            if (this.config.persistentData) {
+                this.emit("persistent data", JSON.stringify(this.persistentData));
+            }
+            else {
+                fse.writeFileSync(this.persistentFile, JSON.stringify(this.persistentData));
+            }
         }
         catch (err) {
             const error = (0, error_1.ensureError)(err);
