@@ -157,6 +157,7 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     updateUserSchedule(deviceSN: string, username: string, schedule: Schedule): Promise<void>;
     private onStationDevicePinVerified;
     private onStationSdInfoEx;
+    private _emitStationImageDownload;
     private onStationImageDownload;
     private onStationDatabaseQueryLatest;
     private onStationDatabaseQueryLocal;

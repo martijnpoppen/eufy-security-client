@@ -19,7 +19,10 @@ export declare class PushNotificationService extends TypedEmitter<PushNotificati
     private log;
     private connected;
     private connecting;
-    constructor(log?: Logger);
+    private got;
+    private constructor();
+    private loadLibraries;
+    static initialize(log?: Logger): Promise<PushNotificationService>;
     private buildExpiresAt;
     private registerFid;
     private renewFidToken;

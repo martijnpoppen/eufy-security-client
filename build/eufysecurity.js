@@ -32,7 +32,6 @@ const ts_log_1 = require("ts-log");
 const fse = __importStar(require("fs-extra"));
 const path = __importStar(require("path"));
 const events_1 = __importDefault(require("events"));
-const image_type_1 = __importDefault(require("image-type"));
 const api_1 = require("./http/api");
 const station_1 = require("./http/station");
 const types_1 = require("./http/types");
@@ -210,7 +209,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.log.debug("Generated new serial_number", { serialnumber: this.persistentData.serial_number });
         }
         this.api.setSerialNumber(this.persistentData.serial_number);
-        this.pushService = new service_1.PushNotificationService(this.log);
+        this.pushService = await service_1.PushNotificationService.initialize(this.log);
         this.pushService.on("connect", async (token) => {
             this.pushCloudRegistered = await this.api.registerPushToken(token);
             this.pushCloudChecked = await this.api.checkPushToken();
@@ -2284,12 +2283,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             station.updateProperty(types_1.PropertyName.StationSdCapacityAvailable, sdCapacityAvailable);
         }
     }
-    onStationImageDownload(station, file, image) {
-        const type = (0, image_type_1.default)(image);
-        const picture = {
-            data: image,
-            type: type !== null ? type : { ext: "unknown", mime: "application/octet-stream" }
-        };
+    _emitStationImageDownload(station, file, picture) {
         this.emit("station image download", station, file, picture);
         this.getDevicesFromStation(station.getSerial()).then((devices) => {
             for (const device of devices) {
@@ -2302,6 +2296,27 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         }).catch((err) => {
             const error = (0, error_1.ensureError)(err);
             this.log.error(`onStationImageDownload - Set first picture error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), file: file });
+        });
+    }
+    onStationImageDownload(station, file, image) {
+        import("image-type").then(({ default: imageType }) => {
+            imageType(image).then((type) => {
+                const picture = {
+                    data: image,
+                    type: type !== null && type !== undefined ? type : { ext: "unknown", mime: "application/octet-stream" }
+                };
+                this._emitStationImageDownload(station, file, picture);
+            }).catch(() => {
+                this._emitStationImageDownload(station, file, {
+                    data: image,
+                    type: { ext: "unknown", mime: "application/octet-stream" }
+                });
+            });
+        }).catch(() => {
+            this._emitStationImageDownload(station, file, {
+                data: image,
+                type: { ext: "unknown", mime: "application/octet-stream" }
+            });
         });
     }
     onStationDatabaseQueryLatest(station, returnCode, data) {

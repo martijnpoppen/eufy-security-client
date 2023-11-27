@@ -9,7 +9,6 @@ const const_1 = require("./const");
 const md5_1 = __importDefault(require("crypto-js/md5"));
 const enc_hex_1 = __importDefault(require("crypto-js/enc-hex"));
 const sha256_1 = __importDefault(require("crypto-js/sha256"));
-const image_type_1 = __importDefault(require("image-type"));
 const types_1 = require("./types");
 const error_1 = require("../error");
 const error_2 = require("./error");
@@ -487,11 +486,12 @@ const getImagePath = function (path) {
 };
 exports.getImagePath = getImagePath;
 const getImage = async function (api, serial, url) {
+    const { default: imageType } = await import("image-type");
     const image = await api.getImage(serial, url);
-    const type = await (0, image_type_1.default)(image);
+    const type = await imageType(image);
     return {
         data: image,
-        type: type !== null ? type : { ext: "unknown", mime: "application/octet-stream" }
+        type: type !== null && type !== undefined ? type : { ext: "unknown", mime: "application/octet-stream" }
     };
 };
 exports.getImage = getImage;

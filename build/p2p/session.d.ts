@@ -32,7 +32,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private connected;
     private connecting;
     private terminating;
-    private handshake_UNKNOWN71;
+    private p2pTurn;
     private seqNumber;
     private offsetDataSeqNumber;
     private videoSeqNumber;
@@ -103,11 +103,11 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private localLookup;
     private cloudLookup;
     private cloudLookup2;
-    private cloudLookup3;
+    private cloudLookupWithTurnServer;
     private localLookupByAddress;
     private cloudLookupByAddress;
     private cloudLookupByAddress2;
-    private cloudLookupByAddress3;
+    private cloudLookupByAddressWithTurnServer;
     isConnected(): boolean;
     private _startConnectTimeout;
     private _connect;

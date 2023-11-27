@@ -126,7 +126,6 @@ var GarageDoorPushEvent;
 var SmartSafeEvent;
 (function (SmartSafeEvent) {
     SmartSafeEvent[SmartSafeEvent["ALARM_911"] = 1946161152] = "ALARM_911";
-    SmartSafeEvent[SmartSafeEvent["BASE"] = 1946161152] = "BASE";
     SmartSafeEvent[SmartSafeEvent["LOCK_STATUS"] = 1946161153] = "LOCK_STATUS";
     SmartSafeEvent[SmartSafeEvent["SHAKE_ALARM"] = 1946161154] = "SHAKE_ALARM";
     SmartSafeEvent[SmartSafeEvent["BATTERY_STATUS"] = 1946161155] = "BATTERY_STATUS";

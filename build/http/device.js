@@ -2149,7 +2149,7 @@ class WallLightCam extends Camera {
                         result.push({
                             colors: theme.colors.map((color) => (0, utils_2.DecimalToRGBColor)(color)),
                             mode: theme.mode,
-                            name: theme.name,
+                            name: theme.name, // 1 fade 2 blink
                             speed: theme.speed // Control speed 500 msec to 5 sec.; 500 msec steps
                         });
                     }

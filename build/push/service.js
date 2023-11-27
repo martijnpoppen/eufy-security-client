@@ -22,12 +22,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PushNotificationService = void 0;
-const got_1 = __importDefault(require("got"));
 const qs = __importStar(require("qs"));
 const ts_log_1 = require("ts-log");
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
@@ -56,9 +52,19 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
     log;
     connected = false;
     connecting = false;
+    got;
     constructor(log = ts_log_1.dummyLogger) {
         super();
         this.log = log;
+    }
+    async loadLibraries() {
+        const { default: got } = await import("got");
+        this.got = got;
+    }
+    static async initialize(log = ts_log_1.dummyLogger) {
+        const service = new PushNotificationService(log);
+        await service.loadLibraries();
+        return service;
     }
     buildExpiresAt(expiresIn) {
         if (expiresIn.endsWith("ms")) {
@@ -72,7 +78,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
     async registerFid(fid) {
         const url = `https://firebaseinstallations.googleapis.com/v1/projects/${this.FCM_PROJECT_ID}/installations`;
         try {
-            const response = await (0, got_1.default)(url, {
+            const response = await this.got(url, {
                 method: "post",
                 json: {
                     fid: fid,
@@ -98,7 +104,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                             const { response, options } = error;
                             const statusCode = response?.statusCode || 0;
                             const { method, url, prefixUrl } = options;
-                            const shortUrl = (0, utils_3.getShortUrl)(url, prefixUrl);
+                            const shortUrl = (0, utils_3.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
                             const body = response?.body ? response.body : error.message;
                             if (response?.body) {
                                 error.name = "RegisterFidError";
@@ -133,7 +139,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
     async renewFidToken(fid, refreshToken) {
         const url = `https://firebaseinstallations.googleapis.com/v1/projects/${this.FCM_PROJECT_ID}/installations/${fid}/authTokens:generate`;
         try {
-            const response = await (0, got_1.default)(url, {
+            const response = await this.got(url, {
                 method: "post",
                 json: {
                     installation: {
@@ -160,7 +166,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                             const { response, options } = error;
                             const statusCode = response?.statusCode || 0;
                             const { method, url, prefixUrl } = options;
-                            const shortUrl = (0, utils_3.getShortUrl)(url, prefixUrl);
+                            const shortUrl = (0, utils_3.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
                             const body = response?.body ? response.body : error.message;
                             if (response?.body) {
                                 error.name = "RenewFidTokenError";
@@ -246,7 +252,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
         const url = "https://android.clients.google.com/checkin";
         try {
             const buffer = await (0, utils_1.buildCheckinRequest)();
-            const response = await (0, got_1.default)(url, {
+            const response = await this.got(url, {
                 method: "post",
                 body: Buffer.from(buffer),
                 headers: {
@@ -265,7 +271,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                             const { response, options } = error;
                             const statusCode = response?.statusCode || 0;
                             const { method, url, prefixUrl } = options;
-                            const shortUrl = (0, utils_3.getShortUrl)(url, prefixUrl);
+                            const shortUrl = (0, utils_3.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
                             const body = response?.body ? response.body : error.message;
                             if (response?.body) {
                                 error.name = "ExecuteCheckInError";
@@ -298,7 +304,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
         const retry = 5;
         try {
             for (let retry_count = 1; retry_count <= retry; retry_count++) {
-                const response = await (0, got_1.default)(url, {
+                const response = await this.got(url, {
                     method: "post",
                     body: qs.stringify({
                         "X-subtype": `${this.APP_SENDER_ID}`,
@@ -343,7 +349,7 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                                 const { response, options } = error;
                                 const statusCode = response?.statusCode || 0;
                                 const { method, url, prefixUrl } = options;
-                                const shortUrl = (0, utils_3.getShortUrl)(url, prefixUrl);
+                                const shortUrl = (0, utils_3.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
                                 const body = response?.body ? response.body : error.message;
                                 if (response?.body) {
                                     error.name = "RegisterGcmError";

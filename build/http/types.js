@@ -872,7 +872,7 @@ exports.GenericTypeProperty = {
         100: "Indoor Cost Down Camera",
         101: "Camera Gun",
         102: "Camera Snail",
-        110: "Starlight 4G LTE",
+        110: "Starlight 4G LTE", //T8150
         131: "Camera Garage T8453 Common",
         132: "Garage-Control Cam E110 (T8452)",
         133: "Garage-Control Cam E120 (T8453)",
@@ -1430,7 +1430,7 @@ exports.DeviceBasicLockStatusProperty = {
     writeable: false,
     type: "number",
     states: {
-        1: "1",
+        1: "1", //TODO: Finish naming of states
         2: "2",
         3: "Unlocked",
         4: "Locked",
@@ -6937,6 +6937,9 @@ exports.StationProperties = {
         [PropertyName.StationAlarm]: exports.StationAlarmProperty,
         [PropertyName.StationAlarmType]: exports.StationAlarmTypeProperty,
         [PropertyName.StationAlarmVolume]: exports.StationAlarmVolumeWalllightProperty,
+        [PropertyName.StationSdStatus]: exports.StationSdStatusProperty,
+        [PropertyName.StationSdCapacity]: exports.StationSdCapacityProperty,
+        [PropertyName.StationSdCapacityAvailable]: exports.StationSdAvailableCapacityProperty,
     },
     [DeviceType.WALL_LIGHT_CAM_81A0]: {
         ...exports.BaseStationProperties,

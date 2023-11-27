@@ -54,7 +54,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     connected = false;
     connecting = false;
     terminating = false;
-    handshake_UNKNOWN71 = false;
+    p2pTurn = {};
     seqNumber = 0;
     offsetDataSeqNumber = 0;
     videoSeqNumber = 0;
@@ -140,7 +140,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     _initialize() {
         let rsaKey;
         this.connected = false;
-        this.handshake_UNKNOWN71 = false;
+        this.p2pTurn = {};
         this.connecting = false;
         this.lastPong = null;
         this.lastPongData = undefined;
@@ -331,8 +331,8 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     cloudLookup2() {
         this.cloudAddresses.map((address) => this.cloudLookupByAddress2(address));
     }
-    cloudLookup3(origAddress, data) {
-        this.cloudAddresses.map((address) => this.cloudLookupByAddress3(address, origAddress, data));
+    cloudLookupWithTurnServer(origAddress, data) {
+        this.cloudAddresses.map((address) => this.cloudLookupByAddressWithTurnServer(address, origAddress, data));
     }
     async localLookupByAddress(address) {
         // Send lookup message
@@ -352,11 +352,11 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
         const payload = (0, utils_1.buildLookupWithKeyPayload2)(this.rawStation.p2p_did, this.dskKey);
         await this.sendMessage(`Cloud lookup addresses (2)`, address, msgId, payload);
     }
-    async cloudLookupByAddress3(address, origAddress, data) {
+    async cloudLookupByAddressWithTurnServer(address, origAddress, data) {
         // Send lookup message3
-        const msgId = types_1.RequestMessageType.LOOKUP_WITH_KEY3;
+        const msgId = types_1.RequestMessageType.TURN_LOOKUP_WITH_KEY;
         const payload = (0, utils_1.buildLookupWithKeyPayload3)(this.rawStation.p2p_did, origAddress, data);
-        await this.sendMessage(`Cloud lookup addresses (3)`, address, msgId, payload);
+        await this.sendMessage(`Cloud lookup addresses with turn server`, address, msgId, payload);
     }
     isConnected() {
         return this.connected;
@@ -370,8 +370,11 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     }
     _connect(address, p2p_did) {
         this.log.debug(`Connecting to host ${address.host} on port ${address.port} (CHECK_CAM)`, { stationSN: this.rawStation.station_sn, address: address, p2pDid: p2p_did });
-        for (let i = 0; i < 4; i++)
-            this.sendCamCheck(address, p2p_did);
+        this.sendCamCheck(address, p2p_did);
+        for (let i = address.port - 3; i < address.port; i++)
+            this.sendCamCheck({ host: address.host, port: i }, p2p_did);
+        for (let i = address.port + 1; i <= address.port + 3; i++)
+            this.sendCamCheck({ host: address.host, port: i }, p2p_did);
         this._startConnectTimeout();
     }
     lookup(host) {
@@ -745,7 +748,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                 }
             }
         }
-        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.CAM_ID) || (0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.CAM_ID2)) {
+        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.CAM_ID) || (0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.TURN_SERVER_CAM_ID)) {
             // Answer from the device to a CAM_CHECK message
             if (!this.connected) {
                 this.log.debug(`Received message - CAM_ID - Connected to station ${this.rawStation.station_sn} on host ${rinfo.address} port ${rinfo.port}`);
@@ -1000,25 +1003,35 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                 for (let i = 0; i < 4; i++)
                     this.sendCamCheck2({ host: ip, port: port }, data);
                 this._startConnectTimeout();
-                this.sendMessage(`Send UNKNOWN_70`, { host: ip, port: port }, types_1.RequestMessageType.UNKNOWN_70);
+                if (this.p2pTurn[ip] === undefined) {
+                    this.p2pTurn[ip] = {
+                        initialized: true,
+                        confirmed: false
+                    };
+                    this.sendMessage(`Send TURN_SERVER_INIT`, { host: ip, port: port }, types_1.RequestMessageType.TURN_SERVER_INIT);
+                }
             }
         }
-        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.UNKNOWN_71)) {
-            if (!this.connected && !this.handshake_UNKNOWN71) {
-                this.log.debug(`Received message - UNKNOWN_71 - Got response`, { stationSN: this.rawStation.station_sn, remoteAddress: rinfo.address, remotePort: rinfo.port, response: { message: msg.toString("hex"), length: msg.length } });
-                this.sendMessage(`Send UNKNOWN_71`, { host: rinfo.address, port: rinfo.port }, types_1.RequestMessageType.UNKNOWN_71);
-                this.handshake_UNKNOWN71 = true;
+        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.TURN_SERVER_OK)) {
+            if (!this.connected && !this.p2pTurn[rinfo.address]?.confirmed) {
+                this.log.debug(`Received message - TURN_SERVER_OK - Got response`, { stationSN: this.rawStation.station_sn, remoteAddress: rinfo.address, remotePort: rinfo.port, response: { message: msg.toString("hex"), length: msg.length } });
+                this.sendMessage(`Send TURN_CLIENT_OK`, { host: rinfo.address, port: rinfo.port }, types_1.RequestMessageType.TURN_CLIENT_OK);
+                this.p2pTurn[rinfo.address].confirmed = true;
             }
         }
-        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.UNKNOWN_73)) {
+        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.TURN_SERVER_TOKEN)) {
             if (!this.connected) {
+                const ip = `${msg[7]}.${msg[6]}.${msg[5]}.${msg[4]}`;
                 const port = msg.subarray(8, 10).readUInt16BE();
-                const data = msg.subarray(4, 8);
-                this.log.debug(`Received message - UNKNOWN_73 - Got response`, { stationSN: this.rawStation.station_sn, remoteAddress: rinfo.address, remotePort: rinfo.port, response: { port: port, data: data.toString("hex") } });
-                this.cloudLookup3({ host: rinfo.address, port: port }, data);
+                const binaryIP = msg.subarray(4, 8);
+                this.log.debug(`Connecting to host ${ip} on port ${port} (CHECK_CAM2)...`, { stationSN: this.rawStation.station_sn, ip: ip, port: port, binaryIP: binaryIP.toString("hex") });
+                for (let i = 0; i < 4; i++)
+                    this.sendCamCheck2({ host: rinfo.address, port: port }, binaryIP);
+                this.log.debug(`Received message - TURN_SERVER_TOKEN - Got response`, { stationSN: this.rawStation.station_sn, remoteAddress: rinfo.address, remotePort: rinfo.port, response: { port: port, binaryIP: binaryIP.toString("hex") } });
+                this.cloudLookupWithTurnServer({ host: rinfo.address, port: port }, binaryIP);
             }
         }
-        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.UNKNOWN_81) || (0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.UNKNOWN_83)) {
+        else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.TURN_SERVER_LOOKUP_OK) || (0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.UNKNOWN_83) || (0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.TURN_SERVER_LIST)) {
             // Do nothing / ignore
         }
         else if ((0, utils_1.hasHeader)(msg, types_1.ResponseMessageType.LOOKUP_RESP)) {

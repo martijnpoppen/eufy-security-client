@@ -114,7 +114,6 @@ export declare enum GarageDoorPushEvent {
 }
 export declare enum SmartSafeEvent {
     ALARM_911 = 1946161152,
-    BASE = 1946161152,
     LOCK_STATUS = 1946161153,
     SHAKE_ALARM = 1946161154,
     BATTERY_STATUS = 1946161155,

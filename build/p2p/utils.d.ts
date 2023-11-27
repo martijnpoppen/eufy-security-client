@@ -1,3 +1,5 @@
+/// <reference types="node" />
+/// <reference types="node" />
 import { Socket } from "dgram";
 import NodeRSA from "node-rsa";
 import { P2PMessageParts, P2PMessageState, P2PQueueMessage, RGBColor } from "./interfaces";

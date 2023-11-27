@@ -25,6 +25,7 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     private headers;
     private constructor();
     static getApiBaseFromCloud(country: string): Promise<string>;
+    private loadLibraries;
     static initialize(country: string, username: string, password: string, log?: Logger, persistentData?: HTTPApiPersistentData): Promise<HTTPApi>;
     private clearScheduleRenewAuthToken;
     private scheduleRenewAuthToken;

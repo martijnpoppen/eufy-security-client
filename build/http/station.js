@@ -1812,7 +1812,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 value: JSON.stringify({
                     "account_id": this.rawStation.member.admin_user_id,
                     "cmd": types_2.CommandType.CMD_SET_MOTION_DETECTION_TYPE_HB3,
-                    "mChannel": 0,
+                    "mChannel": 0, //device.getChannel(),
                     "mValue3": 0,
                     "payload": {
                         "ai_detect_type": (0, utils_1.getHB3DetectionMode)(Number.parseInt(aiDetectionType), type, value),
@@ -3839,7 +3839,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         if ((device.isIndoorCamera() && !device.isIndoorCamMini()) || (device.isWiredDoorbell() && !device.isWiredDoorbellT8200X()) || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || device.isFloodLightT8420X())
             param_value = value === true ? 1 : 0;
         this.log.debug(`Station enable device - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), value: value });
-        if (device.isIndoorCamMini() || device.isOutdoorPanAndTiltCamera()) {
+        if (device.isIndoorCamMini()) {
             this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_DOORBELL_SET_PAYLOAD,
                 value: JSON.stringify({
@@ -7258,11 +7258,11 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
             value: JSON.stringify({
                 account_id: this.rawStation.member.admin_user_id,
                 cmd: types_2.CommandType.CMD_DATABASE_IMAGE,
-                mChannel: Station.CHANNEL,
+                mChannel: Station.CHANNEL, //TODO: Check indoor devices
                 payload: [{ "file": cover_path }],
                 "transaction": cover_path
             }),
-            channel: Station.CHANNEL,
+            channel: Station.CHANNEL, //TODO: Check indoor devices
             strValueSub: this.rawStation.member.admin_user_id,
         }, {
             command: commandData,

@@ -1,8 +1,12 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { Readable } from "stream";
-import { Method } from "got";
-import { ImageType as ImageFileExtension } from "image-type";
+import type { Method } from "got" with {
+    "resolution-mode": "import"
+};
+import type { ImageFileExtension } from "image-type" with {
+    "resolution-mode": "import"
+};
 import { DatabaseCountByDate, DatabaseQueryLatestInfo, DatabaseQueryLocal, StreamMetadata } from "../p2p/interfaces";
 import { CommandResult, StorageInfoBodyHB3 } from "../p2p/models";
 import { AlarmEvent, ChargingType, DatabaseReturnCode, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, TFCardStatus } from "../p2p/types";

@@ -1,12 +1,13 @@
+/// <reference types="node" />
 import { LockV12P2PCommandType } from "./models";
 export declare const RequestMessageType: {
     STUN: Buffer;
     LOOKUP: Buffer;
     LOOKUP_WITH_KEY: Buffer;
     LOOKUP_WITH_KEY2: Buffer;
-    LOOKUP_WITH_KEY3: Buffer;
-    UNKNOWN_70: Buffer;
-    UNKNOWN_71: Buffer;
+    TURN_LOOKUP_WITH_KEY: Buffer;
+    TURN_SERVER_INIT: Buffer;
+    TURN_CLIENT_OK: Buffer;
     CHECK_CAM2: Buffer;
     LOCAL_LOOKUP: Buffer;
     PING: Buffer;
@@ -21,12 +22,13 @@ export declare const ResponseMessageType: {
     LOOKUP_RESP: Buffer;
     LOOKUP_ADDR: Buffer;
     LOCAL_LOOKUP_RESP: Buffer;
-    UNKNOWN_71: Buffer;
-    UNKNOWN_73: Buffer;
-    UNKNOWN_81: Buffer;
+    TURN_SERVER_LIST: Buffer;
+    TURN_SERVER_OK: Buffer;
+    TURN_SERVER_TOKEN: Buffer;
+    TURN_SERVER_LOOKUP_OK: Buffer;
     LOOKUP_ADDR2: Buffer;
     UNKNOWN_83: Buffer;
-    CAM_ID2: Buffer;
+    TURN_SERVER_CAM_ID: Buffer;
     END: Buffer;
     PONG: Buffer;
     PING: Buffer;
@@ -528,8 +530,8 @@ export declare enum CommandType {
     CMD_WALL_LIGHT_NOTIFICATION_TYPE_HUMAN = 6335,
     CMD_WALL_LIGHT_NOTIFICATION_TYPE_ALL = 6337,
     CMD_WALL_LIGHT_NOTIFICATION_TYPE = 6338,
-    CMD_WALL_LIGHT_SETTINGS_COLORED_LIGHTING_COLORS = 6379,
-    CMD_WALL_LIGHT_SETTINGS_DYNAMIC_LIGHTING_THEMES = 6380,
+    CMD_WALL_LIGHT_SETTINGS_COLORED_LIGHTING_COLORS = 6379,// [{"color":16760832},{"color":16744448},{"color":16728320},{"color":16720384},{"color":16711696},{"color":3927961},{"color":1568995},{"color":485368},{"color":9983},{"color":4664060},{"color":16769280}]
+    CMD_WALL_LIGHT_SETTINGS_DYNAMIC_LIGHTING_THEMES = 6380,// [{"name":"Aurora","mode":1,"id":0,"speed":4000,"colors":[65321,65468,28671,9215,42239]},{"name":"Warmth","mode":1,"id":1,"speed":4000,"colors":[16758528,16744448,16732160,16719360,16742144]},{"name":"Let's Party","mode":2,"id":2,"speed":500,"colors":[16718080,16756736,65298,40703,4980991]}]
     CMD_WALL_LIGHT_SETTINGS_MANUAL_LIGHTING_ACTIVE_MODE = 6381,
     CMD_WALL_LIGHT_SETTINGS_SCHEDULE_LIGHTING_ACTIVE_MODE = 6382,
     CMD_WALL_LIGHT_SETTINGS_MOTION_LIGHTING_ACTIVE_MODE = 6383,
@@ -738,8 +740,8 @@ export declare enum VideoCodec {
 export declare enum AudioCodec {
     UNKNOWN = -1,
     NONE = 0,
-    AAC = 1,
-    AAC_LC = 2,
+    AAC = 1,// 0
+    AAC_LC = 2,// 1
     AAC_ELD = 3
 }
 export declare enum ESLCommand {

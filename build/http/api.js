@@ -22,18 +22,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HTTPApi = void 0;
-const got_1 = __importStar(require("got"));
 const tiny_typed_emitter_1 = require("tiny-typed-emitter");
 const ts_log_1 = require("ts-log");
 const i18n_iso_languages_1 = require("@cospired/i18n-iso-languages");
 const crypto_1 = require("crypto");
 const schedule = __importStar(require("node-schedule"));
-const p_throttle_1 = __importDefault(require("p-throttle"));
 const types_1 = require("./types");
 const parameter_1 = require("./parameter");
 const utils_1 = require("./utils");
@@ -54,10 +49,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
     log;
     connected = false;
     requestEufyCloud;
-    throttle = (0, p_throttle_1.default)({
-        limit: 5,
-        interval: 1000,
-    });
+    throttle;
     devices = {};
     hubs = {};
     houses = {};
@@ -126,7 +118,32 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
             }
         }
-        this.requestEufyCloud = got_1.default.extend({
+    }
+    static async getApiBaseFromCloud(country) {
+        const { default: got } = await import("got");
+        const response = await got(`domain/${country}`, {
+            prefixUrl: this.apiDomainBase,
+            method: "GET",
+            responseType: "json",
+            retry: {
+                limit: 1,
+                methods: ["GET"]
+            }
+        });
+        const result = response.body;
+        if (result.code == types_1.ResponseErrorCode.CODE_WHATEVER_ERROR) {
+            return `https://${result.data.domain}`;
+        }
+        throw new error_2.ApiBaseLoadError("Error identifying API base from cloud", { context: { code: result.code, message: result.msg } });
+    }
+    async loadLibraries() {
+        const { default: pThrottle } = await import("p-throttle");
+        const { default: got } = await import("got");
+        this.throttle = pThrottle({
+            limit: 5,
+            interval: 1000,
+        });
+        this.requestEufyCloud = got.extend({
             prefixUrl: this.apiBase,
             headers: this.headers,
             responseType: "json",
@@ -169,7 +186,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                                     }
                                 };
                                 // Update the defaults
-                                this.requestEufyCloud.defaults.options = this.requestEufyCloud.mergeOptions(this.requestEufyCloud.defaults.options, updatedOptions);
+                                this.requestEufyCloud.defaults.options.merge(updatedOptions);
                                 // Make a new retry
                                 return retryWithMergedOptions(updatedOptions);
                             }
@@ -179,13 +196,13 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     }
                 ],
                 beforeRetry: [
-                    (options, error, retryCount) => {
+                    (error) => {
                         // This will be called on `retryWithMergedOptions(...)`
-                        const statusCode = error?.response?.statusCode || 0;
-                        const { method, url, prefixUrl } = options;
-                        const shortUrl = (0, utils_2.getShortUrl)(url, prefixUrl);
-                        const body = error?.response?.body ? error?.response?.body : error?.message;
-                        this.log.debug(`Retrying [${retryCount}]: ${error?.code} (${error?.request?.requestUrl})\n${statusCode} ${method} ${shortUrl}\n${body}`);
+                        const statusCode = error.response?.statusCode || 0;
+                        const { method, url, prefixUrl } = error.options;
+                        const shortUrl = (0, utils_2.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
+                        const body = error.response?.body ? error.response?.body : error.message;
+                        this.log.debug(`Retrying [${error.request?.retryCount !== undefined ? error.request?.retryCount + 1 : 1}]: ${error.code} (${error.request?.requestUrl})\n${statusCode} ${method} ${shortUrl}\n${body}`);
                         // Retrying [1]: ERR_NON_2XX_3XX_RESPONSE
                     }
                 ],
@@ -194,7 +211,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                         const { response, options } = error;
                         const statusCode = response?.statusCode || 0;
                         const { method, url, prefixUrl } = options;
-                        const shortUrl = (0, utils_2.getShortUrl)(url, prefixUrl);
+                        const shortUrl = (0, utils_2.getShortUrl)(typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url, typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString());
                         const body = response?.body ? response.body : error.message;
                         if (response?.body) {
                             error.name = "EufyApiError";
@@ -212,25 +229,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             mutableDefaults: true
         });
     }
-    static async getApiBaseFromCloud(country) {
-        const response = await (0, got_1.default)(`domain/${country}`, {
-            prefixUrl: this.apiDomainBase,
-            method: "GET",
-            responseType: "json",
-            retry: {
-                limit: 1,
-                methods: ["GET"]
-            }
-        });
-        const result = response.body;
-        if (result.code == types_1.ResponseErrorCode.CODE_WHATEVER_ERROR) {
-            return `https://${result.data.domain}`;
-        }
-        throw new error_2.ApiBaseLoadError("Error identifying API base from cloud", { context: { code: result.code, message: result.msg } });
-    }
     static async initialize(country, username, password, log = ts_log_1.dummyLogger, persistentData) {
         const apiBase = await this.getApiBaseFromCloud(country);
-        return new HTTPApi(apiBase, country, username, password, log, persistentData);
+        const api = new HTTPApi(apiBase, country, username, password, log, persistentData);
+        await api.loadLibraries();
+        return api;
     }
     clearScheduleRenewAuthToken() {
         if (this.renewAuthTokenJob !== undefined) {
@@ -635,7 +638,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         }
         catch (err) {
             const error = (0, error_1.ensureError)(err);
-            if (error instanceof got_1.HTTPError) {
+            if (error instanceof (await import("got")).HTTPError) {
                 if (error.response.statusCode === 401) {
                     this.invalidateToken();
                     this.log.error("Status return code 401, invalidate token", { status: error.response.statusCode, statusText: error.response.statusMessage });
@@ -855,7 +858,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         this.tokenExpiration = tokenExpiration;
     }
     getAPIBase() {
-        return this.requestEufyCloud.defaults.options.prefixUrl;
+        return typeof this.requestEufyCloud.defaults.options.prefixUrl === "string" ? this.requestEufyCloud.defaults.options.prefixUrl : this.requestEufyCloud.defaults.options.prefixUrl.toString();
     }
     setOpenUDID(openudid) {
         this.headers.openudid = openudid;
@@ -1098,9 +1101,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     endpoint: "v1/app/get_sensor_history",
                     data: {
                         devicse_sn: deviceSN,
-                        max_time: 0,
-                        num: 500,
-                        page: 0,
+                        max_time: 0, //TODO: Finish implementation
+                        num: 500, //TODO: Finish implementation
+                        page: 0, //TODO: Finish implementation
                         station_sn: stationSN,
                         transaction: `${new Date().getTime().toString()}`
                     }
@@ -1243,7 +1246,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     data: {
                         house_id: houseID,
                         invite_id: inviteID,
-                        is_inviter: 1,
+                        is_inviter: 1, // 1 = true, 0 = false
                         //user_id: "",
                         transaction: `${new Date().getTime().toString()}`
                     }
