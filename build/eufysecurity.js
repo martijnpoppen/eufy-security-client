@@ -127,7 +127,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.persistentFile = path.join(this.config.persistentDir, "persistent.json");
         }
         try {
-            if (fse.statSync(this.persistentFile).isFile()) {
+            if (!this.config.persistentData && fse.statSync(this.persistentFile).isFile()) {
                 const fileContent = fse.readFileSync(this.persistentFile, "utf8");
                 this.persistentData = JSON.parse(fileContent);
             }
