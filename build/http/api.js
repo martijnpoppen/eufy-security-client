@@ -619,14 +619,17 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         await this.refreshDeviceData();
     }
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    async request(request) {
+    async request(request, withoutUrlPrefix = false) {
         this.log.debug("Api request", { method: request.method, endpoint: request.endpoint, responseType: request.responseType, token: this.token, data: request.data });
         try {
-            const internalResponse = await this.requestEufyCloud(request.endpoint, {
+            const options = {
                 method: request.method,
                 json: request.data,
-                responseType: request.responseType !== undefined ? request.responseType : "json"
-            });
+                responseType: request.responseType !== undefined ? request.responseType : "json",
+            };
+            if (withoutUrlPrefix)
+                options.prefixUrl = "";
+            const internalResponse = await this.requestEufyCloud(request.endpoint, options);
             const response = {
                 status: internalResponse.statusCode,
                 statusText: internalResponse.statusMessage ? internalResponse.statusMessage : "",
@@ -1466,9 +1469,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                     if (station) {
                         const response = await this.request({
                             method: "GET",
-                            endpoint: new URL(url),
+                            endpoint: url,
                             responseType: "buffer"
-                        });
+                        }, true);
                         if (response.status == 200) {
                             return (0, utils_1.decodeImage)(station.p2p_did, response.data);
                         }

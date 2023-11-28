@@ -45,7 +45,7 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     refreshStationData(): Promise<void>;
     refreshDeviceData(): Promise<void>;
     refreshAllData(): Promise<void>;
-    request(request: HTTPApiRequest): Promise<ApiResponse>;
+    request(request: HTTPApiRequest, withoutUrlPrefix?: boolean): Promise<ApiResponse>;
     checkPushToken(): Promise<boolean>;
     registerPushToken(token: string): Promise<boolean>;
     setParameters(stationSN: string, deviceSN: string, params: {
