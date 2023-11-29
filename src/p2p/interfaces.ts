@@ -399,3 +399,16 @@ export interface VideoStreamingRecordingQuality {
     },
     cur_mode: number;
 }
+
+export interface MotionZonePoint {
+    x: number;
+    y: number;
+}
+
+export interface MotionZonePoints {
+    points: Array<MotionZonePoint>;
+}
+
+export interface MotionZone {
+    polygens: Array<MotionZonePoints>;
+}
