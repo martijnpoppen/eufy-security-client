@@ -390,16 +390,6 @@ export interface InternalDynamicLighting {
     colors: Array<number>;
 }
 
-export interface VideoStreamingRecordingQuality {
-    mode_0: {
-        quality: number;
-    },
-    mode_1: {
-        quality: number;
-    },
-    cur_mode: number;
-}
-
 export interface MotionZonePoint {
     x: number;
     y: number;
@@ -411,4 +401,14 @@ export interface MotionZonePoints {
 
 export interface MotionZone {
     polygens: Array<MotionZonePoints>;
+}
+
+export interface VideoStreamingRecordingQuality {
+    mode_0: {
+        quality: number;
+    },
+    mode_1: {
+        quality: number;
+    },
+    cur_mode: number;
 }

@@ -344,6 +344,12 @@ export enum HB3DetectionTypes {
     HUMAN_RECOGNITION = 131072,
 }
 
+export enum T8170DetectionTypes {
+    HUMAN_DETECTION = 3,
+    VEHICLE_DETECTION = 4,
+    ALL_OTHER_MOTION = 32768,
+}
+
 export enum IndoorDetectionTypes {
     PERSON_DETECTION = 1,
     PET_DETECTION = 2,
@@ -1017,11 +1023,6 @@ export const DeviceAutoNightvisionProperty: PropertyMetadataBoolean = {
 export const DeviceAutoNightvisionWiredDoorbellProperty: PropertyMetadataBoolean = {
     ...DeviceAutoNightvisionProperty,
     key: ParamType.NIGHT_VISUAL,
-}
-
-export const DeviceAutoNightvisionWalllightProperty: PropertyMetadataBoolean = {
-    ...DeviceAutoNightvisionProperty,
-    commandId: CommandType.CMD_SET_NIGHT_VISION_TYPE,
 }
 
 export const DeviceAutoNightvisionSoloProperty: PropertyMetadataBoolean = {
@@ -1826,6 +1827,12 @@ export const DeviceCameraLightSettingsBrightnessManualProperty: PropertyMetadata
     default: 100,
 }
 
+export const DeviceCameraLightSettingsBrightnessManualWalllightS120Property: PropertyMetadataNumeric = {
+    ...DeviceFloodlightLightSettingsBrightnessManualProperty,
+    min: 10,
+    default: 100,
+}
+
 export const DeviceFloodlightLightSettingsBrightnessMotionProperty: PropertyMetadataNumeric = {
     key: CommandType.CMD_SET_LIGHT_CTRL_BRIGHT_PIR,
     name: PropertyName.DeviceLightSettingsBrightnessMotion,
@@ -2124,6 +2131,13 @@ export const DeviceRecordingClipLengthWalllightProperty: PropertyMetadataNumeric
     default: 60,
 }
 
+export const DeviceRecordingClipLengthWalllightS120Property: PropertyMetadataNumeric = {
+    ...DeviceRecordingClipLengthProperty,
+    min: 10,
+    max: 60,
+    default: 30,
+}
+
 export const DeviceRecordingRetriggerIntervalProperty: PropertyMetadataNumeric = {
     key: CommandType.CMD_DEV_RECORD_INTERVAL,
     name: PropertyName.DeviceRecordingRetriggerInterval,
@@ -2225,8 +2239,18 @@ export const DeviceVideoStreamingQualityCamera3Property: PropertyMetadataNumeric
 
 export const DeviceVideoStreamingQualityDoorbellE340Property: PropertyMetadataNumeric = {
     ...DeviceVideoStreamingQualityProperty,
-    key: CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY_E340,
-    commandId: CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY_E340,
+    key: CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY2,
+    commandId: CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY2,
+}
+
+export const DeviceVideoStreamingQualityS340Property: PropertyMetadataNumeric = {
+    ...DeviceVideoStreamingQualityDoorbellE340Property,
+    states: {
+        0: "Auto",
+        1: "HD (720P)",
+        2: "Full HD (1080P)",
+        3: "3K HD",
+    },
 }
 
 export const DeviceVideoRecordingQualityIndoorProperty: PropertyMetadataNumeric = {
@@ -2266,12 +2290,21 @@ export const DeviceVideoRecordingQualityProperty: PropertyMetadataNumeric = {
 
 export const DeviceVideoRecordingQualityDoorbellE340Property: PropertyMetadataNumeric = {
     ...DeviceVideoRecordingQualityIndoorProperty,
-    key: CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY_E340,
+    key: CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY2,
     states: {
         2: "Full HD (1080P)",
         3: "2K HD",
     },
-    commandId: CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY_E340,
+    commandId: CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY2,
+}
+
+export const DeviceVideoRecordingQualityS340Property: PropertyMetadataNumeric = {
+    ...DeviceVideoRecordingQualityDoorbellE340Property,
+    states: {
+        1: "HD (720P)",
+        2: "Full HD (1080P)",
+        3: "3K HD",
+    },
 }
 
 export const DeviceVideoRecordingQualityWalllightProperty: PropertyMetadataNumeric = {
@@ -3273,7 +3306,17 @@ export const DeviceDualCamWatchViewModeProperty: PropertyMetadataNumeric = {
 
 export const DeviceDualCamWatchViewModeE340Property: PropertyMetadataNumeric = {
     ...DeviceDualCamWatchViewModeProperty,
-    key: CommandType.CMD_DOORBELL_DUAL_VIEW_MODE_E340,
+    key: CommandType.CMD_DOORBELL_DUAL_VIEW_MODE2,
+}
+
+export const DeviceDualCamWatchViewModeS340Property: PropertyMetadataNumeric = {
+    ...DeviceDualCamWatchViewModeProperty,
+    key: CommandType.CMD_DOORBELL_DUAL_VIEW_MODE2,
+    states: {
+        0: "Single view",
+        12: "Double view",
+    },
+    default: 0,
 }
 
 export const DeviceRingAutoResponseProperty: PropertyMetadataBoolean = {
@@ -5134,7 +5177,7 @@ export const DeviceProperties: Properties = {
         [PropertyName.DeviceWifiSignalLevel]: DeviceWifiSignalLevelProperty,
         [PropertyName.DeviceEnabled]: DeviceEnabledProperty,
         [PropertyName.DeviceNightvision]: DeviceNightvisionProperty,
-        [PropertyName.DeviceStatusLed]: DeviceStatusLedBatteryDoorbellDualProperty,
+        [PropertyName.DeviceStatusLed]: DeviceStatusLedBatteryDoorbellProperty,
         //[PropertyName.DeviceLight]: DeviceFloodlightLightProperty,   TODO: DISABLED => when the light is activated, this event is communicated via the p2p connection with the wrong channel of the device if the doorbell is connected to the station. e.g. the device is assigned to channel 2, but the event is communicated for the device on channel 0, which is wrong
         [PropertyName.DeviceMotionDetection]: DeviceMotionDetectionProperty,
         [PropertyName.DeviceWatermark]: DeviceWatermarkBatteryDoorbellCamera1Property,
@@ -5741,53 +5784,40 @@ export const DeviceProperties: Properties = {
     },
     [DeviceType.OUTDOOR_PT_CAMERA]: {
         ...GenericDeviceProperties,
-        [PropertyName.DeviceEnabled]: DeviceEnabledStandaloneProperty,
+        [PropertyName.DeviceEnabled]: DeviceEnabledSoloProperty,
         [PropertyName.DeviceBattery]: DeviceBatteryProperty,
         [PropertyName.DeviceBatteryTemp]: DeviceBatteryTempProperty,
         [PropertyName.DeviceNightvision]: DeviceNightvisionProperty,
         [PropertyName.DeviceMotionDetection]: DeviceMotionDetectionIndoorSoloFloodProperty,
-        [PropertyName.DeviceSoundDetection]: DeviceSoundDetectionProperty,
-        [PropertyName.DevicePetDetection]: DevicePetDetectionProperty,
-        [PropertyName.DeviceRTSPStream]: DeviceRTSPStreamProperty,
-        [PropertyName.DeviceRTSPStreamUrl]: DeviceRTSPStreamUrlProperty,
-        [PropertyName.DeviceWatermark]: DeviceWatermarkIndoorFloodProperty,
+        [PropertyName.DeviceWatermark]: DeviceWatermarkProperty,
         [PropertyName.DeviceMotionDetected]: DeviceMotionDetectedProperty,
         [PropertyName.DevicePersonDetected]: DevicePersonDetectedProperty,
-        [PropertyName.DevicePetDetected]: DevicePetDetectedProperty,
-        [PropertyName.DeviceSoundDetected]: DeviceSoundDetectedProperty,
-        [PropertyName.DeviceSoundDetectionType]: DeviceSoundDetectionTypeProperty,
-        [PropertyName.DeviceSoundDetectionSensitivity]: DeviceSoundDetectionSensitivityProperty,
-        [PropertyName.DeviceCryingDetected]: DeviceCryingDetectedProperty,
         [PropertyName.DeviceStatusLed]: DeviceStatusLedIndoorFloodProperty,
         [PropertyName.DeviceLight]: DeviceFloodlightLightProperty,
         [PropertyName.DeviceLightSettingsBrightnessManual]: DeviceFloodlightLightSettingsBrightnessManualProperty,
+        [PropertyName.DeviceLightSettingsEnable]: DeviceFloodlightLightSettingsEnableProperty,
         [PropertyName.DevicePicture]: DevicePictureProperty,
         [PropertyName.DevicePictureUrl]: DevicePictureUrlProperty,
-        [PropertyName.DeviceMotionDetectionSensitivity]: DeviceMotionDetectionSensitivityIndoorProperty,
+        [PropertyName.DeviceMotionDetectionSensitivity]: DeviceMotionDetectionSensitivitySoloProperty,
         [PropertyName.DeviceMicrophone]: DeviceMicrophoneProperty,
         [PropertyName.DeviceSpeaker]: DeviceSpeakerProperty,
         [PropertyName.DeviceSpeakerVolume]: DeviceSpeakerVolumeIndoorFloodDoorbellProperty,
         [PropertyName.DeviceAudioRecording]: DeviceAudioRecordingIndoorSoloFloodlightProperty,
-        [PropertyName.DeviceMotionDetectionType]: DeviceMotionDetectionTypeIndoorProperty,
+        [PropertyName.DeviceMotionDetectionTypeHuman]: DeviceMotionHB3DetectionTypeHumanProperty,
+        [PropertyName.DeviceMotionDetectionTypeVehicle]: DeviceMotionHB3DetectionTypeVehicleProperty,
+        [PropertyName.DeviceMotionDetectionTypeAllOtherMotions]: DeviceMotionHB3DetectionTypeAllOhterMotionsProperty,
         [PropertyName.DeviceMotionTracking]: DeviceMotionTrackingProperty,
-        [PropertyName.DeviceVideoStreamingQuality]: DeviceVideoStreamingQualityProperty,
-        [PropertyName.DeviceVideoRecordingQuality]: DeviceVideoRecordingQualityIndoorProperty,
+        [PropertyName.DeviceVideoStreamingQuality]: DeviceVideoStreamingQualityS340Property,
+        [PropertyName.DeviceVideoRecordingQuality]: DeviceVideoRecordingQualityS340Property,
         [PropertyName.DeviceNotificationType]: DeviceNotificationTypeIndoorFloodlightProperty,
         [PropertyName.DeviceRotationSpeed]: DeviceRotationSpeedProperty,
-        [PropertyName.DeviceNotificationPerson]: DeviceNotificationPersonProperty,
-        [PropertyName.DeviceNotificationPet]: DeviceNotificationPetProperty,
-        [PropertyName.DeviceNotificationAllOtherMotion]: DeviceNotificationAllOtherMotionProperty,
-        [PropertyName.DeviceNotificationAllSound]: DeviceNotificationAllSoundProperty,
-        [PropertyName.DeviceNotificationCrying]: DeviceNotificationCryingProperty,
-        [PropertyName.DeviceContinuousRecording]: DeviceContinuousRecordingProperty,
-        [PropertyName.DeviceContinuousRecordingType]: DeviceContinuousRecordingTypeProperty,
         [PropertyName.DeviceMotionZone]: DeviceMotionZoneProperty,
-        [PropertyName.DeviceImageMirrored]: DeviceImageMirroredProperty,
-        [PropertyName.DeviceVideoTypeStoreToNAS]: DeviceVideoTypeStoreToNASProperty,
         [PropertyName.DeviceSnooze]: DeviceSnoozeProperty,
         [PropertyName.DeviceSnoozeTime]: DeviceSnoozeTimeProperty,
         [PropertyName.DeviceSnoozeStartTime]: DeviceSnoozeStartTimeProperty,
         [PropertyName.DevicePersonName]: DevicePersonNameProperty,
+        [PropertyName.DevicePowerSource]: DevicePowerSourceProperty,
+        [PropertyName.DeviceDualCamWatchViewMode]: DeviceDualCamWatchViewModeS340Property,
     },
     [DeviceType.CAMERA_FG]: {
         ...GenericDeviceProperties,
@@ -6359,7 +6389,7 @@ export const DeviceProperties: Properties = {
     [DeviceType.WALL_LIGHT_CAM]: {
         ...GenericDeviceProperties,
         [PropertyName.DeviceEnabled]: DeviceEnabledSoloProperty,
-        [PropertyName.DeviceAutoNightvision]: DeviceAutoNightvisionWalllightProperty,
+        [PropertyName.DeviceAutoNightvision]: DeviceAutoNightvisionSoloProperty,
         [PropertyName.DeviceMotionDetection]: DeviceMotionDetectionIndoorSoloFloodProperty,
         [PropertyName.DeviceWatermark]: DeviceWatermarkSoloWiredDoorbellProperty,
         [PropertyName.DeviceMotionDetected]: DeviceMotionDetectedProperty,
@@ -6411,7 +6441,7 @@ export const DeviceProperties: Properties = {
     [DeviceType.WALL_LIGHT_CAM_81A0]: {
         ...GenericDeviceProperties,
         [PropertyName.DeviceEnabled]: DeviceEnabledSoloProperty,
-        [PropertyName.DeviceAutoNightvision]: DeviceAutoNightvisionWalllightProperty,
+        [PropertyName.DeviceAutoNightvision]: DeviceAutoNightvisionSoloProperty,
         [PropertyName.DeviceMotionDetection]: DeviceMotionDetectionIndoorSoloFloodProperty,
         [PropertyName.DeviceWatermark]: DeviceWatermarkSoloWiredDoorbellProperty,
         [PropertyName.DeviceMotionDetected]: DeviceMotionDetectedProperty,
@@ -6420,31 +6450,14 @@ export const DeviceProperties: Properties = {
         [PropertyName.DevicePicture]: DevicePictureProperty,
         [PropertyName.DevicePictureUrl]: DevicePictureUrlProperty,
         [PropertyName.DeviceLight]: DeviceFloodlightLightProperty,
-        [PropertyName.DeviceLightSettingsBrightnessManual]: DeviceFloodlightLightSettingsBrightnessManualProperty,
-        [PropertyName.DeviceLightSettingsManualLightingActiveMode]: DeviceLightSettingsManualLightingActiveModeProperty,
-        [PropertyName.DeviceLightSettingsManualDailyLighting]: DeviceLightSettingsManualDailyLightingProperty,
-        [PropertyName.DeviceLightSettingsManualColoredLighting]: DeviceLightSettingsManualColoredLightingProperty,
-        [PropertyName.DeviceLightSettingsManualDynamicLighting]: DeviceLightSettingsManualDynamicLightingProperty,
-        [PropertyName.DeviceLightSettingsScheduleLightingActiveMode]: DeviceLightSettingsScheduleLightingActiveModeProperty,
-        [PropertyName.DeviceLightSettingsBrightnessMotion]: DeviceFloodlightLightSettingsBrightnessMotionProperty,
-        [PropertyName.DeviceLightSettingsMotionLightingActiveMode]: DeviceLightSettingsMotionLightingActiveModeProperty,
-        [PropertyName.DeviceLightSettingsBrightnessSchedule]: DeviceFloodlightLightSettingsBrightnessScheduleProperty,
-        [PropertyName.DeviceLightSettingsScheduleDailyLighting]: DeviceLightSettingsScheduleDailyLightingProperty,
-        [PropertyName.DeviceLightSettingsScheduleColoredLighting]: DeviceLightSettingsScheduleColoredLightingProperty,
-        [PropertyName.DeviceLightSettingsScheduleDynamicLighting]: DeviceLightSettingsScheduleDynamicLightingProperty,
+        [PropertyName.DeviceLightSettingsBrightnessManual]: DeviceCameraLightSettingsBrightnessManualWalllightS120Property,
         [PropertyName.DeviceLightSettingsMotionTriggered]: DeviceFloodlightLightSettingsMotionTriggeredProperty,
-        [PropertyName.DeviceLightSettingsMotionTriggeredTimer]: DeviceFloodlightLightSettingsMotionTriggeredTimerProperty,
-        [PropertyName.DeviceLightSettingsMotionDailyLighting]: DeviceLightSettingsMotionDailyLightingProperty,
-        [PropertyName.DeviceLightSettingsMotionColoredLighting]: DeviceLightSettingsMotionColoredLightingProperty,
-        [PropertyName.DeviceLightSettingsMotionDynamicLighting]: DeviceLightSettingsMotionDynamicLightingProperty,
-        [PropertyName.DeviceLightSettingsMotionActivationMode]: DeviceLightSettingsMotionActivationModeProperty,
-        [PropertyName.DeviceLightSettingsColoredLightingColors]: DeviceLightSettingsColoredLightingColorsProperty,
-        [PropertyName.DeviceLightSettingsDynamicLightingThemes]: DeviceLightSettingsDynamicLightingThemesProperty,
         [PropertyName.DeviceMotionDetectionSensitivity]: DeviceMotionDetectionSensitivityBatteryDoorbellProperty,
         [PropertyName.DeviceSpeakerVolume]: DeviceSpeakerVolumeWalllightProperty,
         [PropertyName.DeviceAudioRecording]: DeviceAudioRecordingProperty,
-        [PropertyName.DeviceRecordingClipLength]: DeviceRecordingClipLengthWalllightProperty,
+        [PropertyName.DeviceRecordingClipLength]: DeviceRecordingClipLengthWalllightS120Property,
         [PropertyName.DeviceRecordingEndClipMotionStops]: DeviceRecordingEndClipMotionStopsProperty,
+        [PropertyName.DeviceRecordingRetriggerInterval]: DeviceRecordingRetriggerIntervalProperty,
         [PropertyName.DeviceWifiRSSI]: DeviceWifiRSSIProperty,
         [PropertyName.DeviceWifiSignalLevel]: DeviceWifiSignalLevelProperty,
         [PropertyName.DeviceSnooze]: DeviceSnoozeProperty,
@@ -6459,6 +6472,7 @@ export const DeviceProperties: Properties = {
         [PropertyName.DeviceMotionDetectionTypeAllOtherMotions]: DeviceMotionDetectionTypeAllOhterMotionsWalllightProperty,
         [PropertyName.DeviceNotification]: DeviceNotificationWalllightProperty,
         [PropertyName.DeviceNotificationType]: DeviceNotificationTypeWalllightProperty,
+        [PropertyName.DevicePowerWorkingMode]: DevicePowerWorkingModeProperty,
     },
     [DeviceType.CAMERA_GARAGE_T8453]: {
         ...GenericDeviceProperties,
@@ -7239,6 +7253,8 @@ export const StationProperties: Properties = {
         [PropertyName.StationSdStatus]: StationSdStatusProperty,
         [PropertyName.StationSdCapacity]: StationSdCapacityProperty,
         [PropertyName.StationSdCapacityAvailable]: StationSdAvailableCapacityProperty,
+        [PropertyName.StationNotificationSwitchModeSchedule]: StationNotificationSwitchModeScheduleProperty,
+        [PropertyName.StationNotificationSwitchModeApp]: StationNotificationSwitchModeAppProperty,
     },
     [DeviceType.DOORBELL]: {
         ...BaseStationProperties,
@@ -7400,6 +7416,9 @@ export const StationProperties: Properties = {
         [PropertyName.StationAlarm]: StationAlarmProperty,
         [PropertyName.StationAlarmType]: StationAlarmTypeProperty,
         [PropertyName.StationAlarmVolume]: StationAlarmVolumeWalllightProperty,
+        [PropertyName.StationSdStatus]: StationSdStatusProperty,
+        [PropertyName.StationSdCapacity]: StationSdCapacityProperty,
+        [PropertyName.StationSdCapacityAvailable]: StationSdAvailableCapacityProperty,
     },
     [DeviceType.CAMERA_GARAGE_T8452]: {
         ...BaseStationProperties,
