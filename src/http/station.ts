@@ -962,7 +962,7 @@ export class Station extends TypedEmitter<StationEvents> {
         this.log.info(`Disconnected from station ${this.getSerial()}`);
         this.emit("close", this);
         this.pinVerified = false;
-        console.log(`onDisconnect - ${this.getSerial()} - ${this.isEnergySavingDevice()} ${this.terminating}`)
+
         if (!this.isEnergySavingDevice() && !this.terminating)
             this.scheduleReconnect();
     }
@@ -1616,7 +1616,7 @@ export class Station extends TypedEmitter<StationEvents> {
         if (device.isFloodLight() || device.isSoloCameraSpotlight1080() || device.isSoloCameraSpotlight2k() ||
             device.isSoloCameraSpotlightSolar() || device.isCamera2C() || device.isCamera2CPro() ||
             device.isIndoorOutdoorCamera1080p() || device.isIndoorOutdoorCamera2k() || device.isCamera3() || device.isCamera3C()) {
-            await this.p2pSession.sendCommandWithIntString({
+            this.p2pSession.sendCommandWithIntString({
                 commandType: CommandType.CMD_SET_FLOODLIGHT_MANUAL_SWITCH,
                 value: value === true ? 1 : 0,
                 valueSub: device.getChannel(),
