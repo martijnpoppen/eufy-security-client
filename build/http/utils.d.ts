@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
-import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType } from "./types";
+import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes } from "./types";
 import { HTTPApi } from "./api";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
@@ -46,3 +46,5 @@ export declare const getImagePath: (path: string) => string;
 export declare const getImage: (api: HTTPApi, serial: string, url: string) => Promise<Picture>;
 export declare const isPrioritySourceType: (current: SourceType | undefined, update: SourceType) => boolean;
 export declare const decryptTrackerData: (data: Buffer, key: Buffer) => Buffer;
+export declare const isT8170DetectionModeEnabled: (value: number, type: T8170DetectionTypes) => boolean;
+export declare const getT8170DetectionMode: (value: number, type: T8170DetectionTypes, enable: boolean) => number;

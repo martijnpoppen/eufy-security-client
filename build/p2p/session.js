@@ -24,14 +24,15 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     MAX_RETRIES = 10;
     MAX_COMMAND_RESULT_WAIT = 30 * 1000;
     MAX_AKNOWLEDGE_TIMEOUT = 15 * 1000;
-    MAX_LOOKUP_TIMEOUT = 15 * 1000;
+    MAX_LOOKUP_TIMEOUT = 20 * 1000;
     LOOKUP_RETRY_TIMEOUT = 3 * 1000;
-    LOOKUP2_TIMEOUT = 5 * 1000;
+    LOOKUP2_TIMEOUT = 3 * 1000;
+    LOOKUP2_RETRY_TIMEOUT = 3 * 1000;
     MAX_EXPECTED_SEQNO_WAIT = 20 * 1000;
     HEARTBEAT_INTERVAL = 5 * 1000;
     MAX_COMMAND_QUEUE_TIMEOUT = 120 * 1000;
     AUDIO_CODEC_ANALYZE_TIMEOUT = 650;
-    KEEPALIVE_INTERVAL = 5 * 1000;
+    KEEPALIVE_INTERVAL = 2 * 1000;
     ESD_DISCONNECT_TIMEOUT = 30 * 1000;
     MAX_STREAM_DATA_WAIT = 5 * 1000;
     RESEND_NOT_ACKNOWLEDGED_COMMAND = 100;
@@ -73,6 +74,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     lookupTimeout;
     lookupRetryTimeout;
     lookup2Timeout;
+    lookup2RetryTimeout;
     heartbeatTimeout;
     keepaliveTimeout;
     esdDisconnectTimeout;
@@ -248,6 +250,10 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
         this._clearTimeout(this.lookupRetryTimeout);
         this.lookupRetryTimeout = undefined;
     }
+    _clearLookup2RetryTimeout() {
+        this._clearTimeout(this.lookup2RetryTimeout);
+        this.lookup2RetryTimeout = undefined;
+    }
     _clearLookup2Timeout() {
         this._clearTimeout(this.lookup2Timeout);
         this.lookup2Timeout = undefined;
@@ -324,12 +330,18 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
     }
     cloudLookup() {
         this.cloudAddresses.map((address) => this.cloudLookupByAddress(address));
+        this._clearLookup2Timeout();
         this.lookup2Timeout = setTimeout(() => {
             this.cloudLookup2();
         }, this.LOOKUP2_TIMEOUT);
     }
     cloudLookup2() {
         this.cloudAddresses.map((address) => this.cloudLookupByAddress2(address));
+        this._clearLookup2RetryTimeout();
+        this.lookup2RetryTimeout = setTimeout(() => {
+            this.lookup2RetryTimeout = undefined;
+            this.cloudAddresses.map((address) => this.cloudLookupByAddress2(address));
+        }, this.LOOKUP2_RETRY_TIMEOUT);
     }
     cloudLookupWithTurnServer(origAddress, data) {
         this.cloudAddresses.map((address) => this.cloudLookupByAddressWithTurnServer(address, origAddress, data));
@@ -753,6 +765,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
             if (!this.connected) {
                 this.log.debug(`Received message - CAM_ID - Connected to station ${this.rawStation.station_sn} on host ${rinfo.address} port ${rinfo.port}`);
                 this._clearLookupRetryTimeout();
+                this._clearLookup2RetryTimeout();
                 this._clearLookupTimeout();
                 this._clearConnectTimeout();
                 this._clearLookup2Timeout();
@@ -998,6 +1011,7 @@ class P2PClientProtocol extends tiny_typed_emitter_1.TypedEmitter {
                 const data = msg.subarray(20, 24);
                 this._clearLookupTimeout();
                 this._clearLookupRetryTimeout();
+                this._clearLookup2RetryTimeout();
                 this.log.debug(`Received message - LOOKUP_ADDR2 - Got response`, { stationSN: this.rawStation.station_sn, remoteAddress: rinfo.address, remotePort: rinfo.port, response: { ip: ip, port: port, data: data.toString("hex") } });
                 this.log.debug(`Connecting to host ${ip} on port ${port} (CHECK_CAM2)...`, { stationSN: this.rawStation.station_sn, ip: ip, port: port, data: data.toString("hex") });
                 for (let i = 0; i < 4; i++)

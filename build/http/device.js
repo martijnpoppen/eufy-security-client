@@ -157,7 +157,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     convertRawPropertyValue(property, value) {
         try {
             if (property.key === types_1.ParamType.PRIVATE_MODE || property.key === types_1.ParamType.OPEN_DEVICE || property.key === types_2.CommandType.CMD_DEVS_SWITCH) {
-                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || this.isOutdoorPanAndTiltCamera()) {
+                if (this.isIndoorCamera() || (this.isWiredDoorbell() && !this.isWiredDoorbellT8200X()) || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || this.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424) {
                     return value !== undefined ? (value === "true" ? true : false) : false;
                 }
                 return value !== undefined ? (value === "0" ? true : false) : false;
@@ -592,6 +592,19 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     return booleanProperty.default !== undefined ? booleanProperty.default : false;
                 }
             }
+            else if ((property.name === types_1.PropertyName.DeviceMotionDetectionTypeHuman ||
+                property.name === types_1.PropertyName.DeviceMotionDetectionTypeVehicle ||
+                property.name === types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions) && this.isOutdoorPanAndTiltCamera()) {
+                const booleanProperty = property;
+                try {
+                    return (0, utils_1.isT8170DetectionModeEnabled)(Number.parseInt(value), property.name === types_1.PropertyName.DeviceMotionDetectionTypeHuman ? types_1.T8170DetectionTypes.HUMAN_DETECTION : property.name === types_1.PropertyName.DeviceMotionDetectionTypeVehicle ? types_1.T8170DetectionTypes.VEHICLE_DETECTION : types_1.T8170DetectionTypes.ALL_OTHER_MOTION);
+                }
+                catch (err) {
+                    const error = (0, error_2.ensureError)(err);
+                    this.log.error("Device convert raw property - T8170 motion detection type Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), property: property, value: value });
+                    return booleanProperty.default !== undefined ? booleanProperty.default : false;
+                }
+            }
             else if (property.key === types_2.CommandType.CELLULAR_INFO) {
                 switch (property.name) {
                     case types_1.PropertyName.DeviceCellularSignal: {
@@ -610,6 +623,38 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                         const stringProperty = property;
                         return value !== undefined && value.iccid !== undefined ? String(value.iccid) : (stringProperty.default !== undefined ? stringProperty.default : "");
                     }
+                }
+            }
+            else if (property.key === types_2.CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY2) {
+                const numericProperty = property;
+                const quality = value;
+                let mode = quality.mode_1;
+                if (quality.cur_mode === 0) {
+                    mode = quality.mode_0;
+                }
+                try {
+                    return value !== undefined && mode !== undefined && mode.quality !== undefined ? mode.quality : (numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0));
+                }
+                catch (err) {
+                    const error = (0, error_2.ensureError)(err);
+                    this.log.error("Device convert raw property - CMD_BAT_DOORBELL_VIDEO_QUALITY2 Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), property: property, value: value });
+                    return numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
+                }
+            }
+            else if (property.key === types_2.CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY2) {
+                const numericProperty = property;
+                const quality = value;
+                let mode = quality.mode_1;
+                if (quality.cur_mode === 0) {
+                    mode = quality.mode_0;
+                }
+                try {
+                    return value !== undefined && mode !== undefined && mode.quality !== undefined ? mode.quality : (numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0));
+                }
+                catch (err) {
+                    const error = (0, error_2.ensureError)(err);
+                    this.log.error("Device convert raw property - CMD_BAT_DOORBELL_RECORD_QUALITY2 Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), property: property, value: value });
+                    return numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
                 }
             }
             else if (property.type === "number") {
@@ -845,7 +890,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SMART_SAFE_7402 ||
             type == types_1.DeviceType.SMART_SAFE_7403 ||
             type == types_1.DeviceType.CAMERA_FG ||
-            type == types_1.DeviceType.WALL_LIGHT_CAM_81A0)
+            type == types_1.DeviceType.WALL_LIGHT_CAM_81A0 ||
+            type == types_1.DeviceType.OUTDOOR_PT_CAMERA)
             //TODO: Add other battery devices
             return true;
         return false;
@@ -894,7 +940,6 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.INDOOR_CAMERA_1080 ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA ||
             type == types_1.DeviceType.INDOOR_PT_CAMERA_1080 ||
-            type == types_1.DeviceType.OUTDOOR_PT_CAMERA ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_2K ||
@@ -1017,6 +1062,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             Device.isSoloCameraSpotlight1080(type) ||
             Device.isSoloCameraSpotlight2k(type) ||
             Device.isSoloCameraSpotlightSolar(type) ||
+            Device.isOutdoorPanAndTiltCamera(type) ||
             Device.isSoloCameraSolar(type);
     }
     static isStarlight4GLTE(type) {
@@ -1193,7 +1239,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return Device.isBatteryDoorbell2(this.rawDevice.device_type);
     }
     isBatteryDoorbellDual() {
-        return Device.isBatteryDoorbellDual(this.rawDevice.device_type) || Device.isBatteryDoorbellDualE340(this.rawDevice.device_type);
+        return Device.isBatteryDoorbellDual(this.rawDevice.device_type);
     }
     isBatteryDoorbellDualE340() {
         return Device.isBatteryDoorbellDualE340(this.rawDevice.device_type);

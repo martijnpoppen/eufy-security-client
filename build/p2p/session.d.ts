@@ -12,6 +12,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private readonly MAX_LOOKUP_TIMEOUT;
     private readonly LOOKUP_RETRY_TIMEOUT;
     private readonly LOOKUP2_TIMEOUT;
+    private readonly LOOKUP2_RETRY_TIMEOUT;
     private readonly MAX_EXPECTED_SEQNO_WAIT;
     private readonly HEARTBEAT_INTERVAL;
     private readonly MAX_COMMAND_QUEUE_TIMEOUT;
@@ -51,6 +52,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private lookupTimeout?;
     private lookupRetryTimeout?;
     private lookup2Timeout?;
+    private lookup2RetryTimeout?;
     private heartbeatTimeout?;
     private keepaliveTimeout?;
     private esdDisconnectTimeout?;
@@ -93,6 +95,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private _clearConnectTimeout;
     private _clearLookupTimeout;
     private _clearLookupRetryTimeout;
+    private _clearLookup2RetryTimeout;
     private _clearLookup2Timeout;
     private _clearESDDisconnectTimeout;
     private _clearSecondaryCommandTimeout;

@@ -357,3 +357,22 @@ export interface InternalDynamicLighting {
     speed: number;
     colors: Array<number>;
 }
+export interface MotionZonePoint {
+    x: number;
+    y: number;
+}
+export interface MotionZonePoints {
+    points: Array<MotionZonePoint>;
+}
+export interface MotionZone {
+    polygens: Array<MotionZonePoints>;
+}
+export interface VideoStreamingRecordingQuality {
+    mode_0: {
+        quality: number;
+    };
+    mode_1: {
+        quality: number;
+    };
+    cur_mode: number;
+}

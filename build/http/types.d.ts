@@ -90,6 +90,7 @@ export declare enum ParamType {
     DOORBELL_RING_RECORD = 2040,
     DOORBELL_SNOOZE_START_TIME = 2037,
     DOORBELL_VIDEO_QUALITY = 2031,
+    DOORBELL_CHIME_MODE = 100000,
     NIGHT_VISUAL = 2002,
     OPEN_DEVICE = 2001,
     RINGING_VOLUME = 2022,
@@ -299,6 +300,11 @@ export declare enum HB3DetectionTypes {
     PET_DETECTION = 8,
     ALL_OTHER_MOTION = 32768,
     HUMAN_RECOGNITION = 131072
+}
+export declare enum T8170DetectionTypes {
+    HUMAN_DETECTION = 3,
+    VEHICLE_DETECTION = 4,
+    ALL_OTHER_MOTION = 32768
 }
 export declare enum IndoorDetectionTypes {
     PERSON_DETECTION = 1,
@@ -741,7 +747,6 @@ export declare const DeviceBatteryIsChargingKeypadProperty: PropertyMetadataBool
 export declare const DeviceAntitheftDetectionProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionWiredDoorbellProperty: PropertyMetadataBoolean;
-export declare const DeviceAutoNightvisionWalllightProperty: PropertyMetadataBoolean;
 export declare const DeviceAutoNightvisionSoloProperty: PropertyMetadataBoolean;
 export declare const DeviceNightvisionProperty: PropertyMetadataNumeric;
 export declare const DeviceWifiRSSIProperty: PropertyMetadataNumeric;
@@ -816,18 +821,20 @@ export declare const DeviceMotionDetectionSensitivityCamera2Property: PropertyMe
 export declare const DeviceMotionDetectionSensitivityCamera1Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityIndoorProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityBatteryDoorbellProperty: PropertyMetadataNumeric;
+export declare const DeviceMotionDetectionSensitivityDoorbellE340Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivitySoloProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityFloodlightT8420Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityGarageCameraProperty: PropertyMetadataNumeric;
 export declare const DeviceHiddenMotionDetectionSensitivityWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceHiddenMotionDetectionModeWiredDoorbellProperty: PropertyMetadataNumeric;
-export declare const DeviceMotionZoneProperty: PropertyMetadataString;
+export declare const DeviceMotionZoneProperty: PropertyMetadataObject;
 export declare const DeviceFloodlightLightProperty: PropertyMetadataBoolean;
 export declare const DeviceFloodlightLightSettingsEnableProperty: PropertyMetadataBoolean;
 export declare const DeviceFloodlightLightSettingsBrightnessManualProperty: PropertyMetadataNumeric;
 export declare const DeviceLightSettingsBrightnessManualCamera3Property: PropertyMetadataNumeric;
 export declare const DeviceCameraLightSettingsBrightnessManualProperty: PropertyMetadataNumeric;
+export declare const DeviceCameraLightSettingsBrightnessManualWalllightS120Property: PropertyMetadataNumeric;
 export declare const DeviceFloodlightLightSettingsBrightnessMotionProperty: PropertyMetadataNumeric;
 export declare const DeviceFloodlightLightSettingsBrightnessScheduleProperty: PropertyMetadataNumeric;
 export declare const DeviceFloodlightLightSettingsMotionTriggeredProperty: PropertyMetadataBoolean;
@@ -859,6 +866,7 @@ export declare const DeviceChargingStatusCamera3Property: PropertyMetadataNumeri
 export declare const DeviceRecordingClipLengthProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthFloodlightProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthWalllightProperty: PropertyMetadataNumeric;
+export declare const DeviceRecordingClipLengthWalllightS120Property: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalBatteryDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalFloodlightProperty: PropertyMetadataNumeric;
@@ -869,9 +877,13 @@ export declare const DeviceVideoStreamingQualityCameraProperty: PropertyMetadata
 export declare const DeviceVideoStreamingQualitySoloProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoStreamingQualityWalllightProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoStreamingQualityCamera3Property: PropertyMetadataNumeric;
+export declare const DeviceVideoStreamingQualityDoorbellE340Property: PropertyMetadataNumeric;
+export declare const DeviceVideoStreamingQualityS340Property: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityIndoorProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityWiredDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityProperty: PropertyMetadataNumeric;
+export declare const DeviceVideoRecordingQualityDoorbellE340Property: PropertyMetadataNumeric;
+export declare const DeviceVideoRecordingQualityS340Property: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityWalllightProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityT8200XProperty: PropertyMetadataNumeric;
 export declare const DeviceVideoRecordingQualityCamera2CProProperty: PropertyMetadataNumeric;
@@ -974,6 +986,8 @@ export declare const DeviceDeliveryGuardUncollectedPackageAlertProperty: Propert
 export declare const DeviceDeliveryGuardUncollectedPackageAlertTimeToCheckProperty: PropertyMetadataString;
 export declare const DeviceDeliveryGuardPackageLiveCheckAssistanceProperty: PropertyMetadataBoolean;
 export declare const DeviceDualCamWatchViewModeProperty: PropertyMetadataNumeric;
+export declare const DeviceDualCamWatchViewModeE340Property: PropertyMetadataNumeric;
+export declare const DeviceDualCamWatchViewModeS340Property: PropertyMetadataNumeric;
 export declare const DeviceRingAutoResponseProperty: PropertyMetadataBoolean;
 export declare const DeviceRingAutoResponseVoiceResponseProperty: PropertyMetadataBoolean;
 export declare const DeviceRingAutoResponseVoiceResponseVoiceProperty: PropertyMetadataNumeric;

@@ -1424,6 +1424,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 if (device.isWallLightCam()) {
                     station.setMotionDetectionTypeHuman(device, value);
                 }
+                else if (device.isOutdoorPanAndTiltCamera()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.T8170DetectionTypes.HUMAN_DETECTION, value);
+                }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
                 }
@@ -1432,11 +1435,19 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeVehicle:
-                station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.VEHICLE_DETECTION, value);
+                if (device.isOutdoorPanAndTiltCamera()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.T8170DetectionTypes.VEHICLE_DETECTION, value);
+                }
+                else {
+                    station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.VEHICLE_DETECTION, value);
+                }
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeAllOtherMotions:
                 if (device.isWallLightCam()) {
                     station.setMotionDetectionTypeAllOtherMotions(device, value);
+                }
+                else if (device.isOutdoorPanAndTiltCamera()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.T8170DetectionTypes.ALL_OTHER_MOTION, value);
                 }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);

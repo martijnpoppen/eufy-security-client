@@ -1,9 +1,9 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
-import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode, SourceType } from "./types";
+import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode, SourceType, T8170DetectionTypes } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
-import { DynamicLighting, RGBColor } from "../p2p/interfaces";
+import { DynamicLighting, MotionZone, RGBColor } from "../p2p/interfaces";
 import { CalibrateGarageType, FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4, WatermarkSetting5 } from "../p2p/types";
 import { Device } from "./device";
 import { PushMessage } from "../push/models";
@@ -86,6 +86,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onAlarmMode;
     private getArmDelay;
     private _getDeviceSerial;
+    private _handleCameraInfoParameters;
     private onCameraInfo;
     private onCommandResponse;
     private onSecondaryCommandResponse;
@@ -108,8 +109,8 @@ export declare class Station extends TypedEmitter<StationEvents> {
     switchLight(device: Device, value: boolean): void;
     setMotionDetectionSensitivity(device: Device, value: number): void;
     setMotionDetectionType(device: Device, value: number): void;
-    setMotionDetectionTypeHB3(device: Device, type: HB3DetectionTypes, value: boolean): void;
-    setMotionZone(device: Device, value: string): void;
+    setMotionDetectionTypeHB3(device: Device, type: HB3DetectionTypes | T8170DetectionTypes, value: boolean): void;
+    setMotionZone(device: Device, value: MotionZone): void;
     setMotionTracking(device: Device, value: boolean): void;
     setPanAndTiltRotationSpeed(device: Device, value: number): void;
     setMicMute(device: Device, value: boolean): void;
