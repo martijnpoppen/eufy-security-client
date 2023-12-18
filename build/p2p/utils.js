@@ -300,7 +300,17 @@ exports.buildCommandWithStringTypePayload = buildCommandWithStringTypePayload;
 const sortP2PMessageParts = (messages) => {
     let completeMessage = Buffer.from([]);
     Object.keys(messages).map(Number)
-        .sort((a, b) => a - b) // assure the seqNumbers are in correct order
+        .sort((a, b) => {
+        if (Math.abs(a - b) > 65000) {
+            if (a < b) {
+                return 1;
+            }
+            else if (b < a) {
+                return -1;
+            }
+        }
+        return a - b;
+    }) // assure the seqNumbers are in correct order
         .forEach((key) => {
         completeMessage = Buffer.concat([completeMessage, messages[key]]);
     });
