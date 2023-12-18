@@ -840,7 +840,6 @@ export class Device extends TypedEmitter<DeviceEvents> {
             type == DeviceType.CAMERA2_PRO ||
             type == DeviceType.CAMERA3 ||
             type == DeviceType.CAMERA3C ||
-            type == DeviceType.PROGESSIONAL_247 ||
             type == DeviceType.SOLO_CAMERA ||
             type == DeviceType.SOLO_CAMERA_PRO ||
             type == DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
