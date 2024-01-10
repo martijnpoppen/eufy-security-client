@@ -57,7 +57,8 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
         serverPublicKey: this.SERVER_PUBLIC_KEY
     };
 
-    private headers: Record<string, string> = {
+    private headers: Record<string, string | undefined> = {
+        "User-Agent": undefined,
         App_version: "v4.6.0_1630",
         Os_type: "android",
         Os_version: "31",
@@ -265,36 +266,46 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     }
 
     private invalidateToken(): void {
+        this.connected = false;
         this.token = null;
-        this.requestEufyCloud.defaults.options.headers["X-Auth-Token"] = undefined;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: {
+                "X-Auth-Token": undefined
+            }
+        });
         this.tokenExpiration = null;
+        this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
         this.clearScheduleRenewAuthToken();
         this.emit("auth token invalidated");
     }
 
     public setPhoneModel(model: string): void {
         this.headers.phone_model = model.toUpperCase();
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
 
     public getPhoneModel(): string {
-        return this.headers.phone_model;
+        return this.headers.phone_model!;
     }
 
     public getCountry(): string {
-        return this.headers.country;
+        return this.headers.country!;
     }
 
     public setLanguage(language: string): void {
         if (isValidLanguage(language) && language.length === 2) {
             this.headers.language = language;
-            this.requestEufyCloud.defaults.options.headers = this.headers;
+            this.requestEufyCloud.defaults.options.merge({
+                headers: this.headers
+            });
         } else
             throw new InvalidLanguageCodeError("Invalid ISO 639 language code", { context: { languageCode: language } });
     }
 
     public getLanguage(): string {
-        return this.headers.language;
+        return this.headers.language!;
     }
 
     public async login(options?: LoginOptions): Promise<void> {
@@ -305,7 +316,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
         if (!this.token || (this.tokenExpiration && (new Date()).getTime() >= this.tokenExpiration.getTime()) || options.verifyCode || options.captcha || options.force) {
             try {
                 const data: LoginRequest = {
-                    ab: this.headers.country,
+                    ab: this.headers.country!,
                     client_secret_info: {
                         public_key: this.ecdh.getPublicKey("hex")
                     },
@@ -386,9 +397,11 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
             try {
                 const profile = await this.getPassportProfile();
                 if (profile !== null) {
-                    this.connected = true;
-                    this.emit("connect");
-                    this.scheduleRenewAuthToken();
+                    if (!this.connected) {
+                        this.connected = true;
+                        this.emit("connect");
+                        this.scheduleRenewAuthToken();
+                    }
                 } else {
                     this.emit("connection error", new ApiInvalidResponseError(`Invalid passport profile response`));
                 }
@@ -651,7 +664,6 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
                 if (error.response.statusCode === 401) {
                     this.invalidateToken();
                     this.log.error("Status return code 401, invalidate token", { status: error.response.statusCode, statusText: error.response.statusMessage });
-                    this.connected = false;
                     this.emit("close");
                 }
             }
@@ -860,7 +872,11 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
 
     public setToken(token: string): void {
         this.token = token;
-        this.requestEufyCloud.defaults.options.headers["X-Auth-Token"] = token;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: {
+                "X-Auth-Token": token
+            }
+        });
     }
 
     public setTokenExpiration(tokenExpiration: Date): void {
@@ -873,12 +889,16 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
 
     public setOpenUDID(openudid: string): void {
         this.headers.openudid = openudid;
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
 
     public setSerialNumber(serialnumber: string): void {
         this.headers.sn = serialnumber;
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
 
     private async _getEvents(functionName: string, endpoint: string, startTime: Date, endTime: Date, filter?: EventFilterType, maxResults?: number): Promise<Array<EventRecordResponse>> {
@@ -1088,7 +1108,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
                 decryptedData = decryptAPIData(data, this.ecdh.computeSecret(Buffer.from(this.persistentData.serverPublicKey, "hex")));
             } catch (err) {
                 const error = ensureError(err);
-                this.log.error("Data decryption error, invalidating session data and reconnecting...", { error: getError(error) });
+                this.log.error("Data decryption error, invalidating session data and reconnecting...", { error: getError(error), serverPublicKey: this.persistentData.serverPublicKey });
                 this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
                 this.invalidateToken();
                 this.emit("close");

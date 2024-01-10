@@ -10,12 +10,12 @@ import { HTTPApi } from "./http/api";
 import { Devices, FullDevices, Hubs, PropertyValue, RawValues, Stations, Houses, LoginOptions, Schedule, Picture } from "./http/interfaces";
 import { Station } from "./http/station";
 import { ConfirmInvite, DeviceListResponse, HouseInviteListResponse, Invite, StationListResponse } from "./http/models";
-import { CommandName, DeviceType, HB3DetectionTypes, NotificationSwitchMode, NotificationType, PropertyName, T8170DetectionTypes } from "./http/types";
+import { CommandName, DeviceType, FloodlightT8425NotificationTypes, HB3DetectionTypes, IndoorS350NotificationTypes, NotificationSwitchMode, NotificationType, PropertyName, SoloCameraDetectionTypes, T8170DetectionTypes } from "./http/types";
 import { PushNotificationService } from "./push/service";
 import { Credentials, PushMessage } from "./push/models";
 import { BatteryDoorbellCamera, Camera, Device, EntrySensor, FloodlightCamera, GarageCamera, IndoorCamera, Keypad, Lock, MotionSensor, SmartSafe, SoloCamera, UnknownDevice, WallLightCam, WiredDoorbellCamera, Tracker } from "./http/device";
 import { AlarmEvent, ChargingType, CommandType, DatabaseReturnCode, P2PConnectionType, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, TFCardStatus } from "./p2p/types";
-import { DatabaseCountByDate, DatabaseQueryLatestInfo, DatabaseQueryLocal, StreamMetadata, DatabaseQueryLatestInfoLocal, DatabaseQueryLatestInfoCloud, RGBColor, DynamicLighting, MotionZone } from "./p2p/interfaces";
+import { DatabaseCountByDate, DatabaseQueryLatestInfo, DatabaseQueryLocal, StreamMetadata, DatabaseQueryLatestInfoLocal, DatabaseQueryLatestInfoCloud, RGBColor, DynamicLighting, MotionZone, CrossTrackingGroupEntry } from "./p2p/interfaces";
 import { CommandResult, StorageInfoBodyHB3 } from "./p2p/models";
 import { generateSerialnumber, generateUDID, getError, handleUpdate, md5, parseValue, removeLastChar, waitForEvent } from "./utils";
 import { DeviceNotFoundError, StationNotFoundError, ReadOnlyPropertyError, NotSupportedError, AddUserError, DeleteUserError, UpdateUserUsernameError, UpdateUserPasscodeError, UpdateUserScheduleError, ensureError } from "./error";
@@ -132,6 +132,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             this.log.debug("No stored data from last exit found", { error: getError(error) });
         }
 
+        this.log.debug("Loaded persistent data", { persistentData: this.persistentData });
         try {
             if (this.persistentData.version !== libVersion) {
                 const currentVersion = Number.parseFloat(removeLastChar(libVersion, "."));
@@ -141,7 +142,6 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 if (previousVersion < currentVersion) {
                     this.persistentData = handleUpdate(this.persistentData, this.log, previousVersion);
                     this.persistentData.version = libVersion;
-                    this.writePersistentData();
                 }
             }
         } catch(err) {
@@ -159,6 +159,32 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             }
         }
 
+        if (this.persistentData.login_hash && this.persistentData.login_hash != "") {
+            this.log.debug("Load previous login_hash", { login_hash: this.persistentData.login_hash });
+            if (md5(`${this.config.username}:${this.config.password}`) != this.persistentData.login_hash) {
+                this.log.info("Authentication properties changed, invalidate saved cloud token.");
+                this.persistentData.cloud_token = "";
+                this.persistentData.cloud_token_expiration = 0;
+                this.persistentData.httpApi = undefined;
+            }
+        } else {
+            this.persistentData.cloud_token = "";
+            this.persistentData.cloud_token_expiration = 0;
+            this.persistentData.httpApi = undefined;
+        }
+        if (this.persistentData.country !== undefined && this.persistentData.country !== "" && this.persistentData.country !== this.config.country) {
+            this.log.info("Country property changed, invalidate saved cloud token.");
+            this.persistentData.cloud_token = "";
+            this.persistentData.cloud_token_expiration = 0;
+            this.persistentData.httpApi = undefined;
+        }
+        if (this.persistentData.httpApi !== undefined && (this.persistentData.httpApi.clientPrivateKey === undefined || this.persistentData.httpApi.clientPrivateKey === "" || this.persistentData.httpApi.serverPublicKey === undefined || this.persistentData.httpApi.serverPublicKey === "")) {
+            this.log.debug("Incomplete persistent data for v2 encrypted cloud api communication. Invalidate authenticated session data.");
+            this.persistentData.cloud_token = "";
+            this.persistentData.cloud_token_expiration = 0;
+            this.persistentData.httpApi = undefined;
+        }
+
         this.api = await HTTPApi.initialize(this.config.country, this.config.username, this.config.password, this.log, this.persistentData.httpApi);
         this.api.setLanguage(this.config.language);
         this.api.setPhoneModel(this.config.trustedDeviceName);
@@ -173,34 +199,10 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
         this.api.on("tfa request", () => this.onTfaRequest());
         this.api.on("connection error", (error: Error) => this.onAPIConnectionError(error));
 
-        if (this.persistentData.login_hash && this.persistentData.login_hash != "") {
-            this.log.debug("Load previous login_hash", { login_hash: this.persistentData.login_hash });
-            if (md5(`${this.config.username}:${this.config.password}`) != this.persistentData.login_hash) {
-                this.log.info("Authentication properties changed, invalidate saved cloud token.");
-                this.persistentData.cloud_token = "";
-                this.persistentData.cloud_token_expiration = 0;
-                this.persistentData.httpApi = undefined;
-            }
-        } else {
-            this.persistentData.cloud_token = "";
-            this.persistentData.cloud_token_expiration = 0;
-        }
-        if (this.persistentData.country !== undefined && this.persistentData.country !== "" && this.persistentData.country !== this.config.country) {
-            this.log.info("Country property changed, invalidate saved cloud token.");
-            this.persistentData.cloud_token = "";
-            this.persistentData.cloud_token_expiration = 0;
-            this.persistentData.httpApi = undefined;
-        }
         if (this.persistentData.cloud_token && this.persistentData.cloud_token != "" && this.persistentData.cloud_token_expiration) {
-            this.log.debug("Load previous token", { token: this.persistentData.cloud_token, tokenExpiration: this.persistentData.cloud_token_expiration });
+            this.log.debug("Load previous token", { token: this.persistentData.cloud_token, tokenExpiration: this.persistentData.cloud_token_expiration, persistentHttpApi: this.persistentData.httpApi });
             this.api.setToken(this.persistentData.cloud_token);
             this.api.setTokenExpiration(new Date(this.persistentData.cloud_token_expiration));
-        }
-        if (this.persistentData.httpApi !== undefined && (this.persistentData.httpApi.clientPrivateKey === undefined || this.persistentData.httpApi.clientPrivateKey === "" || this.persistentData.httpApi.serverPublicKey === undefined || this.persistentData.httpApi.serverPublicKey === "")) {
-            this.log.debug("Incomplete persistent data for v2 encrypted cloud api communication. Invalidate authenticated session data.");
-            this.persistentData.cloud_token = "";
-            this.persistentData.cloud_token_expiration = 0;
-            this.persistentData.httpApi = undefined;
         }
         if (!this.persistentData.openudid || this.persistentData.openudid == "") {
             this.persistentData.openudid = generateUDID();
@@ -864,8 +866,10 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
 
     private writePersistentData(): void {
         this.persistentData.login_hash = md5(`${this.config.username}:${this.config.password}`);
-        this.persistentData.httpApi = this.api?.getPersistentData();
-        this.persistentData.country = this.api?.getCountry();
+        if (this.api.isConnected()) {
+            this.persistentData.httpApi = this.api?.getPersistentData();
+            this.persistentData.country = this.api?.getCountry();
+        }
         try {
             if(this.config.persistentData) {
                 this.emit("persistent data", JSON.stringify(this.persistentData));
@@ -1190,19 +1194,52 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 station.setNotificationType(device, value as NotificationType);
                 break;
             case PropertyName.DeviceNotificationPerson:
-                station.setNotificationPerson(device, value as boolean);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, IndoorS350NotificationTypes.HUMAN, value as boolean);
+                } else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, FloodlightT8425NotificationTypes.HUMAN, value as boolean);
+                } else {
+                    station.setNotificationPerson(device, value as boolean);
+                }
                 break;
             case PropertyName.DeviceNotificationPet:
-                station.setNotificationPet(device, value as boolean);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, IndoorS350NotificationTypes.PET, value as boolean);
+                } else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, FloodlightT8425NotificationTypes.PET, value as boolean);
+                } else {
+                    station.setNotificationPet(device, value as boolean);
+                }
                 break;
             case PropertyName.DeviceNotificationAllOtherMotion:
-                station.setNotificationAllOtherMotion(device, value as boolean);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, IndoorS350NotificationTypes.ALL_OTHER_MOTION, value as boolean);
+                } else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, FloodlightT8425NotificationTypes.ALL_OTHER_MOTION, value as boolean);
+                } else {
+                    station.setNotificationAllOtherMotion(device, value as boolean);
+                }
                 break;
             case PropertyName.DeviceNotificationAllSound:
-                station.setNotificationAllSound(device, value as boolean);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, IndoorS350NotificationTypes.ALL_SOUND, value as boolean);
+                } else {
+                    station.setNotificationAllSound(device, value as boolean);
+                }
                 break;
             case PropertyName.DeviceNotificationCrying:
-                station.setNotificationCrying(device, value as boolean);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, IndoorS350NotificationTypes.CRYING, value as boolean);
+                } else {
+                    station.setNotificationCrying(device, value as boolean);
+                }
+                break;
+            case PropertyName.DeviceNotificationVehicle:
+                if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, FloodlightT8425NotificationTypes.VEHICLE, value as boolean);
+                } else {
+                    throw new InvalidPropertyError("Station has no writable property", { context: { station: station.getSerial(), propertyName: name, propertyValue: value } });
+                }
                 break;
             case PropertyName.DeviceNotificationMotion:
                 station.setNotificationMotion(device, value as boolean);
@@ -1476,6 +1513,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                     station.setMotionDetectionTypeHuman(device, value as boolean);
                 } else if (device.isOutdoorPanAndTiltCamera()) {
                     station.setMotionDetectionTypeHB3(device, T8170DetectionTypes.HUMAN_DETECTION, value as boolean);
+                } else if (device.isSoloCameraC210()) {
+                    station.setMotionDetectionTypeHB3(device, SoloCameraDetectionTypes.HUMAN_DETECTION, value as boolean);
                 } else {
                     station.setMotionDetectionTypeHB3(device, HB3DetectionTypes.HUMAN_DETECTION, value as boolean);
                 }
@@ -1495,6 +1534,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                     station.setMotionDetectionTypeAllOtherMotions(device, value as boolean);
                 } else if (device.isOutdoorPanAndTiltCamera()) {
                     station.setMotionDetectionTypeHB3(device, T8170DetectionTypes.ALL_OTHER_MOTION, value as boolean);
+                } else if (device.isSoloCameraC210()) {
+                    station.setMotionDetectionTypeHB3(device, SoloCameraDetectionTypes.ALL_OTHER_MOTION, value as boolean);
                 } else {
                     station.setMotionDetectionTypeHB3(device, HB3DetectionTypes.ALL_OTHER_MOTION, value as boolean);
                 }
@@ -1574,6 +1615,15 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 }
                 break;
             }
+            case PropertyName.DeviceImageMirrored:
+                station.setMirrorMode(device, value as boolean);
+                break;
+            case PropertyName.DeviceFlickerAdjustment:
+                station.setFlickerAdjustment(device, value as number);
+                break;
+            case PropertyName.DeviceSoundDetectionType:
+                station.setSoundDetectionType(device, value as number);
+                break;
             default:
                 if (!Object.values(PropertyName).includes(name as PropertyName))
                     throw new ReadOnlyPropertyError("Property is read only", { context: { device: deviceSN, propertyName: name, propertyValue: value } });
@@ -1625,6 +1675,21 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 break;
             case PropertyName.StationTurnOffAlarmWithButton:
                 station.setStationTurnOffAlarmWithButton(value as boolean);
+                break;
+            case PropertyName.StationCrossCameraTracking:
+                station.setCrossCameraTracking(value as boolean);
+                break;
+            case PropertyName.StationContinuousTrackingTime:
+                station.setContinuousTrackingTime(value as number);
+                break;
+            case PropertyName.StationTrackingAssistance:
+                station.setTrackingAssistance(value as boolean);
+                break;
+            case PropertyName.StationCrossTrackingCameraList:
+                station.setCrossTrackingCameraList(value as Array<string>);
+                break;
+            case PropertyName.StationCrossTrackingGroupList:
+                station.setCrossTrackingGroupList(value as Array<CrossTrackingGroupEntry>);
                 break;
             default:
                 if (!Object.values(PropertyName).includes(name as PropertyName))
