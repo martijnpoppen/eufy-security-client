@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.SmartSafeByteWriter = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
+exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.SmartSafeByteWriter = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
 const crypto_1 = require("crypto");
 const const_1 = require("./const");
 const md5_1 = __importDefault(require("crypto-js/md5"));
@@ -527,4 +527,34 @@ const getT8170DetectionMode = function (value, type, enable) {
     return result;
 };
 exports.getT8170DetectionMode = getT8170DetectionMode;
+const isIndoorNotitficationEnabled = function (value, type) {
+    return (type & value) == type;
+};
+exports.isIndoorNotitficationEnabled = isIndoorNotitficationEnabled;
+const getIndoorNotification = function (value, type, enable) {
+    let result = 0;
+    if (!enable) {
+        result = (type ^ value) + 800;
+    }
+    else {
+        result = type | value;
+    }
+    return result;
+};
+exports.getIndoorNotification = getIndoorNotification;
+const isFloodlightT8425NotitficationEnabled = function (value, type) {
+    return (type & value) == type;
+};
+exports.isFloodlightT8425NotitficationEnabled = isFloodlightT8425NotitficationEnabled;
+const getFloodLightT8425Notification = function (value, type, enable) {
+    let result = 0;
+    if (!enable) {
+        result = (type ^ value);
+    }
+    else {
+        result = type | value;
+    }
+    return result;
+};
+exports.getFloodLightT8425Notification = getFloodLightT8425Notification;
 //# sourceMappingURL=utils.js.map

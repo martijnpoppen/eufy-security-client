@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
-import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes } from "./types";
+import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes } from "./types";
 import { HTTPApi } from "./api";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
@@ -48,3 +48,7 @@ export declare const isPrioritySourceType: (current: SourceType | undefined, upd
 export declare const decryptTrackerData: (data: Buffer, key: Buffer) => Buffer;
 export declare const isT8170DetectionModeEnabled: (value: number, type: T8170DetectionTypes) => boolean;
 export declare const getT8170DetectionMode: (value: number, type: T8170DetectionTypes, enable: boolean) => number;
+export declare const isIndoorNotitficationEnabled: (value: number, type: IndoorS350NotificationTypes) => boolean;
+export declare const getIndoorNotification: (value: number, type: IndoorS350NotificationTypes, enable: boolean) => number;
+export declare const isFloodlightT8425NotitficationEnabled: (value: number, type: FloodlightT8425NotificationTypes) => boolean;
+export declare const getFloodLightT8425Notification: (value: number, type: FloodlightT8425NotificationTypes, enable: boolean) => number;

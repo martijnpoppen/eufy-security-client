@@ -376,3 +376,6 @@ export interface VideoStreamingRecordingQuality {
     };
     cur_mode: number;
 }
+export interface CrossTrackingGroupEntry {
+    value: Array<string>;
+}

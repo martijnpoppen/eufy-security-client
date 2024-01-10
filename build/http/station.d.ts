@@ -1,9 +1,9 @@
 import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
-import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode, SourceType, T8170DetectionTypes } from "./types";
+import { AlarmTone, NotificationSwitchMode, DeviceType, FloodlightMotionTriggeredDistance, GuardMode, NotificationType, PowerSource, PropertyName, TimeFormat, CommandName, VideoTypeStoreToNAS, HB3DetectionTypes, WalllightNotificationType, DailyLightingType, MotionActivationMode, LightingActiveMode, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, SoloCameraDetectionTypes, MotionDetectionRangeType, ViewModeType, FloodlightT8425NotificationTypes, PresetPositionType } from "./types";
 import { SnoozeDetail, StationListResponse } from "./models";
 import { IndexedProperty, PropertyMetadataAny, PropertyValue, PropertyValues, RawValues, StationEvents, Schedule } from "./interfaces";
-import { DynamicLighting, MotionZone, RGBColor } from "../p2p/interfaces";
+import { CrossTrackingGroupEntry, DynamicLighting, MotionZone, RGBColor } from "../p2p/interfaces";
 import { CalibrateGarageType, FilterDetectType, FilterEventType, FilterStorageType, P2PConnectionType, PanTiltDirection, VideoCodec, WatermarkSetting1, WatermarkSetting2, WatermarkSetting3, WatermarkSetting4, WatermarkSetting5 } from "../p2p/types";
 import { Device } from "./device";
 import { PushMessage } from "../push/models";
@@ -109,7 +109,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     switchLight(device: Device, value: boolean): void;
     setMotionDetectionSensitivity(device: Device, value: number): void;
     setMotionDetectionType(device: Device, value: number): void;
-    setMotionDetectionTypeHB3(device: Device, type: HB3DetectionTypes | T8170DetectionTypes, value: boolean): void;
+    setMotionDetectionTypeHB3(device: Device, type: HB3DetectionTypes | T8170DetectionTypes | SoloCameraDetectionTypes, value: boolean): void;
     setMotionZone(device: Device, value: MotionZone): void;
     setMotionTracking(device: Device, value: boolean): void;
     setPanAndTiltRotationSpeed(device: Device, value: number): void;
@@ -177,7 +177,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setStationTurnOffAlarmWithButton(value: boolean): void;
     startRTSPStream(device: Device): void;
     stopRTSPStream(device: Device): void;
-    setMotionDetectionRange(device: Device, type: number): void;
+    setMotionDetectionRange(device: Device, type: MotionDetectionRangeType): void;
     setMotionDetectionRangeStandardSensitivity(device: Device, sensitivity: number): void;
     setMotionDetectionRangeAdvancedLeftSensitivity(device: Device, sensitivity: number): void;
     setMotionDetectionRangeAdvancedMiddleSensitivity(device: Device, sensitivity: number): void;
@@ -237,7 +237,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setDeliveryGuardUncollectedPackageAlert(device: Device, value: boolean): void;
     setDeliveryGuardUncollectedPackageAlertTimeToCheck(device: Device, value: string): void;
     setDeliveryGuardPackageLiveCheckAssistance(device: Device, value: boolean): void;
-    setDualCamWatchViewMode(device: Device, value: number): void;
+    setDualCamWatchViewMode(device: Device, value: ViewModeType): void;
     private _setRingAutoResponse;
     setRingAutoResponse(device: Device, value: boolean): void;
     setRingAutoResponseVoiceResponse(device: Device, value: boolean): void;
@@ -328,4 +328,16 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onGarageDoorStatus;
     calibrateGarageDoor(device: Device, doorId: number, type: CalibrateGarageType): void;
     private onStorageInfoHB3;
+    setMirrorMode(device: Device, value: boolean): void;
+    setFlickerAdjustment(device: Device, value: number): void;
+    setCrossCameraTracking(value: boolean): void;
+    setContinuousTrackingTime(value: number): void;
+    setTrackingAssistance(value: boolean): void;
+    setCrossTrackingCameraList(value: Array<string>): void;
+    setCrossTrackingGroupList(value: Array<CrossTrackingGroupEntry>): void;
+    setNotificationIndoor(device: Device, type: IndoorS350NotificationTypes, value: boolean): void;
+    setNotificationFloodlightT8425(device: Device, type: FloodlightT8425NotificationTypes, value: boolean): void;
+    presetPosition(device: Device, position: PresetPositionType): void;
+    savePresetPosition(device: Device, position: PresetPositionType): void;
+    deletePresetPosition(device: Device, position: PresetPositionType): void;
 }

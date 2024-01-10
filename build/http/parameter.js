@@ -29,7 +29,12 @@ class ParameterHelper {
                 type === types_1.CommandType.CMD_INDOOR_DET_SET_ACTIVE_ZONE ||
                 type === types_1.CommandType.CMD_SET_PRIVACYPARAM ||
                 type === types_1.CommandType.CMD_BAT_DOORBELL_VIDEO_QUALITY2 ||
-                type === types_1.CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY2) {
+                type === types_1.CommandType.CMD_BAT_DOORBELL_RECORD_QUALITY2 ||
+                type === types_1.CommandType.CMD_SET_CROSS_TRACKING_CAMERA_LIST ||
+                type === types_1.CommandType.CMD_SET_CROSS_TRACKING_GROUP_LIST ||
+                type === types_1.CommandType.CMD_FLOODLIGHT_SET_DETECTION_RANGE_T8425 ||
+                type === types_1.CommandType.CMD_SET_LIGHT_CTRL_BRIGHT_PIR_T8425 ||
+                type === types_1.CommandType.CMD_SET_LIGHT_CTRL_BRIGHT_SCH_T8425) {
                 if (typeof value === "string") {
                     const parsedValue = (0, utils_2.parseJSON)((0, utils_1.getNullTerminatedString)((0, utils_1.decodeBase64)(value), "utf-8"), log);
                     if (parsedValue === undefined) {

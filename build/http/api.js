@@ -62,6 +62,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         serverPublicKey: this.SERVER_PUBLIC_KEY
     };
     headers = {
+        "User-Agent": undefined,
         App_version: "v4.6.0_1630",
         Os_type: "android",
         Os_version: "31",
@@ -256,15 +257,23 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         }
     }
     invalidateToken() {
+        this.connected = false;
         this.token = null;
-        this.requestEufyCloud.defaults.options.headers["X-Auth-Token"] = undefined;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: {
+                "X-Auth-Token": undefined
+            }
+        });
         this.tokenExpiration = null;
+        this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
         this.clearScheduleRenewAuthToken();
         this.emit("auth token invalidated");
     }
     setPhoneModel(model) {
         this.headers.phone_model = model.toUpperCase();
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
     getPhoneModel() {
         return this.headers.phone_model;
@@ -275,7 +284,9 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
     setLanguage(language) {
         if ((0, i18n_iso_languages_1.isValid)(language) && language.length === 2) {
             this.headers.language = language;
-            this.requestEufyCloud.defaults.options.headers = this.headers;
+            this.requestEufyCloud.defaults.options.merge({
+                headers: this.headers
+            });
         }
         else
             throw new error_1.InvalidLanguageCodeError("Invalid ISO 639 language code", { context: { languageCode: language } });
@@ -375,9 +386,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             try {
                 const profile = await this.getPassportProfile();
                 if (profile !== null) {
-                    this.connected = true;
-                    this.emit("connect");
-                    this.scheduleRenewAuthToken();
+                    if (!this.connected) {
+                        this.connected = true;
+                        this.emit("connect");
+                        this.scheduleRenewAuthToken();
+                    }
                 }
                 else {
                     this.emit("connection error", new error_2.ApiInvalidResponseError(`Invalid passport profile response`));
@@ -645,7 +658,6 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
                 if (error.response.statusCode === 401) {
                     this.invalidateToken();
                     this.log.error("Status return code 401, invalidate token", { status: error.response.statusCode, statusText: error.response.statusMessage });
-                    this.connected = false;
                     this.emit("close");
                 }
             }
@@ -855,7 +867,11 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
     }
     setToken(token) {
         this.token = token;
-        this.requestEufyCloud.defaults.options.headers["X-Auth-Token"] = token;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: {
+                "X-Auth-Token": token
+            }
+        });
     }
     setTokenExpiration(tokenExpiration) {
         this.tokenExpiration = tokenExpiration;
@@ -865,11 +881,15 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
     }
     setOpenUDID(openudid) {
         this.headers.openudid = openudid;
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
     setSerialNumber(serialnumber) {
         this.headers.sn = serialnumber;
-        this.requestEufyCloud.defaults.options.headers = this.headers;
+        this.requestEufyCloud.defaults.options.merge({
+            headers: this.headers
+        });
     }
     async _getEvents(functionName, endpoint, startTime, endTime, filter, maxResults) {
         const records = [];
@@ -1080,7 +1100,7 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
             }
             catch (err) {
                 const error = (0, error_1.ensureError)(err);
-                this.log.error("Data decryption error, invalidating session data and reconnecting...", { error: (0, utils_2.getError)(error) });
+                this.log.error("Data decryption error, invalidating session data and reconnecting...", { error: (0, utils_2.getError)(error), serverPublicKey: this.persistentData.serverPublicKey });
                 this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
                 this.invalidateToken();
                 this.emit("close");

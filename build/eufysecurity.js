@@ -136,6 +136,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             const error = (0, error_1.ensureError)(err);
             this.log.debug("No stored data from last exit found", { error: (0, utils_1.getError)(error) });
         }
+        this.log.debug("Loaded persistent data", { persistentData: this.persistentData });
         try {
             if (this.persistentData.version !== _1.libVersion) {
                 const currentVersion = Number.parseFloat((0, utils_1.removeLastChar)(_1.libVersion, "."));
@@ -144,7 +145,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 if (previousVersion < currentVersion) {
                     this.persistentData = (0, utils_1.handleUpdate)(this.persistentData, this.log, previousVersion);
                     this.persistentData.version = _1.libVersion;
-                    this.writePersistentData();
                 }
             }
         }
@@ -162,18 +162,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 this.config.trustedDeviceName = this.persistentData.fallbackTrustedDeviceName;
             }
         }
-        this.api = await api_1.HTTPApi.initialize(this.config.country, this.config.username, this.config.password, this.log, this.persistentData.httpApi);
-        this.api.setLanguage(this.config.language);
-        this.api.setPhoneModel(this.config.trustedDeviceName);
-        this.api.on("houses", (houses) => this.handleHouses(houses));
-        this.api.on("hubs", (hubs) => this.handleHubs(hubs));
-        this.api.on("devices", (devices) => this.handleDevices(devices));
-        this.api.on("close", () => this.onAPIClose());
-        this.api.on("connect", () => this.onAPIConnect());
-        this.api.on("captcha request", (id, captcha) => this.onCaptchaRequest(id, captcha));
-        this.api.on("auth token invalidated", () => this.onAuthTokenInvalidated());
-        this.api.on("tfa request", () => this.onTfaRequest());
-        this.api.on("connection error", (error) => this.onAPIConnectionError(error));
         if (this.persistentData.login_hash && this.persistentData.login_hash != "") {
             this.log.debug("Load previous login_hash", { login_hash: this.persistentData.login_hash });
             if ((0, utils_1.md5)(`${this.config.username}:${this.config.password}`) != this.persistentData.login_hash) {
@@ -186,6 +174,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         else {
             this.persistentData.cloud_token = "";
             this.persistentData.cloud_token_expiration = 0;
+            this.persistentData.httpApi = undefined;
         }
         if (this.persistentData.country !== undefined && this.persistentData.country !== "" && this.persistentData.country !== this.config.country) {
             this.log.info("Country property changed, invalidate saved cloud token.");
@@ -193,16 +182,28 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             this.persistentData.cloud_token_expiration = 0;
             this.persistentData.httpApi = undefined;
         }
-        if (this.persistentData.cloud_token && this.persistentData.cloud_token != "" && this.persistentData.cloud_token_expiration) {
-            this.log.debug("Load previous token", { token: this.persistentData.cloud_token, tokenExpiration: this.persistentData.cloud_token_expiration });
-            this.api.setToken(this.persistentData.cloud_token);
-            this.api.setTokenExpiration(new Date(this.persistentData.cloud_token_expiration));
-        }
         if (this.persistentData.httpApi !== undefined && (this.persistentData.httpApi.clientPrivateKey === undefined || this.persistentData.httpApi.clientPrivateKey === "" || this.persistentData.httpApi.serverPublicKey === undefined || this.persistentData.httpApi.serverPublicKey === "")) {
             this.log.debug("Incomplete persistent data for v2 encrypted cloud api communication. Invalidate authenticated session data.");
             this.persistentData.cloud_token = "";
             this.persistentData.cloud_token_expiration = 0;
             this.persistentData.httpApi = undefined;
+        }
+        this.api = await api_1.HTTPApi.initialize(this.config.country, this.config.username, this.config.password, this.log, this.persistentData.httpApi);
+        this.api.setLanguage(this.config.language);
+        this.api.setPhoneModel(this.config.trustedDeviceName);
+        this.api.on("houses", (houses) => this.handleHouses(houses));
+        this.api.on("hubs", (hubs) => this.handleHubs(hubs));
+        this.api.on("devices", (devices) => this.handleDevices(devices));
+        this.api.on("close", () => this.onAPIClose());
+        this.api.on("connect", () => this.onAPIConnect());
+        this.api.on("captcha request", (id, captcha) => this.onCaptchaRequest(id, captcha));
+        this.api.on("auth token invalidated", () => this.onAuthTokenInvalidated());
+        this.api.on("tfa request", () => this.onTfaRequest());
+        this.api.on("connection error", (error) => this.onAPIConnectionError(error));
+        if (this.persistentData.cloud_token && this.persistentData.cloud_token != "" && this.persistentData.cloud_token_expiration) {
+            this.log.debug("Load previous token", { token: this.persistentData.cloud_token, tokenExpiration: this.persistentData.cloud_token_expiration, persistentHttpApi: this.persistentData.httpApi });
+            this.api.setToken(this.persistentData.cloud_token);
+            this.api.setTokenExpiration(new Date(this.persistentData.cloud_token_expiration));
         }
         if (!this.persistentData.openudid || this.persistentData.openudid == "") {
             this.persistentData.openudid = (0, utils_1.generateUDID)();
@@ -827,8 +828,10 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     }
     writePersistentData() {
         this.persistentData.login_hash = (0, utils_1.md5)(`${this.config.username}:${this.config.password}`);
-        this.persistentData.httpApi = this.api?.getPersistentData();
-        this.persistentData.country = this.api?.getCountry();
+        if (this.api.isConnected()) {
+            this.persistentData.httpApi = this.api?.getPersistentData();
+            this.persistentData.country = this.api?.getCountry();
+        }
         try {
             if (this.config.persistentData) {
                 this.emit("persistent data", JSON.stringify(this.persistentData));
@@ -1139,19 +1142,61 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 station.setNotificationType(device, value);
                 break;
             case types_1.PropertyName.DeviceNotificationPerson:
-                station.setNotificationPerson(device, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, types_1.IndoorS350NotificationTypes.HUMAN, value);
+                }
+                else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, types_1.FloodlightT8425NotificationTypes.HUMAN, value);
+                }
+                else {
+                    station.setNotificationPerson(device, value);
+                }
                 break;
             case types_1.PropertyName.DeviceNotificationPet:
-                station.setNotificationPet(device, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, types_1.IndoorS350NotificationTypes.PET, value);
+                }
+                else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, types_1.FloodlightT8425NotificationTypes.PET, value);
+                }
+                else {
+                    station.setNotificationPet(device, value);
+                }
                 break;
             case types_1.PropertyName.DeviceNotificationAllOtherMotion:
-                station.setNotificationAllOtherMotion(device, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, types_1.IndoorS350NotificationTypes.ALL_OTHER_MOTION, value);
+                }
+                else if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, types_1.FloodlightT8425NotificationTypes.ALL_OTHER_MOTION, value);
+                }
+                else {
+                    station.setNotificationAllOtherMotion(device, value);
+                }
                 break;
             case types_1.PropertyName.DeviceNotificationAllSound:
-                station.setNotificationAllSound(device, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, types_1.IndoorS350NotificationTypes.ALL_SOUND, value);
+                }
+                else {
+                    station.setNotificationAllSound(device, value);
+                }
                 break;
             case types_1.PropertyName.DeviceNotificationCrying:
-                station.setNotificationCrying(device, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setNotificationIndoor(device, types_1.IndoorS350NotificationTypes.CRYING, value);
+                }
+                else {
+                    station.setNotificationCrying(device, value);
+                }
+                break;
+            case types_1.PropertyName.DeviceNotificationVehicle:
+                if (device.isFloodLightT8425()) {
+                    station.setNotificationFloodlightT8425(device, types_1.FloodlightT8425NotificationTypes.VEHICLE, value);
+                }
+                else {
+                    throw new error_2.InvalidPropertyError("Station has no writable property", { context: { station: station.getSerial(), propertyName: name, propertyValue: value } });
+                }
                 break;
             case types_1.PropertyName.DeviceNotificationMotion:
                 station.setNotificationMotion(device, value);
@@ -1427,6 +1472,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 else if (device.isOutdoorPanAndTiltCamera()) {
                     station.setMotionDetectionTypeHB3(device, types_1.T8170DetectionTypes.HUMAN_DETECTION, value);
                 }
+                else if (device.isSoloCameraC210()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.SoloCameraDetectionTypes.HUMAN_DETECTION, value);
+                }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
                 }
@@ -1448,6 +1496,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 else if (device.isOutdoorPanAndTiltCamera()) {
                     station.setMotionDetectionTypeHB3(device, types_1.T8170DetectionTypes.ALL_OTHER_MOTION, value);
+                }
+                else if (device.isSoloCameraC210()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.SoloCameraDetectionTypes.ALL_OTHER_MOTION, value);
                 }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);
@@ -1528,6 +1579,15 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 break;
             }
+            case types_1.PropertyName.DeviceImageMirrored:
+                station.setMirrorMode(device, value);
+                break;
+            case types_1.PropertyName.DeviceFlickerAdjustment:
+                station.setFlickerAdjustment(device, value);
+                break;
+            case types_1.PropertyName.DeviceSoundDetectionType:
+                station.setSoundDetectionType(device, value);
+                break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
                     throw new error_1.ReadOnlyPropertyError("Property is read only", { context: { device: deviceSN, propertyName: name, propertyValue: value } });
@@ -1577,6 +1637,21 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 break;
             case types_1.PropertyName.StationTurnOffAlarmWithButton:
                 station.setStationTurnOffAlarmWithButton(value);
+                break;
+            case types_1.PropertyName.StationCrossCameraTracking:
+                station.setCrossCameraTracking(value);
+                break;
+            case types_1.PropertyName.StationContinuousTrackingTime:
+                station.setContinuousTrackingTime(value);
+                break;
+            case types_1.PropertyName.StationTrackingAssistance:
+                station.setTrackingAssistance(value);
+                break;
+            case types_1.PropertyName.StationCrossTrackingCameraList:
+                station.setCrossTrackingCameraList(value);
+                break;
+            case types_1.PropertyName.StationCrossTrackingGroupList:
+                station.setCrossTrackingGroupList(value);
                 break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))

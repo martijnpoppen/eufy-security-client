@@ -40,6 +40,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     setCustomPropertyValue(name: string, value: PropertyValue): void;
     destroy(): void;
     protected clearEventTimeout(eventType: DeviceEvent): void;
+    static isSupported(type: number): boolean;
     static isCamera(type: number): boolean;
     static hasBattery(type: number): boolean;
     static isStation(type: number): boolean;
@@ -52,8 +53,10 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isIndoorCamera(type: number): boolean;
     static isPanAndTiltCamera(type: number): boolean;
     static isOutdoorPanAndTiltCamera(type: number): boolean;
+    static isIndoorPanAndTiltCameraS350(type: number): boolean;
     static isFloodLight(type: number): boolean;
     static isFloodLightT8420X(type: number, serialnumber: string): boolean;
+    static isFloodLightT8425(type: number): boolean;
     static isWallLightCam(type: number): boolean;
     static isLock(type: number): boolean;
     static isLockKeypad(type: number): boolean;
@@ -77,6 +80,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isSoloCameraSpotlight2k(type: number): boolean;
     static isSoloCameraSpotlightSolar(type: number): boolean;
     static isSoloCameraSolar(type: number): boolean;
+    static isSoloCameraC210(type: number): boolean;
     static isSoloCameras(type: number): boolean;
     static isStarlight4GLTE(type: number): boolean;
     static isIndoorOutdoorCamera1080p(type: number): boolean;
@@ -105,6 +109,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isCamera(): boolean;
     isFloodLight(): boolean;
     isFloodLightT8420X(): boolean;
+    isFloodLightT8425(): boolean;
     isWallLightCam(): boolean;
     isDoorbell(): boolean;
     isWiredDoorbell(): boolean;
@@ -132,6 +137,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isSoloCameraSpotlight2k(): boolean;
     isSoloCameraSpotlightSolar(): boolean;
     isSoloCameraSolar(): boolean;
+    isSoloCameraC210(): boolean;
     isStarlight4GLTE(): boolean;
     isIndoorOutdoorCamera1080p(): boolean;
     isIndoorOutdoorCamera1080pNoLight(): boolean;
@@ -153,6 +159,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isIndoorCamera(): boolean;
     isPanAndTiltCamera(): boolean;
     isOutdoorPanAndTiltCamera(): boolean;
+    isIndoorPanAndTiltCameraS350(): boolean;
     isSmartDrop(): boolean;
     isSmartSafe(): boolean;
     isGarageCamera(): boolean;
