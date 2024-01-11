@@ -972,7 +972,6 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.CAMERA2_PRO ||
             type == types_1.DeviceType.CAMERA3 ||
             type == types_1.DeviceType.CAMERA3C ||
-            type == types_1.DeviceType.PROFESSIONAL_247 ||
             type == types_1.DeviceType.SOLO_CAMERA ||
             type == types_1.DeviceType.SOLO_CAMERA_PRO ||
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_1080 ||
