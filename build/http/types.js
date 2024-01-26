@@ -5672,6 +5672,7 @@ exports.DeviceProperties = {
         [PropertyName.DeviceWatermark]: exports.DeviceWatermarkProperty,
         [PropertyName.DeviceMotionDetected]: exports.DeviceMotionDetectedProperty,
         [PropertyName.DevicePersonDetected]: exports.DevicePersonDetectedProperty,
+        [PropertyName.DeviceVehicleDetected]: exports.DeviceVehicleDetectedProperty,
         [PropertyName.DeviceStatusLed]: exports.DeviceStatusLedIndoorFloodProperty,
         [PropertyName.DeviceLight]: exports.DeviceFloodlightLightProperty,
         [PropertyName.DeviceLightSettingsBrightnessManual]: exports.DeviceFloodlightLightSettingsBrightnessManualProperty,
