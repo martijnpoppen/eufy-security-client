@@ -1,5 +1,4 @@
 /// <reference types="node" />
-import { Logger } from "ts-log";
 import { TypedEmitter } from "tiny-typed-emitter";
 import { PushClientParserEvents } from "./interfaces";
 export declare class PushClientParser extends TypedEmitter<PushClientParserEvents> {
@@ -11,10 +10,9 @@ export declare class PushClientParser extends TypedEmitter<PushClientParserEvent
     private messageSize;
     private messageTag;
     private handshakeComplete;
-    private log;
     private constructor();
     resetState(): void;
-    static init(log?: Logger): Promise<PushClientParser>;
+    static init(): Promise<PushClientParser>;
     handleData(newData: Buffer): void;
     private waitForData;
     private handleFullMessage;

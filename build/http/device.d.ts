@@ -1,7 +1,6 @@
 /// <reference types="node" />
 /// <reference types="node" />
 import { TypedEmitter } from "tiny-typed-emitter";
-import { Logger } from "ts-log";
 import { HTTPApi } from "./api";
 import { CommandName, DeviceEvent, SourceType, TrackerType } from "./types";
 import { DeviceListResponse } from "./models";
@@ -11,7 +10,6 @@ import { DeviceSmartLockNotifyData } from "../mqtt/model";
 export declare class Device extends TypedEmitter<DeviceEvents> {
     protected api: HTTPApi;
     protected rawDevice: DeviceListResponse;
-    protected log: Logger;
     protected eventTimeouts: Map<DeviceEvent, NodeJS.Timeout>;
     protected properties: PropertyValues;
     private rawProperties;
@@ -44,6 +42,8 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isCamera(type: number): boolean;
     static hasBattery(type: number): boolean;
     static isStation(type: number): boolean;
+    static isCamera1(type: number): boolean;
+    static isCameraE(type: number): boolean;
     static isSensor(type: number): boolean;
     static isKeyPad(type: number): boolean;
     static isDoorbell(type: number): boolean;
@@ -87,6 +87,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isIndoorOutdoorCamera1080pNoLight(type: number): boolean;
     static isIndoorOutdoorCamera2k(type: number): boolean;
     static isIndoorCamMini(type: number): boolean;
+    static isCamera1Product(type: number): boolean;
     static isCamera2(type: number): boolean;
     static isCamera2C(type: number): boolean;
     static isCamera2Pro(type: number): boolean;
@@ -103,6 +104,13 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isGarageCamera(type: number): boolean;
     static isIntegratedDeviceBySn(sn: string): boolean;
     static isSoloCameraBySn(sn: string): boolean;
+    static isSmartDropBySn(sn: string): boolean;
+    static isLockBySn(sn: string): boolean;
+    static isGarageCameraBySn(sn: string): boolean;
+    static isFloodlightBySn(sn: string): boolean;
+    static isIndoorCameraBySn(sn: string): boolean;
+    static is4GCameraBySn(sn: string): boolean;
+    static isSmartSafeBySn(sn: string): boolean;
     static isSmartTrackCard(type: number): boolean;
     static isSmartTrackLink(type: number): boolean;
     static isSmartTrack(type: number): boolean;
@@ -220,6 +228,7 @@ export declare class SoloCamera extends Camera {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<SoloCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class IndoorCamera extends Camera {
@@ -398,6 +407,18 @@ export declare class Tracker extends Device {
     setFindPhone(value: boolean): Promise<boolean>;
     setLeftBehindAlarm(value: boolean): Promise<boolean>;
     setTrackerType(value: TrackerType): Promise<boolean>;
+}
+export declare class DoorbellLock extends DoorbellCamera {
+    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<DoorbellLock>;
+    getStateChannel(): string;
+    protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    getState(): PropertyValue;
+    getBatteryValue(): PropertyValue;
+    getWifiRssi(): PropertyValue;
+    isLocked(): PropertyValue;
+    getLockStatus(): PropertyValue;
+    processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class UnknownDevice extends Device {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<UnknownDevice>;

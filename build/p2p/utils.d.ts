@@ -64,3 +64,7 @@ export declare const getLockV12P2PCommand: (deviceSN: string, user_id: string, c
 export declare const DecimalToRGBColor: (color: number) => RGBColor;
 export declare const RGBColorToDecimal: (color: RGBColor) => number;
 export declare const getNullTerminatedString: (data: Buffer, encoding?: BufferEncoding) => string;
+export declare const isUsbCharging: (value: number) => boolean;
+export declare const isSolarCharging: (value: number) => boolean;
+export declare const isPlugSolarCharging: (value: number) => boolean;
+export declare const isCharging: (value: number) => boolean;

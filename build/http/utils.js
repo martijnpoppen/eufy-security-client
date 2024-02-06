@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.SmartSafeByteWriter = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
+exports.getLockEventType = exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.SmartSafeByteWriter = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
 const crypto_1 = require("crypto");
 const const_1 = require("./const");
 const md5_1 = __importDefault(require("crypto-js/md5"));
@@ -12,6 +12,7 @@ const sha256_1 = __importDefault(require("crypto-js/sha256"));
 const types_1 = require("./types");
 const error_1 = require("../error");
 const error_2 = require("./error");
+const __1 = require("..");
 const normalizeVersionString = function (version) {
     const trimmed = version ? version.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1") : "";
     const pieces = trimmed.split(RegExp("\\."));
@@ -557,4 +558,30 @@ const getFloodLightT8425Notification = function (value, type, enable) {
     return result;
 };
 exports.getFloodLightT8425Notification = getFloodLightT8425Notification;
+const getLockEventType = function (event) {
+    switch (event) {
+        case __1.LockPushEvent.AUTO_LOCK:
+        case __1.LockPushEvent.AUTO_UNLOCK:
+            return 1;
+        case __1.LockPushEvent.MANUAL_LOCK:
+        case __1.LockPushEvent.MANUAL_UNLOCK:
+            return 2;
+        case __1.LockPushEvent.APP_LOCK:
+        case __1.LockPushEvent.APP_UNLOCK:
+            return 3;
+        case __1.LockPushEvent.PW_LOCK:
+        case __1.LockPushEvent.PW_UNLOCK:
+            return 4;
+        case __1.LockPushEvent.FINGER_LOCK:
+        case __1.LockPushEvent.FINGERPRINT_UNLOCK:
+            return 5;
+        case __1.LockPushEvent.TEMPORARY_PW_LOCK:
+        case __1.LockPushEvent.TEMPORARY_PW_UNLOCK:
+            return 6;
+        case __1.LockPushEvent.KEYPAD_LOCK:
+            return 7;
+    }
+    return 0;
+};
+exports.getLockEventType = getLockEventType;
 //# sourceMappingURL=utils.js.map

@@ -69,7 +69,6 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private preferredIPAddress;
     private dskKey;
     private dskExpiration;
-    private log;
     private deviceSNs;
     private api;
     private rawStation;
@@ -175,4 +174,5 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     stopTalkback(channel?: number): void;
     setLockAESKey(commandCode: number, aesKey: string): void;
     getLockAESKey(commandCode: number): string | undefined;
+    isConnecting(): boolean;
 }

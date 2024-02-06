@@ -1,4 +1,5 @@
 import { UserType } from "../http/types";
+import { AlarmAction } from "./types";
 export interface CusPushData {
     a?: number;
     alarm?: number;
@@ -49,7 +50,7 @@ export interface EufyPushMessage {
     content: string;
     device_sn: string;
     event_time: string;
-    payload?: CusPushData | IndoorPushData | ServerPushData | BatteryDoorbellPushData | LockPushData | SmartSafeData | GarageDoorPushData;
+    payload?: CusPushData | IndoorPushData | ServerPushData | BatteryDoorbellPushData | LockPushData | SmartSafePushData | GarageDoorPushData | AlarmPushData;
     push_time: string;
     station_sn: string;
     title: string;
@@ -64,7 +65,7 @@ export interface SmartSafeEventValueDetail {
     user_id: number;
     name?: string;
 }
-export interface SmartSafeData {
+export interface SmartSafePushData {
     dev_name: string;
     event_type: number;
     event_time: number;
@@ -272,6 +273,10 @@ export interface PushMessage {
     person_id?: number;
     door_id?: number;
     power?: number;
+    email?: string;
+    verify_code?: string;
+    alarm_status?: string;
+    alarm_action?: AlarmAction;
 }
 export interface PlatformPushMode {
     a: number;
@@ -306,4 +311,12 @@ export interface PlatformPushMode {
     trigger_time: number;
     alarm_delay: number;
     person_id: number;
+}
+export interface AlarmPushData {
+    alarm_action_channel: AlarmAction;
+    alarm_id: string;
+    alarm_status: string;
+    alert_time: number;
+    device_sn: string;
+    station_sn: string;
 }

@@ -59,6 +59,9 @@ export interface ESLAdvancedLockStatusNotification {
     slState: string;
     trigger: number;
 }
+export interface ESLAdvancedLockStatusNotificationT8530 extends ESLAdvancedLockStatusNotification {
+    slOpenDirection: string;
+}
 export interface SmartSafeSettingsNotification {
     data: string;
     prj_id: number;
@@ -76,11 +79,13 @@ export interface SmartSafeNotificationResponse {
     responseCode: number;
     data: Buffer;
 }
-export interface LockAdvancedOnOffRequestPayload {
+export interface LockAdvancedOnOffRequestBasePayload {
     shortUserId: string;
     slOperation: number;
     userId: string;
     userName: string;
+}
+export interface LockAdvancedOnOffRequestPayload extends LockAdvancedOnOffRequestBasePayload {
     seq_num: number;
 }
 export interface AdvancedLockSetParamsType {
@@ -101,6 +106,37 @@ export interface AdvancedLockSetParamsType {
     scheduleStart: string;
     wrongTryTime: number;
     seq_num: number;
+}
+export interface AdvancedLockSetParamsTypeT8520 {
+    [index: string]: unknown;
+    autoLockTime: number;
+    isAutoLock: number;
+    isLockNotification: number;
+    isNotification: number;
+    isOneTouchLock: number;
+    isSchedule: number;
+    isScramblePasscode: number;
+    isUnLockNotification: number;
+    isWrongTryProtect: number;
+    lockDownTime: number;
+    lockOpenDirection: number;
+    lockVolume: number;
+    nightVisionEnhance: number;
+    openLeftAlarmEnable: number;
+    openLeftAlarmScheduleEnd: string;
+    openLeftAlarmScheduleStart: string;
+    openLeftAlarmScheduled: number;
+    openLeftAlarmTimer: number;
+    openLeftAlarmWays: number;
+    paramType: number;
+    scheduleEnd: string;
+    scheduleStart: string;
+    tamperAlarmEnable: number;
+    tamperAlarmScheduleEnd: string;
+    tamperAlarmScheduleStart: string;
+    tamperAlarmScheduled: number;
+    tamperAlarmWays: number;
+    wrongTryTime: number;
 }
 export interface LockP2PCommandType {
     commandType: CommandType;

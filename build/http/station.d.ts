@@ -10,7 +10,6 @@ import { PushMessage } from "../push/models";
 export declare class Station extends TypedEmitter<StationEvents> {
     private api;
     private rawStation;
-    private log;
     private p2pSession;
     private properties;
     private rawProperties;
@@ -49,6 +48,9 @@ export declare class Station extends TypedEmitter<StationEvents> {
     static getChannel(type: number): number;
     static isStation(type: number): boolean;
     isStation(): boolean;
+    static isStationHomeBase3(type: number): boolean;
+    static isStationHomeBase3BySn(sn: string): boolean;
+    isStationHomeBase3(): boolean;
     isIntegratedDevice(): boolean;
     isP2PConnectableDevice(): boolean;
     getDeviceType(): number;
@@ -203,8 +205,11 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onFloodlightManualSwitch;
     calibrateLock(device: Device): void;
     private convertAdvancedLockSettingValue;
+    private convertAdvancedLockSettingValueT8530;
     private getAdvancedLockSettingsPayload;
+    private getAdvancedLockSettingsPayloadT8530;
     private getAdvancedLockSettingName;
+    private getAdvancedLockSettingNameT8530;
     setAdvancedLockParams(device: Device, property: PropertyName, value: PropertyValue): void;
     setLoiteringDetection(device: Device, value: boolean): void;
     setLoiteringDetectionRange(device: Device, value: number): void;
@@ -340,4 +345,12 @@ export declare class Station extends TypedEmitter<StationEvents> {
     presetPosition(device: Device, position: PresetPositionType): void;
     savePresetPosition(device: Device, position: PresetPositionType): void;
     deletePresetPosition(device: Device, position: PresetPositionType): void;
+    setLeavingDetection(device: Device, value: boolean): void;
+    private _setLeavingReactions;
+    setLeavingReactionNotification(device: Device, value: boolean): void;
+    setLeavingReactionStartTime(device: Device, value: string): void;
+    setLeavingReactionEndTime(device: Device, value: string): void;
+    setBeepVolume(device: Device, value: number): void;
+    setNightvisionOptimization(device: Device, value: boolean): void;
+    setNightvisionOptimizationSide(device: Device, value: number): void;
 }

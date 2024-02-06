@@ -56,7 +56,8 @@ class ParameterHelper {
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_RADAR_WD_TIME ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_DELIVERY_GUARD_SWITCH ||
                 type === types_1.CommandType.CMD_DOORBELL_DUAL_PACKAGE_GUARD_VOICE ||
-                type === types_1.CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS) {
+                type === types_1.CommandType.CMD_CAMERA_GARAGE_DOOR_SENSORS ||
+                type === types_1.CommandType.CMD_MOTION_SET_LEAVING_REACTIONS) {
                 if (typeof value === "string") {
                     const parsedValue = (0, utils_2.parseJSON)(value, log);
                     if (parsedValue === undefined) {

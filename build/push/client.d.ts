@@ -1,5 +1,4 @@
 import { TypedEmitter } from "tiny-typed-emitter";
-import { Logger } from "ts-log";
 import { PushClientEvents } from "./interfaces";
 export declare class PushClient extends TypedEmitter<PushClientEvents> {
     private readonly HOST;
@@ -17,12 +16,11 @@ export declare class PushClient extends TypedEmitter<PushClientEvents> {
     private static proto;
     private pushClientParser;
     private auth;
-    private log;
     private constructor();
     static init(auth: {
         androidId: string;
         securityToken: string;
-    }, log?: Logger): Promise<PushClient>;
+    }): Promise<PushClient>;
     private initialize;
     getPersistentIds(): Array<string>;
     setPersistentIds(ids: Array<string>): void;

@@ -3,6 +3,7 @@ import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
 import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes } from "./types";
 import { HTTPApi } from "./api";
+import { LockPushEvent } from "..";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
 export declare const getTimezoneGMTString: () => string;
@@ -52,3 +53,4 @@ export declare const isIndoorNotitficationEnabled: (value: number, type: IndoorS
 export declare const getIndoorNotification: (value: number, type: IndoorS350NotificationTypes, enable: boolean) => number;
 export declare const isFloodlightT8425NotitficationEnabled: (value: number, type: FloodlightT8425NotificationTypes) => boolean;
 export declare const getFloodLightT8425Notification: (value: number, type: FloodlightT8425NotificationTypes, enable: boolean) => number;
+export declare const getLockEventType: (event: LockPushEvent) => number;

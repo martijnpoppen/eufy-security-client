@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TrackerCommandType = exports.InternalP2PCommandType = exports.EncryptionType = exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.ChargingType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
+exports.TrackerCommandType = exports.InternalP2PCommandType = exports.EncryptionType = exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
 exports.RequestMessageType = {
     STUN: Buffer.from([0xF1, 0x00]),
     LOOKUP: Buffer.from([0xF1, 0x20]),
@@ -478,6 +478,12 @@ var CommandType;
     CommandType[CommandType["CMD_SMARTLOCK_AUTO_LOCK_TIMER"] = 6600] = "CMD_SMARTLOCK_AUTO_LOCK_TIMER";
     CommandType[CommandType["CMD_SMARTLOCK_WRONG_TRY_LOCKDOWN"] = 6604] = "CMD_SMARTLOCK_WRONG_TRY_LOCKDOWN";
     CommandType[CommandType["CMD_SMARTLOCK_WRONG_TRY_ATTEMPTS"] = 6603] = "CMD_SMARTLOCK_WRONG_TRY_ATTEMPTS";
+    CommandType[CommandType["CMD_SMARTLOCK_NIGHT_VISION_ENHANCE"] = 6614] = "CMD_SMARTLOCK_NIGHT_VISION_ENHANCE";
+    CommandType[CommandType["CMD_SMARTLOCK_NIGHT_VISION_SIDE"] = 6615] = "CMD_SMARTLOCK_NIGHT_VISION_SIDE";
+    //CMD_SMARTLOCK_OPEN_DIRECTION = 6615,
+    CommandType[CommandType["CMD_SMARTLOCK_LEFT_OPEN_ALARM"] = 6616] = "CMD_SMARTLOCK_LEFT_OPEN_ALARM";
+    CommandType[CommandType["CMD_SMARTLOCK_TAMPER_ALARM"] = 6617] = "CMD_SMARTLOCK_TAMPER_ALARM";
+    CommandType[CommandType["CMD_SMARTLOCK_VOLUME"] = 6618] = "CMD_SMARTLOCK_VOLUME";
     CommandType[CommandType["CMD_DOORBELL_DUAL_VIEW_MODE"] = 2700] = "CMD_DOORBELL_DUAL_VIEW_MODE";
     CommandType[CommandType["CMD_DOORBELL_DUAL_VIEW_MODE2"] = 6243] = "CMD_DOORBELL_DUAL_VIEW_MODE2";
     CommandType[CommandType["CMD_DOORBELL_DUAL_RADAR_WD_DETECTION_SENSITIVITY"] = 2705] = "CMD_DOORBELL_DUAL_RADAR_WD_DETECTION_SENSITIVITY";
@@ -580,6 +586,16 @@ var CommandType;
     CommandType[CommandType["CMD_SET_CROSS_TRACKING_GROUP_LIST"] = 1073] = "CMD_SET_CROSS_TRACKING_GROUP_LIST";
     CommandType[CommandType["CMD_INDOOR_SET_SOUND_DETECT_ROUND_LOOK_S350"] = 6208] = "CMD_INDOOR_SET_SOUND_DETECT_ROUND_LOOK_S350";
     CommandType[CommandType["CMD_INDOOR_ENABLE_PRIVACY_MODE_S350"] = 6250] = "CMD_INDOOR_ENABLE_PRIVACY_MODE_S350";
+    CommandType[CommandType["CMD_MOTION_SET_LEAVING_DETECTION"] = 2726] = "CMD_MOTION_SET_LEAVING_DETECTION";
+    CommandType[CommandType["CMD_MOTION_SET_LEAVING_REACTIONS"] = 2727] = "CMD_MOTION_SET_LEAVING_REACTIONS";
+    CommandType[CommandType["CMD_SMARKLOCK_ADD_FINGER"] = 1965] = "CMD_SMARKLOCK_ADD_FINGER";
+    CommandType[CommandType["CMD_SMARKLOCK_ADD_FINGER_STEP"] = 1967] = "CMD_SMARKLOCK_ADD_FINGER_STEP";
+    CommandType[CommandType["CMD_SMARKLOCK_CANCLE_FINGER"] = 1966] = "CMD_SMARKLOCK_CANCLE_FINGER";
+    CommandType[CommandType["CMD_SMARTLOCK_ALARM_NOTIFY"] = 1970] = "CMD_SMARTLOCK_ALARM_NOTIFY";
+    CommandType[CommandType["CMD_SMARTLOCK_ALARM_STOP"] = 1971] = "CMD_SMARTLOCK_ALARM_STOP";
+    CommandType[CommandType["CMD_SMARTLOCK_GET_DOOR_STATUS"] = 1972] = "CMD_SMARTLOCK_GET_DOOR_STATUS";
+    CommandType[CommandType["CMD_TRANSFER_PAYLOAD"] = 1940] = "CMD_TRANSFER_PAYLOAD";
+    CommandType[CommandType["CMD_WIFILOCK_KEYPAD_ENTER_OTA"] = 1933] = "CMD_WIFILOCK_KEYPAD_ENTER_OTA";
 })(CommandType || (exports.CommandType = CommandType = {}));
 var MessageType;
 (function (MessageType) {
@@ -907,13 +923,6 @@ var P2PConnectionType;
     P2PConnectionType[P2PConnectionType["ONLY_LOCAL"] = 1] = "ONLY_LOCAL";
     P2PConnectionType[P2PConnectionType["QUICKEST"] = 2] = "QUICKEST";
 })(P2PConnectionType || (exports.P2PConnectionType = P2PConnectionType = {}));
-var ChargingType;
-(function (ChargingType) {
-    ChargingType[ChargingType["CHARGING"] = 1] = "CHARGING";
-    ChargingType[ChargingType["UNPLUGGED"] = 2] = "UNPLUGGED";
-    ChargingType[ChargingType["PLUGGED"] = 3] = "PLUGGED";
-    ChargingType[ChargingType["SOLAR_CHARGING"] = 4] = "SOLAR_CHARGING";
-})(ChargingType || (exports.ChargingType = ChargingType = {}));
 var IndoorSoloSmartdropCommandType;
 (function (IndoorSoloSmartdropCommandType) {
     //com.eufy.security.indoorcam.logic.net.IcP2PCommandType

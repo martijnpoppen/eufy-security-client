@@ -1,5 +1,4 @@
 import { TypedEmitter } from "tiny-typed-emitter";
-import { Logger } from "ts-log";
 import { EufySecurityEvents, EufySecurityConfig } from "./interfaces";
 import { HTTPApi } from "./http/api";
 import { LoginOptions, Schedule } from "./http/interfaces";
@@ -8,9 +7,9 @@ import { PushNotificationService } from "./push/service";
 import { Credentials } from "./push/models";
 import { Device } from "./http/device";
 import { P2PConnectionType } from "./p2p/types";
+import { Logger } from "./logging";
 export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private config;
-    private log;
     private api;
     private houses;
     private stations;

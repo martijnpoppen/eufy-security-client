@@ -27,7 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSmartSafeP2PCommand = exports.decodeSmartSafeData = exports.decodeP2PCloudIPs = exports.buildTalkbackAudioFrameHeader = exports.getLockV12Key = exports.getAdvancedLockKey = exports.eufyKDF = exports.decryptPayloadData = exports.encryptPayloadData = exports.isP2PQueueMessage = exports.buildVoidCommandPayload = exports.checkT8420 = exports.getVideoCodec = exports.generateAdvancedLockAESKey = exports.eslTimestamp = exports.decodeBase64 = exports.decodeLockPayload = exports.getLockVectorBytes = exports.encodeLockPayload = exports.generateLockSequence = exports.getCurrentTimeInSeconds = exports.generateBasicLockAESKey = exports.encryptLockAESData = exports.decryptLockAESData = exports.isIFrame = exports.findStartCode = exports.decryptAESData = exports.getNewRSAPrivateKey = exports.getRSAPrivateKey = exports.sortP2PMessageParts = exports.buildCommandWithStringTypePayload = exports.buildCommandHeader = exports.hasHeader = exports.sendMessage = exports.buildIntStringCommandPayload = exports.buildStringTypeCommandPayload = exports.buildIntCommandPayload = exports.buildCheckCamPayload2 = exports.buildCheckCamPayload = exports.buildLookupWithKeyPayload3 = exports.buildLookupWithKeyPayload2 = exports.buildLookupWithKeyPayload = exports.paddingP2PData = exports.decryptP2PData = exports.encryptP2PData = exports.getP2PCommandEncryptionKey = exports.isP2PCommandEncrypted = exports.getLocalIpAddress = exports.isPrivateIp = exports.MAGIC_WORD = void 0;
-exports.getNullTerminatedString = exports.RGBColorToDecimal = exports.DecimalToRGBColor = exports.getLockV12P2PCommand = exports.getLockP2PCommand = void 0;
+exports.isCharging = exports.isPlugSolarCharging = exports.isSolarCharging = exports.isUsbCharging = exports.getNullTerminatedString = exports.RGBColorToDecimal = exports.DecimalToRGBColor = exports.getLockV12P2PCommand = exports.getLockP2PCommand = void 0;
 const node_rsa_1 = __importDefault(require("node-rsa"));
 const CryptoJS = __importStar(require("crypto-js"));
 const crypto_1 = require("crypto");
@@ -732,4 +732,20 @@ const getNullTerminatedString = function (data, encoding) {
     return data.toString(encoding, 0, index === -1 ? data.length : index);
 };
 exports.getNullTerminatedString = getNullTerminatedString;
+const isUsbCharging = function (value) {
+    return (value & 1) == 1;
+};
+exports.isUsbCharging = isUsbCharging;
+const isSolarCharging = function (value) {
+    return ((value >> 2) & 1) == 1;
+};
+exports.isSolarCharging = isSolarCharging;
+const isPlugSolarCharging = function (value) {
+    return ((value >> 3) & 1) == 1;
+};
+exports.isPlugSolarCharging = isPlugSolarCharging;
+const isCharging = function (value) {
+    return (0, exports.isUsbCharging)(value) || (0, exports.isSolarCharging)(value) || (0, exports.isPlugSolarCharging)(value);
+};
+exports.isCharging = isCharging;
 //# sourceMappingURL=utils.js.map

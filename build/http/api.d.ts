@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import { TypedEmitter } from "tiny-typed-emitter";
-import { Logger } from "ts-log";
 import { TrustDevice, Cipher, EventRecordResponse, ConfirmInvite, SensorHistoryEntry, ApiResponse, HouseDetail, DeviceListResponse, StationListResponse, HouseInviteListResponse, HouseListResponse, PassportProfileResponse, User, AddUserResponse } from "./models";
 import { HTTPApiEvents, Ciphers, FullDevices, Hubs, Voices, Invites, HTTPApiRequest, HTTPApiPersistentData, LoginOptions } from "./interfaces";
 import { EventFilterType, PublicKeyType, VerfyCodeTypes } from "./types";
@@ -14,7 +13,6 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     private token;
     private tokenExpiration;
     private renewAuthTokenJob?;
-    private log;
     private connected;
     private requestEufyCloud;
     private throttle;
@@ -26,7 +24,7 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     private constructor();
     static getApiBaseFromCloud(country: string): Promise<string>;
     private loadLibraries;
-    static initialize(country: string, username: string, password: string, log?: Logger, persistentData?: HTTPApiPersistentData): Promise<HTTPApi>;
+    static initialize(country: string, username: string, password: string, persistentData?: HTTPApiPersistentData): Promise<HTTPApi>;
     private clearScheduleRenewAuthToken;
     private scheduleRenewAuthToken;
     private invalidateToken;
@@ -55,7 +53,6 @@ export declare class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     getCiphers(/*stationSN: string, */ cipherIDs: Array<number>, userID: string): Promise<Ciphers>;
     getVoices(deviceSN: string): Promise<Voices>;
     getCipher(/*stationSN: string, */ cipherID: number, userID: string): Promise<Cipher>;
-    getLog(): Logger;
     getDevices(): FullDevices;
     getHubs(): Hubs;
     getToken(): string | null;

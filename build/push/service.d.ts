@@ -1,4 +1,3 @@
-import { Logger } from "ts-log";
 import { TypedEmitter } from "tiny-typed-emitter";
 import { Credentials } from "./models";
 import { PushNotificationServiceEvents } from "./interfaces";
@@ -16,13 +15,12 @@ export declare class PushNotificationService extends TypedEmitter<PushNotificati
     private retryDelay;
     private credentials;
     private persistentIds;
-    private log;
     private connected;
     private connecting;
     private got;
     private constructor();
     private loadLibraries;
-    static initialize(log?: Logger): Promise<PushNotificationService>;
+    static initialize(): Promise<PushNotificationService>;
     private buildExpiresAt;
     private registerFid;
     private renewFidToken;

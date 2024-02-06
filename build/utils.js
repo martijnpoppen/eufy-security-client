@@ -52,7 +52,7 @@ exports.generateSerialnumber = generateSerialnumber;
 const md5 = (contents) => crypto.createHash("md5").update(contents).digest("hex");
 exports.md5 = md5;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const handleUpdate = function (config, log, oldVersion) {
+const handleUpdate = function (config, oldVersion) {
     if (oldVersion <= 1.24) {
         config.cloud_token = "";
         config.cloud_token_expiration = 0;
