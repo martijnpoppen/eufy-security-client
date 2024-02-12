@@ -1046,6 +1046,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.LOCK_8530 ||
             type == types_1.DeviceType.LOCK_8592 ||
             type == types_1.DeviceType.LOCK_85A3 ||
+            type == types_1.DeviceType.LOCK_8506 ||
             type == types_1.DeviceType.SMART_SAFE_7400 ||
             type == types_1.DeviceType.SMART_SAFE_7401 ||
             type == types_1.DeviceType.SMART_SAFE_7402 ||
@@ -1167,7 +1168,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             Device.isLockWifiNoFinger(type) ||
             Device.isLockWifiR10(type) ||
             Device.isLockWifiR20(type) ||
-            Device.isLockWifiVideo(type);
+            Device.isLockWifiVideo(type) ||
+            Device.isLockWifiT8506(type);
     }
     static isLockKeypad(type) {
         return Device.isLockWifiR10Keypad(type);
@@ -1195,6 +1197,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     static isLockWifiR10Keypad(type) {
         return types_1.DeviceType.LOCK_85A3 == type;
+    }
+    static isLockWifiT8506(type) {
+        return types_1.DeviceType.LOCK_8506 == type;
     }
     static isBatteryDoorbell1(type) {
         return types_1.DeviceType.BATTERY_DOORBELL == type;
@@ -1468,6 +1473,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isLockWifiR10Keypad() {
         return Device.isLockWifiR10Keypad(this.rawDevice.device_type);
+    }
+    isLockWifiT8506() {
+        return Device.isLockWifiT8506(this.rawDevice.device_type);
     }
     isBatteryDoorbell1() {
         return Device.isBatteryDoorbell1(this.rawDevice.device_type);
@@ -2794,6 +2802,7 @@ class MotionSensor extends Sensor {
 }
 exports.MotionSensor = MotionSensor;
 class Lock extends Device {
+    static VERSION_CODE_SMART_LOCK = 3;
     static VERSION_CODE_LOCKV12 = 18;
     static async getInstance(api, device) {
         return new Lock(api, device);
@@ -2988,45 +2997,45 @@ class Lock extends Device {
         return buffer;
     }
     static encodeCmdStatus(user_id) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id, "hex"));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id, "hex"));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdUnlock(short_user_id, value, username) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(short_user_id, "hex"));
-        ssbytes.write(this.getUInt8Buffer(value));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        ssbytes.write(Buffer.from(username));
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(short_user_id, "hex"));
+        payload.write(this.getUInt8Buffer(value));
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(username));
+        return payload.getData();
     }
     static encodeCmdCalibrate(user_id) {
         return this.encodeCmdStatus(user_id);
     }
     static encodeCmdAddUser(short_user_id, passcode, username, schedule, user_permission = 4) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(short_user_id, "hex"));
-        ssbytes.write(Buffer.from(passcode, "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
-        ssbytes.write(this.getUInt8Buffer(user_permission));
-        ssbytes.write(Buffer.from(username));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(short_user_id, "hex"));
+        payload.write(Buffer.from(passcode, "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
+        payload.write(this.getUInt8Buffer(user_permission));
+        payload.write(Buffer.from(username));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdAddTemporaryUser(schedule, unlimited = false) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
-        ssbytes.write(this.getUInt8Buffer(unlimited === false ? 1 : 2));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
+        payload.write(this.getUInt8Buffer(unlimited === false ? 1 : 2));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdDeleteTemporaryUser(password_id) {
         return this.encodeCmdStatus(password_id);
@@ -3038,104 +3047,255 @@ class Lock extends Device {
         return this.encodeCmdStatus(password);
     }
     static encodeCmdQueryLockRecord(index) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16LEBuffer(index));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16LEBuffer(index));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdQueryUser(short_user_id) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(short_user_id, "hex"));
-        ssbytes.write(this.getUInt8Buffer(0)); //TODO: eSLQueryAllUsers.index
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(short_user_id, "hex"));
+        payload.write(this.getUInt8Buffer(0)); //TODO: eSLQueryAllUsers.index
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdQueryPassword(password_id) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(password_id, "hex"));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(password_id, "hex"));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdModifyPassword(password_id, passcode) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(password_id, "hex"));
-        ssbytes.write(Buffer.from(passcode, "hex"));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(password_id, "hex"));
+        payload.write(Buffer.from(passcode, "hex"));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdUpdateSchedule(short_user_id, schedule) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(short_user_id, "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
-        ssbytes.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(short_user_id, "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdModifyUsername(username, password_id) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(password_id, "hex"));
-        ssbytes.write(Buffer.from(username));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(password_id, "hex"));
+        payload.write(Buffer.from(username));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdGetLockParam(user_id) {
         return this.encodeCmdStatus(user_id);
     }
     static encodeCmdSetLockParamAutoLock(enabled, lockTimeSeconds) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getUint16LEBuffer(lockTimeSeconds));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUint16LEBuffer(lockTimeSeconds));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static hexTime = function (time) {
         const buf = Buffer.allocUnsafe(2);
         buf.writeUint8(Number.parseInt(time.split(":")[0]));
-        buf.writeUint8(Number.parseInt(time.split(":")[1]));
+        buf.writeUint8(Number.parseInt(time.split(":")[1]), 1);
         return buf.readUInt16BE().toString(16).padStart(4, "0");
     };
     static encodeCmdSetLockParamAutoLockSchedule(enabled, schedule_start, schedule_end) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK_SCHEDULE));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(Buffer.from(Lock.hexTime(schedule_start), "hex"));
-        ssbytes.write(Buffer.from(Lock.hexTime(schedule_end), "hex"));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_AUTO_LOCK_SCHEDULE));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(Buffer.from(Lock.hexTime(schedule_start), "hex"));
+        payload.write(Buffer.from(Lock.hexTime(schedule_end), "hex"));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdSetLockParamOneTouchLock(enabled) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_ONE_TOUCH_LOCK));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_ONE_TOUCH_LOCK));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdSetLockParamWrongTryProtect(enabled, lockdownTime, attempts) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_WRONG_TRY_PROTECT));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getUint16LEBuffer(lockdownTime));
-        ssbytes.write(this.getUInt8Buffer(attempts));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_WRONG_TRY_PROTECT));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUint16LEBuffer(lockdownTime));
+        payload.write(this.getUInt8Buffer(attempts));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdSetLockParamScramblePasscode(enabled) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_SCRAMBLE_PASSCODE));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_SCRAMBLE_PASSCODE));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdSetLockParamSound(value) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_LOCK_SOUND));
-        ssbytes.write(this.getUInt8Buffer(value));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getUint16BEBuffer(types_2.CommandType.CMD_SMARTLOCK_LOCK_SOUND));
+        payload.write(this.getUInt8Buffer(value));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
+    }
+    convertRawPropertyValue(property, value) {
+        try {
+            switch (property.key) {
+                case types_2.CommandType.CMD_DOORLOCK_SET_PUSH_MODE:
+                    if (property.name === types_1.PropertyName.DeviceNotification) {
+                        return value !== undefined ? (0, utils_1.isSmartLockNotification)(Number.parseInt(value), 1 /* SmartLockNotification.ENABLED */) : false;
+                    }
+                    else if (property.name === types_1.PropertyName.DeviceNotificationLocked) {
+                        return value !== undefined ? (0, utils_1.isSmartLockNotification)(Number.parseInt(value), 4 /* SmartLockNotification.LOCKED */) : false;
+                    }
+                    else if (property.name === types_1.PropertyName.DeviceNotificationUnlocked) {
+                        return value !== undefined ? (0, utils_1.isSmartLockNotification)(Number.parseInt(value), 2 /* SmartLockNotification.UNLOCKED */) : false;
+                    }
+                    break;
+            }
+        }
+        catch (err) {
+            const error = (0, error_2.ensureError)(err);
+            logging_1.rootHTTPLogger.error("WallLightCam convert raw property - Error", { error: (0, utils_3.getError)(error), deviceSN: this.getSerial(), property: property, value: value });
+        }
+        return super.convertRawPropertyValue(property, value);
+    }
+    static encodeCmdSmartLockUnlock(adminUserId, lock, username, shortUserId) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(lock ? 0 : 1));
+        payload.write(Buffer.from(username));
+        payload.write(Buffer.from(shortUserId, "hex"));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockCalibrate(adminUserId) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        return payload.getData();
+    }
+    static encodeCmdSetSmartLockParamWrongTryProtect(adminUserId, enabled, attempts, lockdownTime) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(2));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUInt8Buffer(attempts));
+        payload.write(this.getUint16LEBuffer(lockdownTime));
+        return payload.getData();
+    }
+    static hexTimeSmartLock = function (time) {
+        const buf = Buffer.allocUnsafe(2);
+        buf.writeUint8(Number.parseInt(time.split(":")[0]));
+        buf.writeUint8(Number.parseInt(time.split(":")[1]), 1);
+        return buf;
+    };
+    static encodeCmdSetSmartLockParamAutoLock(adminUserId, enabled, lockTimeSeconds, schedule, scheduleStart, scheduleEnd) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(0));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUint16LEBuffer(lockTimeSeconds));
+        payload.write(this.getUInt8Buffer(schedule === true ? 1 : 0));
+        payload.write(this.hexTimeSmartLock(scheduleStart));
+        payload.write(this.hexTimeSmartLock(scheduleEnd));
+        return payload.getData();
+    }
+    static encodeCmdSetSmartLockParamOneTouchLock(adminUserId, enabled) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(1));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        return payload.getData();
+    }
+    static encodeCmdSetSmartLockParamScramblePasscode(adminUserId, enabled) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(3));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        return payload.getData();
+    }
+    static encodeCmdSetSmartLockParamSound(adminUserId, value) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(4));
+        payload.write(this.getUInt8Buffer(value));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockAddUser(adminUserId, shortUserId, passcode, username, schedule, userPermission = 4) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(Buffer.from(passcode, "hex"));
+        payload.write(this.getUInt8Buffer(userPermission));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
+        payload.write(this.getUInt8Buffer(userPermission === 5 ? 1 : 0));
+        payload.write(Buffer.from(username));
+        payload.write(Buffer.from(shortUserId, "hex"));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockDeleteUser(adminUserId, shortUserId) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(Buffer.from(shortUserId, "hex"));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockUpdateSchedule(adminUserId, shortUserId, username, schedule, userPermission = 4) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(userPermission));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000", "hex"));
+        payload.write(Buffer.from(schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff", "hex"));
+        payload.write(this.getUInt8Buffer(userPermission === 5 ? 1 : 0));
+        payload.write(Buffer.from(username));
+        payload.write(Buffer.from(shortUserId, "hex"));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockModifyPassword(adminUserId, passwordId, passcode) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(Buffer.from(passwordId, "hex"));
+        payload.write(Buffer.from(passcode, "hex"));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockGetUserList(adminUserId) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        payload.write(this.getUInt8Buffer(0));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockStatus(adminUserId) {
+        const payload = new utils_1.WritePayload();
+        payload.write(this.getCurrentTimeInSeconds());
+        payload.write(Buffer.from(adminUserId));
+        return payload.getData();
+    }
+    static encodeCmdSmartLockGetParams(adminUserId) {
+        return this.encodeCmdSmartLockStatus(adminUserId);
     }
 }
 exports.Lock = Lock;
@@ -3216,28 +3376,28 @@ class SmartSafe extends Device {
         return buffer;
     }
     static encodeCmdSingleUInt8(user_id, value) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(this.getUInt8Buffer(value));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(this.getUInt8Buffer(value));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdWrongTryProtect(user_id, enabled, attempts, lockdownTime) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getUInt8Buffer(attempts));
-        ssbytes.write(this.getUInt8Buffer(lockdownTime));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUInt8Buffer(attempts));
+        payload.write(this.getUInt8Buffer(lockdownTime));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdLeftOpenAlarm(user_id, enabled, duration) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
-        ssbytes.write(this.getUint16LEBuffer(duration));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(this.getUInt8Buffer(enabled === true ? 1 : 0));
+        payload.write(this.getUint16LEBuffer(duration));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdDualUnlock(user_id, enabled) {
         return SmartSafe.encodeCmdSingleUInt8(user_id, enabled === true ? 1 : 0);
@@ -3261,12 +3421,12 @@ class SmartSafe extends Device {
                 convertedinteriorBrightness = 3;
                 break;
         }
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(this.getUInt8Buffer(convertedinteriorBrightness));
-        ssbytes.write(this.getUInt8Buffer(duration));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(this.getUInt8Buffer(convertedinteriorBrightness));
+        payload.write(this.getUInt8Buffer(duration));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdTamperAlarm(user_id, option) {
         return SmartSafe.encodeCmdSingleUInt8(user_id, option);
@@ -3281,11 +3441,11 @@ class SmartSafe extends Device {
         return SmartSafe.encodeCmdSingleUInt8(user_id, volume);
     }
     static encodeCmdPushNotification(user_id, modes) {
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(this.getUint16LEBuffer(modes));
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(this.getUint16LEBuffer(modes));
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     static encodeCmdUnlock(user_id) {
         return SmartSafe.encodeCmdSingleUInt8(user_id, 1);
@@ -3293,11 +3453,11 @@ class SmartSafe extends Device {
     static encodeCmdVerifyPIN(user_id, pin) {
         const pinBuffer = Buffer.alloc(8);
         pinBuffer.write(pin);
-        const ssbytes = new utils_1.SmartSafeByteWriter();
-        ssbytes.write(Buffer.from(user_id));
-        ssbytes.write(pinBuffer);
-        ssbytes.write(this.getCurrentTimeInSeconds());
-        return ssbytes.getData();
+        const payload = new utils_1.WritePayload();
+        payload.write(Buffer.from(user_id));
+        payload.write(pinBuffer);
+        payload.write(this.getCurrentTimeInSeconds());
+        return payload.getData();
     }
     convertRawPropertyValue(property, value) {
         try {

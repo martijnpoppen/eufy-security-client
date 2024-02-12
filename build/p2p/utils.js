@@ -27,7 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSmartSafeP2PCommand = exports.decodeSmartSafeData = exports.decodeP2PCloudIPs = exports.buildTalkbackAudioFrameHeader = exports.getLockV12Key = exports.getAdvancedLockKey = exports.eufyKDF = exports.decryptPayloadData = exports.encryptPayloadData = exports.isP2PQueueMessage = exports.buildVoidCommandPayload = exports.checkT8420 = exports.getVideoCodec = exports.generateAdvancedLockAESKey = exports.eslTimestamp = exports.decodeBase64 = exports.decodeLockPayload = exports.getLockVectorBytes = exports.encodeLockPayload = exports.generateLockSequence = exports.getCurrentTimeInSeconds = exports.generateBasicLockAESKey = exports.encryptLockAESData = exports.decryptLockAESData = exports.isIFrame = exports.findStartCode = exports.decryptAESData = exports.getNewRSAPrivateKey = exports.getRSAPrivateKey = exports.sortP2PMessageParts = exports.buildCommandWithStringTypePayload = exports.buildCommandHeader = exports.hasHeader = exports.sendMessage = exports.buildIntStringCommandPayload = exports.buildStringTypeCommandPayload = exports.buildIntCommandPayload = exports.buildCheckCamPayload2 = exports.buildCheckCamPayload = exports.buildLookupWithKeyPayload3 = exports.buildLookupWithKeyPayload2 = exports.buildLookupWithKeyPayload = exports.paddingP2PData = exports.decryptP2PData = exports.encryptP2PData = exports.getP2PCommandEncryptionKey = exports.isP2PCommandEncrypted = exports.getLocalIpAddress = exports.isPrivateIp = exports.MAGIC_WORD = void 0;
-exports.isCharging = exports.isPlugSolarCharging = exports.isSolarCharging = exports.isUsbCharging = exports.getNullTerminatedString = exports.RGBColorToDecimal = exports.DecimalToRGBColor = exports.getLockV12P2PCommand = exports.getLockP2PCommand = void 0;
+exports.getSmartLockP2PCommand = exports.generateSmartLockAESKey = exports.getSmartLockCurrentTimeInSeconds = exports.isCharging = exports.isPlugSolarCharging = exports.isSolarCharging = exports.isUsbCharging = exports.getNullTerminatedString = exports.RGBColorToDecimal = exports.DecimalToRGBColor = exports.getLockV12P2PCommand = exports.getLockP2PCommand = void 0;
 const node_rsa_1 = __importDefault(require("node-rsa"));
 const CryptoJS = __importStar(require("crypto-js"));
 const crypto_1 = require("crypto");
@@ -35,6 +35,7 @@ const os = __importStar(require("os"));
 const types_1 = require("./types");
 const device_1 = require("../http/device");
 const ble_1 = require("./ble");
+const logging_1 = require("../logging");
 exports.MAGIC_WORD = "XZYH";
 const isPrivateIp = (ip) => /^(::f{4}:)?10\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$/i.test(ip) ||
     /^(::f{4}:)?192\.168\.([0-9]{1,3})\.([0-9]{1,3})$/i.test(ip) ||
@@ -628,7 +629,7 @@ const decodeP2PCloudIPs = (data) => {
 };
 exports.decodeP2PCloudIPs = decodeP2PCloudIPs;
 const decodeSmartSafeData = function (deviceSN, data) {
-    const response = new ble_1.BleCommandFactory(data);
+    const response = ble_1.BleCommandFactory.parseSmartSafe(data);
     return {
         versionCode: response.getVersionCode(),
         dataType: response.getDataType(),
@@ -647,6 +648,7 @@ const getSmartSafeP2PCommand = function (deviceSN, user_id, command, intCommand,
         .setDataType(-1)
         .setData(encPayload)
         .getSmartSafeCommand();
+    logging_1.rootP2PLogger.debug(`Generate smart safe command`, { deviceSN: deviceSN, userId: user_id, command: command, intCommand: intCommand, channel: channel, sequence: sequence, data: data.toString("hex") });
     return {
         commandType: types_1.CommandType.CMD_SET_PAYLOAD,
         value: JSON.stringify({
@@ -669,6 +671,7 @@ const getLockP2PCommand = function (deviceSN, user_id, command, channel, lockPub
     const ecdhKey = (0, exports.getAdvancedLockKey)(key, lockPublicKey);
     const iv = (0, exports.getLockVectorBytes)(deviceSN);
     const encPayload = (0, exports.encryptLockAESData)(key, iv, Buffer.from(JSON.stringify(payload)));
+    logging_1.rootP2PLogger.debug(`Generate lock command`, { deviceSN: deviceSN, userId: user_id, command: command, channel: channel, data: JSON.stringify(payload) });
     return {
         commandType: types_1.CommandType.CMD_SET_PAYLOAD,
         value: JSON.stringify({
@@ -689,6 +692,7 @@ const getLockV12P2PCommand = function (deviceSN, user_id, command, channel, lock
     const encryptedAesKey = (0, exports.getLockV12Key)(key, lockPublicKey);
     const iv = (0, exports.getLockVectorBytes)(deviceSN);
     const encPayload = (0, exports.encryptPayloadData)(data, Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+    logging_1.rootP2PLogger.debug(`Generate smart lock v12 command`, { deviceSN: deviceSN, userId: user_id, command: command, channel: channel, sequence: sequence, data: data.toString("hex") });
     const bleCommand = new ble_1.BleCommandFactory()
         .setVersionCode(device_1.Lock.VERSION_CODE_LOCKV12)
         .setCommandCode(Number.parseInt(types_1.ESLBleCommand[types_1.ESLCommand[command]])) //TODO: Change internal command identification?
@@ -748,4 +752,52 @@ const isCharging = function (value) {
     return (0, exports.isUsbCharging)(value) || (0, exports.isSolarCharging)(value) || (0, exports.isPlugSolarCharging)(value);
 };
 exports.isCharging = isCharging;
+const getSmartLockCurrentTimeInSeconds = function () {
+    return Math.trunc(new Date().getTime() / 1000) | Math.trunc(Math.random() * 100);
+};
+exports.getSmartLockCurrentTimeInSeconds = getSmartLockCurrentTimeInSeconds;
+const generateSmartLockAESKey = (adminUserId, time) => {
+    const buffer = Buffer.allocUnsafe(4);
+    buffer.writeUint32BE(time);
+    return Buffer.concat([Buffer.from(adminUserId.substring(adminUserId.length - 12)), buffer]);
+};
+exports.generateSmartLockAESKey = generateSmartLockAESKey;
+const getSmartLockP2PCommand = function (deviceSN, user_id, command, channel, sequence, data, functionType = types_1.SmartLockFunctionType.TYPE_2) {
+    const time = (0, exports.getSmartLockCurrentTimeInSeconds)();
+    const key = (0, exports.generateSmartLockAESKey)(user_id, time);
+    const iv = (0, exports.getLockVectorBytes)(deviceSN);
+    const encPayload = (0, exports.encryptPayloadData)(data, key, Buffer.from(iv, "hex"));
+    logging_1.rootP2PLogger.debug(`Generate smart lock command`, { deviceSN: deviceSN, userId: user_id, command: command, channel: channel, sequence: sequence, data: data.toString("hex"), functionType: functionType });
+    let commandCode = 0;
+    if (functionType === types_1.SmartLockFunctionType.TYPE_1) {
+        commandCode = Number.parseInt(types_1.SmartLockBleCommandFunctionType1[types_1.SmartLockCommand[command]]);
+    }
+    else if (functionType === types_1.SmartLockFunctionType.TYPE_2) {
+        commandCode = Number.parseInt(types_1.SmartLockBleCommandFunctionType2[types_1.SmartLockCommand[command]]);
+    }
+    const bleCommand = new ble_1.BleCommandFactory()
+        .setVersionCode(device_1.Lock.VERSION_CODE_SMART_LOCK)
+        .setCommandCode(commandCode)
+        .setDataType(functionType)
+        .setData(encPayload);
+    return {
+        bleCommand: bleCommand.getCommandCode(),
+        payload: {
+            commandType: types_1.CommandType.CMD_SET_PAYLOAD,
+            value: JSON.stringify({
+                account_id: user_id,
+                cmd: types_1.CommandType.CMD_TRANSFER_PAYLOAD,
+                mChannel: channel,
+                mValue3: 0,
+                payload: {
+                    apiCommand: command,
+                    lock_payload: bleCommand.getSmartLockCommand().toString("hex"),
+                    seq_num: sequence,
+                    time: time,
+                }
+            })
+        }
+    };
+};
+exports.getSmartLockP2PCommand = getSmartLockP2PCommand;
 //# sourceMappingURL=utils.js.map

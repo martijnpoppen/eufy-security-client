@@ -256,3 +256,24 @@ export interface StorageInfoEmmcHB3 {
     work_status: number;
     health: number;
 }
+export interface SmartLockP2PCommandPayloadType {
+    account_id: string;
+    cmd: CommandType;
+    mChannel: number;
+    mValue3: number;
+    payload: {
+        apiCommand: number;
+        lock_payload: string;
+        seq_num: number;
+        time: number;
+    };
+}
+export interface SmartLockP2PCommandType {
+    commandType: CommandType;
+    value: string;
+}
+export interface SmartLockP2PThroughData {
+    dev_sn: string;
+    lock_payload: string;
+    time: string;
+}

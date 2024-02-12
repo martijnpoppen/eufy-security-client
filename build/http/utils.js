@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getLockEventType = exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.SmartSafeByteWriter = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
+exports.isSmartLockNotification = exports.switchSmartLockNotification = exports.getLockEventType = exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexStringScheduleToSchedule = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.ParsePayload = exports.WritePayload = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
 const crypto_1 = require("crypto");
 const const_1 = require("./const");
 const md5_1 = __importDefault(require("crypto-js/md5"));
@@ -12,7 +12,7 @@ const sha256_1 = __importDefault(require("crypto-js/sha256"));
 const types_1 = require("./types");
 const error_1 = require("../error");
 const error_2 = require("./error");
-const __1 = require("..");
+const types_2 = require("./../push/types");
 const normalizeVersionString = function (version) {
     const trimmed = version ? version.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1") : "";
     const pieces = trimmed.split(RegExp("\\."));
@@ -287,7 +287,7 @@ const getAdvancedLockTimezone = function (stationSN) {
     return "";
 };
 exports.getAdvancedLockTimezone = getAdvancedLockTimezone;
-class SmartSafeByteWriter {
+class WritePayload {
     split_byte = -95;
     data = Buffer.from([]);
     write(bytes) {
@@ -299,7 +299,96 @@ class SmartSafeByteWriter {
         return this.data;
     }
 }
-exports.SmartSafeByteWriter = SmartSafeByteWriter;
+exports.WritePayload = WritePayload;
+class ParsePayload {
+    data;
+    constructor(data) {
+        this.data = data;
+    }
+    readUint32BE(indexValue) {
+        return this.readData(indexValue).readUint32BE();
+    }
+    readUint32LE(indexValue) {
+        return this.readData(indexValue).readUint32LE();
+    }
+    readUint16BE(indexValue) {
+        return this.readData(indexValue).readUint16BE();
+    }
+    readUint16LE(indexValue) {
+        return this.readData(indexValue).readUint16LE();
+    }
+    readString(indexValue) {
+        return this.readData(indexValue).toString();
+    }
+    readStringHex(indexValue) {
+        return this.readData(indexValue).toString("hex");
+    }
+    readInt8(indexValue) {
+        let dataPosition = this.getDataPosition(indexValue);
+        if (dataPosition == -1) {
+            return 0;
+        }
+        dataPosition = dataPosition + 2;
+        if (dataPosition >= this.data.length) {
+            return 0;
+        }
+        return this.data.readInt8(dataPosition);
+    }
+    readData(indexValue) {
+        let dataPosition = this.getDataPosition(indexValue);
+        if (dataPosition == -1) {
+            return Buffer.from("");
+        }
+        dataPosition++;
+        if (dataPosition >= this.data.length) {
+            return Buffer.from("");
+        }
+        const nextStep = this.getNextStep(indexValue, dataPosition, this.data);
+        let tmp;
+        if (nextStep == 1) {
+            tmp = this.data.readInt8(dataPosition);
+        }
+        else {
+            tmp = this.data.readUint16LE(dataPosition);
+        }
+        if (dataPosition + nextStep + tmp > this.data.length) {
+            return Buffer.from("");
+        }
+        return this.data.subarray(dataPosition + nextStep, dataPosition + nextStep + tmp);
+    }
+    getDataPosition(indexValue) {
+        if (this.data && this.data.length >= 1) {
+            for (let currentPosition = 0; currentPosition < this.data.length;) {
+                if (this.data.readInt8(currentPosition) == indexValue) {
+                    return currentPosition;
+                }
+                else {
+                    const value = this.data.readInt8(currentPosition);
+                    currentPosition++;
+                    if (currentPosition >= this.data.length) {
+                        break;
+                    }
+                    const nextStep = this.getNextStep(value, currentPosition, this.data);
+                    if ((currentPosition + nextStep) >= this.data.length) {
+                        break;
+                    }
+                    if (nextStep == 1) {
+                        currentPosition = this.data.readInt8(currentPosition) + currentPosition + nextStep;
+                    }
+                    else {
+                        currentPosition = this.data.readUint16LE(currentPosition) + currentPosition + nextStep;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    getNextStep(indexValue, position, data) {
+        const newPosition = position + 1 + data.readUInt8(position);
+        return (newPosition == data.length || newPosition > data.length || data.readInt8(newPosition) == indexValue + 1) ? 1 : 2;
+    }
+}
+exports.ParsePayload = ParsePayload;
 /*export const generateHash = function(data: Buffer): number {
     let result = 0;
     for (const value of data) {
@@ -378,6 +467,30 @@ const hexWeek = function (schedule) {
     return "ff";
 };
 exports.hexWeek = hexWeek;
+const hexStringScheduleToSchedule = function (startDay, startTime, endDay, endTime, week) {
+    const SUNDAY = 1;
+    const MONDAY = 2;
+    const TUESDAY = 4;
+    const WEDNESDAY = 8;
+    const THUERSDAY = 16;
+    const FRIDAY = 32;
+    const SATURDAY = 64;
+    const weekNumber = Number.parseInt(week, 16);
+    return {
+        startDateTime: startDay === "00000000" ? undefined : new Date(Number.parseInt(`${startDay.substring(2, 4)}${startDay.substring(0, 2)}`, 16), Number.parseInt(startDay.substring(4, 6), 16) - 1, Number.parseInt(startDay.substring(6, 8), 16), Number.parseInt(startTime.substring(0, 2), 16), Number.parseInt(startTime.substring(2, 4), 16)),
+        endDateTime: endDay === "ffffffff" ? undefined : new Date(Number.parseInt(`${endDay.substring(2, 4)}${endDay.substring(0, 2)}`, 16), Number.parseInt(endDay.substring(4, 6), 16) - 1, Number.parseInt(endDay.substring(6, 8), 16), Number.parseInt(endTime.substring(0, 2), 16), Number.parseInt(endTime.substring(2, 4), 16)),
+        week: {
+            monday: (weekNumber & MONDAY) == MONDAY,
+            tuesday: (weekNumber & TUESDAY) == TUESDAY,
+            wednesday: (weekNumber & WEDNESDAY) == WEDNESDAY,
+            thursday: (weekNumber & THUERSDAY) == THUERSDAY,
+            friday: (weekNumber & FRIDAY) == FRIDAY,
+            saturday: (weekNumber & SATURDAY) == SATURDAY,
+            sunday: (weekNumber & SUNDAY) == SUNDAY,
+        },
+    };
+};
+exports.hexStringScheduleToSchedule = hexStringScheduleToSchedule;
 const randomNumber = function (min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
@@ -560,28 +673,43 @@ const getFloodLightT8425Notification = function (value, type, enable) {
 exports.getFloodLightT8425Notification = getFloodLightT8425Notification;
 const getLockEventType = function (event) {
     switch (event) {
-        case __1.LockPushEvent.AUTO_LOCK:
-        case __1.LockPushEvent.AUTO_UNLOCK:
+        case types_2.LockPushEvent.AUTO_LOCK:
+        case types_2.LockPushEvent.AUTO_UNLOCK:
             return 1;
-        case __1.LockPushEvent.MANUAL_LOCK:
-        case __1.LockPushEvent.MANUAL_UNLOCK:
+        case types_2.LockPushEvent.MANUAL_LOCK:
+        case types_2.LockPushEvent.MANUAL_UNLOCK:
             return 2;
-        case __1.LockPushEvent.APP_LOCK:
-        case __1.LockPushEvent.APP_UNLOCK:
+        case types_2.LockPushEvent.APP_LOCK:
+        case types_2.LockPushEvent.APP_UNLOCK:
             return 3;
-        case __1.LockPushEvent.PW_LOCK:
-        case __1.LockPushEvent.PW_UNLOCK:
+        case types_2.LockPushEvent.PW_LOCK:
+        case types_2.LockPushEvent.PW_UNLOCK:
             return 4;
-        case __1.LockPushEvent.FINGER_LOCK:
-        case __1.LockPushEvent.FINGERPRINT_UNLOCK:
+        case types_2.LockPushEvent.FINGER_LOCK:
+        case types_2.LockPushEvent.FINGERPRINT_UNLOCK:
             return 5;
-        case __1.LockPushEvent.TEMPORARY_PW_LOCK:
-        case __1.LockPushEvent.TEMPORARY_PW_UNLOCK:
+        case types_2.LockPushEvent.TEMPORARY_PW_LOCK:
+        case types_2.LockPushEvent.TEMPORARY_PW_UNLOCK:
             return 6;
-        case __1.LockPushEvent.KEYPAD_LOCK:
+        case types_2.LockPushEvent.KEYPAD_LOCK:
             return 7;
     }
     return 0;
 };
 exports.getLockEventType = getLockEventType;
+const switchSmartLockNotification = function (currentValue, mode, enable) {
+    let result = 0;
+    if (enable) {
+        result = mode | currentValue;
+    }
+    else {
+        result = ~mode & currentValue;
+    }
+    return result;
+};
+exports.switchSmartLockNotification = switchSmartLockNotification;
+const isSmartLockNotification = function (value, mode) {
+    return (value & mode) !== 0;
+};
+exports.isSmartLockNotification = isSmartLockNotification;
 //# sourceMappingURL=utils.js.map

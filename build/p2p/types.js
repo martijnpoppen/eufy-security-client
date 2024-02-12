@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TrackerCommandType = exports.InternalP2PCommandType = exports.EncryptionType = exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
+exports.SmartLockBleCommandFunctionType2 = exports.SmartLockBleCommandFunctionType1 = exports.SmartLockFunctionType = exports.SmartLockCommand = exports.TrackerCommandType = exports.InternalP2PCommandType = exports.EncryptionType = exports.CalibrateGarageType = exports.FilterDetectType = exports.FeatureTag = exports.FilterEventType = exports.FilterStorageType = exports.P2PStorageType = exports.DatabaseReturnCode = exports.SmartSafeBatteryStatusEvent = exports.SmartSafeBatteryTemperatureEvent = exports.SmartSafeShakeAlarmEvent = exports.SmartSafeAlarm911Event = exports.SmartSafeCommandCode = exports.IndoorSoloSmartdropCommandType = exports.P2PConnectionType = exports.ESLAnkerBleConstant = exports.ESLBleCommand = exports.ESLCommand = exports.AudioCodec = exports.VideoCodec = exports.PanTiltDirection = exports.WatermarkSetting5 = exports.WatermarkSetting4 = exports.WatermarkSetting3 = exports.WatermarkSetting2 = exports.WatermarkSetting1 = exports.AlarmEvent = exports.TFCardStatus = exports.ErrorCode = exports.MessageType = exports.CommandType = exports.P2PDataTypeHeader = exports.P2PDataType = exports.ResponseMessageType = exports.RequestMessageType = void 0;
 exports.RequestMessageType = {
     STUN: Buffer.from([0xF1, 0x00]),
     LOOKUP: Buffer.from([0xF1, 0x20]),
@@ -1123,4 +1123,88 @@ var TrackerCommandType;
     TrackerCommandType[TrackerCommandType["LOCATION_NEW_ADDRESS"] = 1009] = "LOCATION_NEW_ADDRESS";
     TrackerCommandType[TrackerCommandType["TYPE_ICON_INDEX"] = 1005] = "TYPE_ICON_INDEX";
 })(TrackerCommandType || (exports.TrackerCommandType = TrackerCommandType = {}));
+var SmartLockCommand;
+(function (SmartLockCommand) {
+    SmartLockCommand[SmartLockCommand["CALIBRATE_LOCK"] = 6017] = "CALIBRATE_LOCK";
+    SmartLockCommand[SmartLockCommand["QUERY_STATUS_IN_LOCK"] = 6012] = "QUERY_STATUS_IN_LOCK";
+    SmartLockCommand[SmartLockCommand["ON_OFF_LOCK"] = 6018] = "ON_OFF_LOCK";
+    SmartLockCommand[SmartLockCommand["ADD_PW"] = 6002] = "ADD_PW";
+    SmartLockCommand[SmartLockCommand["UPDATE_USER_TIME"] = 146] = "UPDATE_USER_TIME";
+    SmartLockCommand[SmartLockCommand["UPDATE_PW"] = 6014] = "UPDATE_PW";
+    SmartLockCommand[SmartLockCommand["QUERY_PW"] = 6009] = "QUERY_PW";
+    SmartLockCommand[SmartLockCommand["ADD_FINGER"] = 6003] = "ADD_FINGER";
+    SmartLockCommand[SmartLockCommand["CANCEL_ADD_FINGER"] = 115] = "CANCEL_ADD_FINGER";
+    SmartLockCommand[SmartLockCommand["DELETE_FINGER"] = 6006] = "DELETE_FINGER";
+    SmartLockCommand[SmartLockCommand["UPDATE_FINGER_NAME"] = 119] = "UPDATE_FINGER_NAME";
+    SmartLockCommand[SmartLockCommand["QUERY_ALL_USERS"] = 6007] = "QUERY_ALL_USERS";
+    SmartLockCommand[SmartLockCommand["DELETE_USER"] = 6004] = "DELETE_USER";
+    SmartLockCommand[SmartLockCommand["GET_FINGER_PW_USAGE"] = 6022] = "GET_FINGER_PW_USAGE";
+    SmartLockCommand[SmartLockCommand["WIFI_SCAN"] = 104] = "WIFI_SCAN";
+    SmartLockCommand[SmartLockCommand["WIFI_LIST"] = 105] = "WIFI_LIST";
+    SmartLockCommand[SmartLockCommand["WIFI_CONNECT"] = 106] = "WIFI_CONNECT";
+    SmartLockCommand[SmartLockCommand["ACTIVATE_DEVICE"] = 107] = "ACTIVATE_DEVICE";
+    SmartLockCommand[SmartLockCommand["SET_LOCK_PARAM"] = 6015] = "SET_LOCK_PARAM";
+    SmartLockCommand[SmartLockCommand["GET_LOCK_PARAM"] = 6016] = "GET_LOCK_PARAM";
+    SmartLockCommand[SmartLockCommand["GET_LOCK_EVENT"] = 122] = "GET_LOCK_EVENT";
+    SmartLockCommand[SmartLockCommand["PULL_BLE"] = 6024] = "PULL_BLE";
+    SmartLockCommand[SmartLockCommand["NOTIFY"] = 142] = "NOTIFY";
+    SmartLockCommand[SmartLockCommand["CONNECT"] = 138] = "CONNECT";
+    SmartLockCommand[SmartLockCommand["DISCONNECT"] = 141] = "DISCONNECT";
+    SmartLockCommand[SmartLockCommand["CAPACITY_NEGOTIATION"] = 139] = "CAPACITY_NEGOTIATION";
+    SmartLockCommand[SmartLockCommand["SET_CAPACITY"] = 140] = "SET_CAPACITY";
+    SmartLockCommand[SmartLockCommand["VERIFY_IDENTIFY"] = 6000] = "VERIFY_IDENTIFY";
+    SmartLockCommand[SmartLockCommand["BIND"] = 101] = "BIND";
+    SmartLockCommand[SmartLockCommand["UNBIND"] = 124] = "UNBIND";
+    SmartLockCommand[SmartLockCommand["HEARTBEAT"] = 6001] = "HEARTBEAT";
+    SmartLockCommand[SmartLockCommand["RESET"] = 6019] = "RESET";
+    SmartLockCommand[SmartLockCommand["BIND_SUCCESS"] = 102] = "BIND_SUCCESS";
+})(SmartLockCommand || (exports.SmartLockCommand = SmartLockCommand = {}));
+var SmartLockFunctionType;
+(function (SmartLockFunctionType) {
+    SmartLockFunctionType[SmartLockFunctionType["TYPE_1"] = 1] = "TYPE_1";
+    SmartLockFunctionType[SmartLockFunctionType["TYPE_2"] = 2] = "TYPE_2";
+})(SmartLockFunctionType || (exports.SmartLockFunctionType = SmartLockFunctionType = {}));
+var SmartLockBleCommandFunctionType1;
+(function (SmartLockBleCommandFunctionType1) {
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["CONNECT"] = 1] = "CONNECT";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["DISCONNECT"] = 2] = "DISCONNECT";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["CAPACITY_NEGOTIATION"] = 3] = "CAPACITY_NEGOTIATION";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["SET_CAPACITY"] = 5] = "SET_CAPACITY";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["VERIFY_IDENTIFY"] = 34] = "VERIFY_IDENTIFY";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["BIND"] = 35] = "BIND";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["UNBIND"] = 36] = "UNBIND";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["HEARTBEAT"] = 38] = "HEARTBEAT";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["GET_DEVICE_INFO"] = 41] = "GET_DEVICE_INFO";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["GET_OTA_STATUS"] = 44] = "GET_OTA_STATUS";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["OTA_OPERATION"] = 45] = "OTA_OPERATION";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["OTA_DATA_SENDING"] = 46] = "OTA_DATA_SENDING";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["RESET"] = 47] = "RESET";
+    SmartLockBleCommandFunctionType1[SmartLockBleCommandFunctionType1["BIND_SUCCESS"] = 48] = "BIND_SUCCESS";
+})(SmartLockBleCommandFunctionType1 || (exports.SmartLockBleCommandFunctionType1 = SmartLockBleCommandFunctionType1 = {}));
+var SmartLockBleCommandFunctionType2;
+(function (SmartLockBleCommandFunctionType2) {
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["CALIBRATE_LOCK"] = 33] = "CALIBRATE_LOCK";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["QUERY_STATUS_IN_LOCK"] = 34] = "QUERY_STATUS_IN_LOCK";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["ON_OFF_LOCK"] = 35] = "ON_OFF_LOCK";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["ADD_PW"] = 36] = "ADD_PW";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["UPDATE_USER_TIME"] = 37] = "UPDATE_USER_TIME";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["UPDATE_PW"] = 38] = "UPDATE_PW";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["QUERY_PW"] = 39] = "QUERY_PW";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["ADD_FINGER"] = 40] = "ADD_FINGER";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["CANCEL_ADD_FINGER"] = 41] = "CANCEL_ADD_FINGER";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["DELETE_FINGER"] = 42] = "DELETE_FINGER";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["UPDATE_FINGER_NAME"] = 43] = "UPDATE_FINGER_NAME";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["QUERY_ALL_USERS"] = 44] = "QUERY_ALL_USERS";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["DELETE_USER"] = 45] = "DELETE_USER";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["GET_FINGER_PW_USAGE"] = 46] = "GET_FINGER_PW_USAGE";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["WIFI_SCAN"] = 48] = "WIFI_SCAN";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["WIFI_LIST"] = 49] = "WIFI_LIST";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["WIFI_CONNECT"] = 50] = "WIFI_CONNECT";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["ACTIVATE_DEVICE"] = 51] = "ACTIVATE_DEVICE";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["SET_LOCK_PARAM"] = 52] = "SET_LOCK_PARAM";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["GET_LOCK_PARAM"] = 53] = "GET_LOCK_PARAM";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["GET_LOCK_EVENT"] = 56] = "GET_LOCK_EVENT";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["PULL_BLE"] = 61] = "PULL_BLE";
+    SmartLockBleCommandFunctionType2[SmartLockBleCommandFunctionType2["NOTIFY"] = 74] = "NOTIFY";
+})(SmartLockBleCommandFunctionType2 || (exports.SmartLockBleCommandFunctionType2 = SmartLockBleCommandFunctionType2 = {}));
 //# sourceMappingURL=types.js.map

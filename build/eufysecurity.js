@@ -545,6 +545,17 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 station.getCameraInfo();
             }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
         }
+        else if (device_1.Device.isLock(station.getDeviceType())) {
+            station.getLockParameters();
+            if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
+                clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
+                delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
+            }
+            this.refreshEufySecurityP2PTimeout[station.getSerial()] = setTimeout(() => {
+                station.getLockParameters();
+                station.getLockStatus();
+            }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
+        }
     }
     onStationConnectionError(station, error) {
         this.emit("station connection error", station, error);
@@ -1770,8 +1781,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
             }
             this.getStationDevice(station.getSerial(), result.channel).then((device) => {
-                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe()) ||
-                    (result.customData !== undefined && result.customData.property !== undefined && device.isSmartSafe() && result.command_type !== types_2.CommandType.CMD_SMARTSAFE_SETTINGS)) {
+                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe() && !device.isLockWifiT8506()) ||
+                    (result.customData !== undefined && result.customData.property !== undefined && device.isSmartSafe() && result.command_type !== types_2.CommandType.CMD_SMARTSAFE_SETTINGS) ||
+                    (result.customData !== undefined && result.customData.property !== undefined && device.isLockWifiT8506() && result.command_type !== types_2.CommandType.CMD_DOORLOCK_SET_PUSH_MODE)) {
                     if (device.hasProperty(result.customData.property.name)) {
                         const metadata = device.getPropertyMetadata(result.customData.property.name);
                         if (typeof result.customData.property.value !== "object" || metadata.type === "object") {
@@ -2311,6 +2323,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     }
     async updateUser(deviceSN, username, newUsername) {
         const device = await this.getDevice(deviceSN);
+        const station = await this.getStation(device.getStationSerial());
         if (!device.hasCommand(types_1.CommandName.DeviceUpdateUsername))
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceUpdateUsername, usernmae: username, newUsername: newUsername } });
         try {
@@ -2319,6 +2332,19 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
+                        if (device.isLockWifiT8506() && user.password_list.length > 0) {
+                            for (const entry of user.password_list) {
+                                if (entry.password_type === types_1.UserPasswordType.PIN) {
+                                    let schedule = entry.schedule;
+                                    if (schedule !== undefined && typeof schedule == "string") {
+                                        schedule = JSON.parse(schedule);
+                                    }
+                                    if (schedule !== undefined && schedule.endDay !== undefined && schedule.endTime !== undefined && schedule.startDay !== undefined && schedule.startTime !== undefined && schedule.week !== undefined) {
+                                        station.updateUserSchedule(device, newUsername, user.short_user_id, (0, utils_2.hexStringScheduleToSchedule)(schedule.startDay, schedule.startTime, schedule.endDay, schedule.endTime, schedule.week));
+                                    }
+                                }
+                            }
+                        }
                         const result = await this.api.updateUser(deviceSN, device.getStationSerial(), user.short_user_id, newUsername);
                         if (result) {
                             this.emit("user username updated", device, username);

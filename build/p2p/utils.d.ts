@@ -3,7 +3,7 @@
 import { Socket } from "dgram";
 import NodeRSA from "node-rsa";
 import { P2PMessageParts, P2PMessageState, P2PQueueMessage, RGBColor } from "./interfaces";
-import { CommandType, ESLCommand, LockV12P2PCommand, SmartSafeCommandCode, VideoCodec, EncryptionType } from "./types";
+import { CommandType, ESLCommand, LockV12P2PCommand, SmartSafeCommandCode, VideoCodec, EncryptionType, SmartLockP2PCommand, SmartLockFunctionType, SmartLockCommand } from "./types";
 import { Address, LockP2PCommandType, SmartSafeNotificationResponse, SmartSafeP2PCommandType } from "./models";
 import { DeviceType } from "../http/types";
 export declare const MAGIC_WORD = "XZYH";
@@ -68,3 +68,6 @@ export declare const isUsbCharging: (value: number) => boolean;
 export declare const isSolarCharging: (value: number) => boolean;
 export declare const isPlugSolarCharging: (value: number) => boolean;
 export declare const isCharging: (value: number) => boolean;
+export declare const getSmartLockCurrentTimeInSeconds: () => number;
+export declare const generateSmartLockAESKey: (adminUserId: string, time: number) => Buffer;
+export declare const getSmartLockP2PCommand: (deviceSN: string, user_id: string, command: CommandType | SmartLockCommand, channel: number, sequence: number, data: Buffer, functionType?: SmartLockFunctionType) => SmartLockP2PCommand;

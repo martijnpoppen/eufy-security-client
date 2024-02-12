@@ -286,6 +286,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     updateUserSchedule(device: Device, username: string, shortUserId: string, schedule: Schedule): void;
     updateUserPasscode(device: Device, username: string, shortUserId: string, passcode: string): void;
     setLockV12Params(device: Device, property: PropertyName, value: PropertyValue): void;
+    setSmartLockParams(device: Device, property: PropertyName, value: PropertyValue): void;
     setAutoLock(device: Device, value: boolean): void;
     setAutoLockSchedule(device: Device, value: boolean): void;
     setAutoLockScheduleStartTime(device: Device, value: string): void;
@@ -353,4 +354,6 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setBeepVolume(device: Device, value: number): void;
     setNightvisionOptimization(device: Device, value: boolean): void;
     setNightvisionOptimizationSide(device: Device, value: number): void;
+    getLockParameters(): void;
+    getLockStatus(): void;
 }

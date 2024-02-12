@@ -439,6 +439,11 @@ export declare enum PresetPositionType {
     PRESET_3 = 2,
     PRESET_4 = 3
 }
+export declare const enum SmartLockNotification {
+    ENABLED = 1,
+    UNLOCKED = 2,
+    LOCKED = 4
+}
 export interface EventFilterType {
     deviceSN?: string;
     stationSN?: string;
@@ -1028,9 +1033,12 @@ export declare const DeviceScramblePasscodeSmartSafeProperty: PropertyMetadataBo
 export declare const DeviceSoundProperty: PropertyMetadataNumeric;
 export declare const DeviceSoundSimpleProperty: PropertyMetadataNumeric;
 export declare const DeviceNotificationProperty: PropertyMetadataBoolean;
+export declare const DeviceNotificationSmartLockProperty: PropertyMetadataBoolean;
 export declare const DeviceNotificationWalllightProperty: PropertyMetadataBoolean;
 export declare const DeviceNotificationUnlockedProperty: PropertyMetadataBoolean;
+export declare const DeviceNotificationUnlockedSmartLockProperty: PropertyMetadataBoolean;
 export declare const DeviceNotificationLockedProperty: PropertyMetadataBoolean;
+export declare const DeviceNotificationLockedSmartLockProperty: PropertyMetadataBoolean;
 export declare const DeviceLoiteringDetectionProperty: PropertyMetadataBoolean;
 export declare const DeviceLoiteringDetectionRangeProperty: PropertyMetadataNumeric;
 export declare const DeviceLoiteringDetectionLengthProperty: PropertyMetadataNumeric;

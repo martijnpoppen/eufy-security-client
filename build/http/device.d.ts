@@ -68,6 +68,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isLockWifiR20(type: number): boolean;
     static isLockWifiVideo(type: number): boolean;
     static isLockWifiR10Keypad(type: number): boolean;
+    static isLockWifiT8506(type: number): boolean;
     static isBatteryDoorbell1(type: number): boolean;
     static isBatteryDoorbell2(type: number): boolean;
     static isBatteryDoorbellDual(type: number): boolean;
@@ -133,6 +134,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isLockWifiR20(): boolean;
     isLockWifiVideo(): boolean;
     isLockWifiR10Keypad(): boolean;
+    isLockWifiT8506(): boolean;
     isBatteryDoorbell1(): boolean;
     isBatteryDoorbell2(): boolean;
     isBatteryDoorbellDual(): boolean;
@@ -312,6 +314,7 @@ export declare class MotionSensor extends Sensor {
     processPushNotification(message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class Lock extends Device {
+    static readonly VERSION_CODE_SMART_LOCK = 3;
     static readonly VERSION_CODE_LOCKV12 = 18;
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Lock>;
     getStateChannel(): string;
@@ -352,6 +355,22 @@ export declare class Lock extends Device {
     static encodeCmdSetLockParamWrongTryProtect(enabled: boolean, lockdownTime: number, attempts: number): Buffer;
     static encodeCmdSetLockParamScramblePasscode(enabled: boolean): Buffer;
     static encodeCmdSetLockParamSound(value: number): Buffer;
+    protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
+    static encodeCmdSmartLockUnlock(adminUserId: string, lock: boolean, username: string, shortUserId: string): Buffer;
+    static encodeCmdSmartLockCalibrate(adminUserId: string): Buffer;
+    static encodeCmdSetSmartLockParamWrongTryProtect(adminUserId: string, enabled: boolean, attempts: number, lockdownTime: number): Buffer;
+    private static hexTimeSmartLock;
+    static encodeCmdSetSmartLockParamAutoLock(adminUserId: string, enabled: boolean, lockTimeSeconds: number, schedule: boolean, scheduleStart: string, scheduleEnd: string): Buffer;
+    static encodeCmdSetSmartLockParamOneTouchLock(adminUserId: string, enabled: boolean): Buffer;
+    static encodeCmdSetSmartLockParamScramblePasscode(adminUserId: string, enabled: boolean): Buffer;
+    static encodeCmdSetSmartLockParamSound(adminUserId: string, value: number): Buffer;
+    static encodeCmdSmartLockAddUser(adminUserId: string, shortUserId: string, passcode: string, username: string, schedule?: Schedule, userPermission?: number): Buffer;
+    static encodeCmdSmartLockDeleteUser(adminUserId: string, shortUserId: string): Buffer;
+    static encodeCmdSmartLockUpdateSchedule(adminUserId: string, shortUserId: string, username: string, schedule: Schedule, userPermission?: number): Buffer;
+    static encodeCmdSmartLockModifyPassword(adminUserId: string, passwordId: string, passcode: string): Buffer;
+    static encodeCmdSmartLockGetUserList(adminUserId: string): Buffer;
+    static encodeCmdSmartLockStatus(adminUserId: string): Buffer;
+    static encodeCmdSmartLockGetParams(adminUserId: string): Buffer;
 }
 export declare class Keypad extends Device {
     static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Keypad>;

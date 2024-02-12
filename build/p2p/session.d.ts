@@ -33,7 +33,8 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private connected;
     private connecting;
     private terminating;
-    private p2pTurn;
+    private p2pTurnHandshaking;
+    private p2pTurnConfirmed;
     private seqNumber;
     private offsetDataSeqNumber;
     private videoSeqNumber;
@@ -72,8 +73,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private deviceSNs;
     private api;
     private rawStation;
-    private lastCustomData?;
-    private lastChannel?;
+    private customDataStaging;
     private lockPublicKey;
     private lockAESKeys;
     private channel;

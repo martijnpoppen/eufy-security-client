@@ -1503,6 +1503,50 @@ class HTTPApi extends tiny_typed_emitter_1.TypedEmitter {
         }
         return Buffer.alloc(0);
     }
+    async updateUserPassword(deviceSN, shortUserId, passwordId, schedule, stationSN = "") {
+        if (this.connected) {
+            try {
+                const response = await this.request({
+                    method: "post",
+                    endpoint: "v1/app/device/password/save_or_update",
+                    data: {
+                        device_sn: deviceSN,
+                        password_list: [{
+                                password_id: passwordId,
+                                password_type: types_1.UserPasswordType.PIN,
+                                schedule: JSON.stringify({
+                                    endDay: schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexDate)(schedule.endDateTime) : "ffffffff",
+                                    endTime: schedule !== undefined && schedule.endDateTime !== undefined ? (0, utils_1.hexTime)(schedule.endDateTime) : "ffff",
+                                    startDay: schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexDate)(schedule.startDateTime) : "00000000",
+                                    startTime: schedule !== undefined && schedule.startDateTime !== undefined ? (0, utils_1.hexTime)(schedule.startDateTime) : "0000",
+                                    week: schedule !== undefined && schedule.week !== undefined ? (0, utils_1.hexWeek)(schedule) : "ff",
+                                })
+                            }],
+                        short_user_id: shortUserId,
+                        station_sn: stationSN === deviceSN ? "" : stationSN,
+                        transaction: `${new Date().getTime().toString()}`
+                    }
+                });
+                if (response.status == 200) {
+                    const result = response.data;
+                    if (result.code == types_1.ResponseErrorCode.CODE_WHATEVER_ERROR) {
+                        return true;
+                    }
+                    else {
+                        logging_1.rootHTTPLogger.error("Add user - Response code not ok", { code: result.code, msg: result.msg, data: response.data, deviceSN: deviceSN, shortUserId: shortUserId, schedule: schedule, stationSN: stationSN });
+                    }
+                }
+                else {
+                    logging_1.rootHTTPLogger.error("Add user - Status return code not 200", { status: response.status, statusText: response.statusText, data: response.data, deviceSN: deviceSN, shortUserId: shortUserId, schedule: schedule, stationSN: stationSN });
+                }
+            }
+            catch (err) {
+                const error = (0, error_1.ensureError)(err);
+                logging_1.rootHTTPLogger.error("Add user - Generic Error", { error: (0, utils_2.getError)(error), deviceSN: deviceSN, shortUserId: shortUserId, schedule: schedule, stationSN: stationSN });
+            }
+        }
+        return false;
+    }
 }
 exports.HTTPApi = HTTPApi;
 //# sourceMappingURL=api.js.map

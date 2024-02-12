@@ -1,9 +1,9 @@
 /// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
-import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes } from "./types";
+import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes, SmartLockNotification } from "./types";
 import { HTTPApi } from "./api";
-import { LockPushEvent } from "..";
+import { LockPushEvent } from "./../push/types";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
 export declare const getTimezoneGMTString: () => string;
@@ -27,16 +27,31 @@ export interface EufyTimezone {
 }
 export declare const getEufyTimezone: () => EufyTimezone | undefined;
 export declare const getAdvancedLockTimezone: (stationSN: string) => string;
-export declare class SmartSafeByteWriter {
+export declare class WritePayload {
     private split_byte;
     private data;
     write(bytes: Buffer): void;
     getData(): Buffer;
 }
+export declare class ParsePayload {
+    private data;
+    constructor(data: Buffer);
+    readUint32BE(indexValue: number): number;
+    readUint32LE(indexValue: number): number;
+    readUint16BE(indexValue: number): number;
+    readUint16LE(indexValue: number): number;
+    readString(indexValue: number): string;
+    readStringHex(indexValue: number): string;
+    readInt8(indexValue: number): number;
+    readData(indexValue: number): Buffer;
+    private getDataPosition;
+    private getNextStep;
+}
 export declare const encodePasscode: (pass: string) => string;
 export declare const hexDate: (date: Date) => string;
 export declare const hexTime: (date: Date) => string;
 export declare const hexWeek: (schedule: Schedule) => string;
+export declare const hexStringScheduleToSchedule: (startDay: string, startTime: string, endDay: string, endTime: string, week: string) => Schedule;
 export declare const randomNumber: (min: number, max: number) => number;
 export declare const getIdSuffix: (p2pDid: string) => number;
 export declare const getImageBaseCode: (serialnumber: string, p2pDid: string) => string;
@@ -54,3 +69,5 @@ export declare const getIndoorNotification: (value: number, type: IndoorS350Noti
 export declare const isFloodlightT8425NotitficationEnabled: (value: number, type: FloodlightT8425NotificationTypes) => boolean;
 export declare const getFloodLightT8425Notification: (value: number, type: FloodlightT8425NotificationTypes, enable: boolean) => number;
 export declare const getLockEventType: (event: LockPushEvent) => number;
+export declare const switchSmartLockNotification: (currentValue: number, mode: SmartLockNotification, enable: boolean) => number;
+export declare const isSmartLockNotification: (value: number, mode: SmartLockNotification) => boolean;

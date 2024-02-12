@@ -1,16 +1,19 @@
 /// <reference types="node" />
-export declare enum BleCommandFactorySeparator {
-    a = -96,
-    b = -95,
-    c = -94,
-    d = -93,
-    e = -92,
-    f = -91,
-    g = -90,
-    h = -89,
-    i = -88,
-    j = -87,
-    k = -86
+export declare enum BleParameterIndex {
+    ZERO = -96,
+    ONE = -95,
+    TWO = -94,
+    THREE = -93,
+    FOUR = -92,
+    FIVE = -91,
+    SIX = -90,
+    SEVEN = -89,
+    EIGHT = -88,
+    NINE = -87,
+    TEN = -86,
+    ELEVEN = -85,
+    TWELVE = -84,
+    THIRTEEN = -83
 }
 export declare class BleCommandFactory {
     private static readonly HEADER;
@@ -23,8 +26,13 @@ export declare class BleCommandFactory {
     private additionalDataSeparatorByte?;
     private additionalData?;
     private responseCode?;
-    constructor(data?: string | Buffer);
+    private encrypted?;
+    private partial?;
+    static parseLockV12(data: string | Buffer): BleCommandFactory;
+    static parseSmartSafe(data: string | Buffer): BleCommandFactory;
+    static parseSmartLock(data: string | Buffer): BleCommandFactory;
     toString: () => string;
+    private setResponseCode;
     getResponseCode(): number | undefined;
     setVersionCode(version: number): BleCommandFactory;
     getVersionCode(): number | undefined;
@@ -42,6 +50,11 @@ export declare class BleCommandFactory {
     getData(): Buffer | undefined;
     setUnknown(data: Buffer): BleCommandFactory;
     static generateHash(data: Buffer): number;
+    isEncrypted(): boolean | undefined;
+    setEncrypted(encrypted: boolean): BleCommandFactory;
+    isPartial(): boolean | undefined;
+    setPartial(partial: boolean): BleCommandFactory;
     getLockV12Command(): Buffer;
     getSmartSafeCommand(): Buffer;
+    getSmartLockCommand(): Buffer;
 }
