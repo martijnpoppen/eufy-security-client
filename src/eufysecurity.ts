@@ -12,11 +12,11 @@ import { ConfirmInvite, DeviceListResponse, HouseInviteListResponse, Invite, Sta
 import { CommandName, DeviceType, FloodlightT8425NotificationTypes, HB3DetectionTypes, IndoorS350NotificationTypes, NotificationSwitchMode, NotificationType, PropertyName, SoloCameraDetectionTypes, T8170DetectionTypes, UserPasswordType } from "./http/types";
 import { PushNotificationService } from "./push/service";
 import { Credentials, PushMessage } from "./push/models";
-import { BatteryDoorbellCamera, Camera, Device, EntrySensor, FloodlightCamera, GarageCamera, IndoorCamera, Keypad, Lock, MotionSensor, SmartSafe, SoloCamera, UnknownDevice, WallLightCam, WiredDoorbellCamera, Tracker, DoorbellLock } from "./http/device";
+import { BatteryDoorbellCamera, Camera, Device, EntrySensor, FloodlightCamera, GarageCamera, IndoorCamera, Keypad, Lock, MotionSensor, SmartSafe, SoloCamera, UnknownDevice, WallLightCam, WiredDoorbellCamera, Tracker, DoorbellLock, LockKeypad, SmartDrop } from "./http/device";
 import { AlarmEvent, CommandType, DatabaseReturnCode, P2PConnectionType, SmartSafeAlarm911Event, SmartSafeShakeAlarmEvent, TFCardStatus } from "./p2p/types";
 import { DatabaseCountByDate, DatabaseQueryLatestInfo, DatabaseQueryLocal, StreamMetadata, DatabaseQueryLatestInfoLocal, DatabaseQueryLatestInfoCloud, RGBColor, DynamicLighting, MotionZone, CrossTrackingGroupEntry } from "./p2p/interfaces";
 import { CommandResult, StorageInfoBodyHB3 } from "./p2p/models";
-import { generateSerialnumber, generateUDID, getError, handleUpdate, md5, parseValue, removeLastChar, waitForEvent } from "./utils";
+import { generateSerialnumber, generateUDID, getError, handleUpdate, isValidUrl, md5, parseValue, removeLastChar, waitForEvent } from "./utils";
 import { DeviceNotFoundError, StationNotFoundError, ReadOnlyPropertyError, NotSupportedError, AddUserError, DeleteUserError, UpdateUserUsernameError, UpdateUserPasscodeError, UpdateUserScheduleError, ensureError } from "./error";
 import { libVersion } from ".";
 import { InvalidPropertyError } from "./http/error";
@@ -282,6 +282,15 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 this.emit("mqtt lock message", message);
             });
         });
+    }
+
+    public updateLogging(category: LoggingCategories, level: LogLevel): void {
+        if (typeof level === "number" &&
+        Object.values(LogLevel).includes(level) &&
+        typeof category === "string" &&
+        ["main", "http", "p2p" , "push", "mqtt"].includes(category.toLowerCase())) {
+            setLoggingLevel(category, level);
+        }
     }
 
     public getPushService(): PushNotificationService {
@@ -563,6 +572,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
         } else if (Device.isLock(station.getDeviceType())) {
             station.getLockParameters();
+            station.getLockStatus();
             if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
                 clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
                 delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
@@ -623,6 +633,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                     new_device = WallLightCam.getInstance(this.api, device);
                 } else if (Device.isGarageCamera(device.device_type)) {
                     new_device = GarageCamera.getInstance(this.api, device);
+                } else if (Device.isSmartDrop(device.device_type)) {
+                    new_device = SmartDrop.getInstance(this.api, device);
                 } else if (Device.isCamera(device.device_type)) {
                     new_device = Camera.getInstance(this.api, device);
                 } else if (Device.isLock(device.device_type)) {
@@ -637,6 +649,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                     new_device = SmartSafe.getInstance(this.api, device);
                 } else if (Device.isSmartTrack(device.device_type)) {
                     new_device = Tracker.getInstance(this.api, device);
+                } else if (Device.isLockKeypad(device.device_type)) {
+                    new_device = LockKeypad.getInstance(this.api, device);
                 } else {
                     new_device = UnknownDevice.getInstance(this.api, device);
                 }
@@ -670,6 +684,12 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                         device.on("dog detected", (device: Device, state: boolean) => this.onDeviceDogDetected(device, state));
                         device.on("dog lick detected", (device: Device, state: boolean) => this.onDeviceDogLickDetected(device, state));
                         device.on("dog poop detected", (device: Device, state: boolean) => this.onDeviceDogPoopDetected(device, state));
+                        device.on("tampering", (device: Device, state: boolean) => this.onDeviceTampering(device, state));
+                        device.on("low temperature", (device: Device, state: boolean) => this.onDeviceLowTemperature(device, state));
+                        device.on("high temperature", (device: Device, state: boolean) => this.onDeviceHighTemperature(device, state));
+                        device.on("pin incorrect", (device: Device, state: boolean) => this.onDevicePinIncorrect(device, state));
+                        device.on("lid stuck", (device: Device, state: boolean) => this.onDeviceLidStuck(device, state));
+                        device.on("battery fully charged", (device: Device, state: boolean) => this.onDeviceBatteryFullyCharged(device, state));
                         this.addDevice(device);
                         device.initialize();
                     } catch (err) {
@@ -1047,12 +1067,17 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             });
             this.getDevices().then((devices: Device[]) => {
                 devices.forEach(device => {
-                    try {
-                        device.processPushNotification(message, this.config.eventDurationSeconds);
-                    } catch (err) {
+                    this.getStation(device.getStationSerial()).then((station) => {
+                        try {
+                            device.processPushNotification(station, message, this.config.eventDurationSeconds);
+                        } catch (err) {
+                            const error = ensureError(err);
+                            rootMainLogger.error(`Error processing push notification for device`, { error: getError(error), deviceSN: device.getSerial(), message: message });
+                        }
+                    }).catch((err) => {
                         const error = ensureError(err);
-                        rootMainLogger.error(`Error processing push notification for device`, { error: getError(error), deviceSN: device.getSerial(), message: message });
-                    }
+                        rootMainLogger.error("Process push notification for devices loading station", { error: getError(error), message: message });
+                    });
                 });
             }).catch((err) => {
                 const error = ensureError(err);
@@ -1676,6 +1701,12 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             case PropertyName.DeviceNightvisionOptimizationSide:
                 station.setNightvisionOptimizationSide(device, value as number);
                 break;
+            case PropertyName.DeviceOpenMethod:
+                station.setOpenMethod(device, value as number);
+                break;
+            case PropertyName.DeviceMotionActivatedPrompt:
+                station.setMotionActivatedPrompt(device, value as boolean);
+                break;
             default:
                 if (!Object.values(PropertyName).includes(name as PropertyName))
                     throw new ReadOnlyPropertyError("Property is read only", { context: { device: deviceSN, propertyName: name, propertyValue: value } });
@@ -1825,9 +1856,9 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 }
             }
             this.getStationDevice(station.getSerial(), result.channel).then((device: Device) => {
-                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe() && !device.isLockWifiT8506()) ||
+                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe() && !device.isLockWifiT8506() && !device.isLockWifiT8502() && !device.isLockWifiT8510P() && !device.isLockWifiT8520P()) ||
                     (result.customData !== undefined && result.customData.property !== undefined && device.isSmartSafe() && result.command_type !== CommandType.CMD_SMARTSAFE_SETTINGS) ||
-                    (result.customData !== undefined && result.customData.property !== undefined && device.isLockWifiT8506() && result.command_type !== CommandType.CMD_DOORLOCK_SET_PUSH_MODE)) {
+                    (result.customData !== undefined && result.customData.property !== undefined && (device.isLockWifiT8506() || device.isLockWifiT8502() || device.isLockWifiT8510P() || device.isLockWifiT8520P()) && result.command_type !== CommandType.CMD_DOORLOCK_SET_PUSH_MODE)) {
                     if (device.hasProperty(result.customData.property.name)) {
                         const metadata = device.getPropertyMetadata(result.customData.property.name);
                         if (typeof result.customData.property.value !== "object" || metadata.type === "object") {
@@ -1919,7 +1950,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                     this.getStationDevice(station.getSerial(), result.channel).then((device: Device) => {
                         switch (result.return_code) {
                             case 0:
-                                this.api.deleteUser(device.getSerial(), customValue.short_user_id, device.getStationSerial()).then((result) => {
+                                this.api.deleteUser(device.getSerial(), customValue.shortUserId, device.getStationSerial()).then((result) => {
                                     if (result) {
                                         this.emit("user deleted", device, customValue.username);
                                     } else {
@@ -2044,14 +2075,16 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             } else if (name === PropertyName.DeviceRTSPStream && (value as boolean) === false) {
                 device.setCustomPropertyValue(PropertyName.DeviceRTSPStreamUrl, "");
             } else if (name === PropertyName.DevicePictureUrl && value !== "") {
-                this.getStation(device.getStationSerial()).then((station: Station) => {
-                    if (station.hasCommand(CommandName.StationDownloadImage)) {
-                        station.downloadImage(value as string);
-                    }
-                }).catch((err) => {
-                    const error = ensureError(err);
-                    rootMainLogger.error(`Device property changed error - station download image`, { error: getError(error), deviceSN: device.getSerial(), stationSN: device.getStationSerial(), propertyName: name, propertyValue: value, ready: ready });
-                });
+                if (!isValidUrl(value as string)) {
+                    this.getStation(device.getStationSerial()).then((station: Station) => {
+                        if (station.hasCommand(CommandName.StationDownloadImage)) {
+                            station.downloadImage(value as string);
+                        }
+                    }).catch((err) => {
+                        const error = ensureError(err);
+                        rootMainLogger.error(`Device property changed error - station download image`, { error: getError(error), deviceSN: device.getSerial(), stationSN: device.getStationSerial(), propertyName: name, propertyValue: value, ready: ready });
+                    });
+                }
             }
         } catch (err) {
             const error = ensureError(err);
@@ -2424,7 +2457,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        if (device.isLockWifiT8506() && user.password_list.length > 0) {
+                        if ((device.isLockWifiT8506() || device.isLockWifiT8502() || device.isLockWifiT8510P() || device.isLockWifiT8520P()) && user.password_list.length > 0) {
                             for (const entry of user.password_list) {
                                 if (entry.password_type === UserPasswordType.PIN) {
                                     let schedule = entry.schedule;
@@ -2434,6 +2467,12 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                                     if (schedule !== undefined && schedule.endDay !== undefined && schedule.endTime !== undefined && schedule.startDay !== undefined && schedule.startTime !== undefined && schedule.week !== undefined) {
                                         station.updateUserSchedule(device, newUsername, user.short_user_id, hexStringScheduleToSchedule(schedule.startDay, schedule.startTime, schedule.endDay, schedule.endTime, schedule.week));
                                     }
+                                }
+                            }
+                        } else if (device.isLockWifiR10() || device.isLockWifiR20()) {
+                            for (const entry of user.password_list) {
+                                if (entry.password_type === UserPasswordType.PIN) {
+                                    station.updateUsername(device, newUsername, entry.password_id);
                                 }
                             }
                         }
@@ -2473,8 +2512,12 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        station.updateUserPasscode(device, user.user_name, user.short_user_id, passcode);
-                        found = true;
+                        for (const entry of user.password_list) {
+                            if (entry.password_type === UserPasswordType.PIN) {
+                                station.updateUserPasscode(device, user.user_name, entry.password_id, passcode);
+                                found = true;
+                            }
+                        }
                     }
                 }
                 if (!found) {
@@ -2645,4 +2688,29 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             station.updateProperty(PropertyName.StationStorageInfoHdd, storageInfo.hdd_info);
         }
     }
+
+    private onDeviceTampering(device: Device, state: boolean): void {
+        this.emit("device tampering", device, state);
+    }
+
+    private onDeviceLowTemperature(device: Device, state: boolean): void {
+        this.emit("device low temperature", device, state);
+    }
+
+    private onDeviceHighTemperature(device: Device, state: boolean): void {
+        this.emit("device high temperature", device, state);
+    }
+
+    private onDevicePinIncorrect(device: Device, state: boolean): void {
+        this.emit("device pin incorrect", device, state);
+    }
+
+    private onDeviceLidStuck(device: Device, state: boolean): void {
+        this.emit("device lid stuck", device, state);
+    }
+
+    private onDeviceBatteryFullyCharged(device: Device, state: boolean): void {
+        this.emit("device battery fully charged", device, state);
+    }
+
 }
