@@ -163,7 +163,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     enableDevice(device: Device, value: boolean): void;
     startDownload(device: Device, path: string, cipher_id?: number): Promise<void>;
     cancelDownload(device: Device): void;
-    startLivestream(device: Device, videoCodec?: VideoCodec): void;
+    startLivestream(device: Device, videoCodec?: VideoCodec, skipLiveStreamingCheck?: boolean): void;
     stopLivestream(device: Device): void;
     isLiveStreaming(device: Device): boolean;
     isDownloading(device: Device): boolean;

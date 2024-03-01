@@ -4730,7 +4730,7 @@ export class Station extends TypedEmitter<StationEvents> {
         });
     }
 
-    public startLivestream(device: Device, videoCodec: VideoCodec = VideoCodec.H264): void {
+    public startLivestream(device: Device, videoCodec: VideoCodec = VideoCodec.H264, skipLiveStreamingCheck = true): void {
         const commandData: CommandData = {
             name: CommandName.DeviceStartLivestream,
             value: videoCodec
@@ -4741,7 +4741,7 @@ export class Station extends TypedEmitter<StationEvents> {
         if (!device.hasCommand(CommandName.DeviceStartLivestream)) {
             throw new NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
-        if (this.isLiveStreaming(device)) {
+        if (!skipLiveStreamingCheck && this.isLiveStreaming(device)) {
             throw new LivestreamAlreadyRunningError("Livestream for device is already running", { context: { device: device.getSerial(), station: this.getSerial(), commandName: commandData.name, commandValue: commandData.value } });
         }
         rootHTTPLogger.debug(`Station start livestream - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), videoCodec: videoCodec });
