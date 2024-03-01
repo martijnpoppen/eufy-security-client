@@ -7,7 +7,8 @@ import { PushNotificationService } from "./push/service";
 import { Credentials } from "./push/models";
 import { Device } from "./http/device";
 import { P2PConnectionType } from "./p2p/types";
-import { Logger } from "./logging";
+import { Logger, LoggingCategories } from "./logging";
+import { LogLevel } from "typescript-logging";
 export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private config;
     private api;
@@ -35,6 +36,7 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     static initialize(config: EufySecurityConfig, log?: Logger): Promise<EufySecurity>;
     protected _initializeInternals(): Promise<void>;
     private initMQTT;
+    updateLogging(category: LoggingCategories, level: LogLevel): void;
     getPushService(): PushNotificationService;
     private addStation;
     private removeStation;
@@ -165,4 +167,10 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onStationSensorStatus;
     private onStationGarageDoorStatus;
     private onStorageInfoHb3;
+    private onDeviceTampering;
+    private onDeviceLowTemperature;
+    private onDeviceHighTemperature;
+    private onDevicePinIncorrect;
+    private onDeviceLidStuck;
+    private onDeviceBatteryFullyCharged;
 }

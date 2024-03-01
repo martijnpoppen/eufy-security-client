@@ -50,6 +50,7 @@ export interface P2PClientProtocolEvents {
     "sensor status": (channel: number, status: number) => void;
     "garage door status": (channel: number, doorId: number, status: number) => void;
     "storage info hb3": (channel: number, storageInfo: StorageInfoBodyHB3) => void;
+    "sequence error": (channel: number, command: number, sequence: number, serialnumber: string) => void;
 }
 export interface P2PQueueMessage {
     p2pCommandType: InternalP2PCommandType;
@@ -68,7 +69,7 @@ export interface P2PMessageState {
     data: Buffer;
     retries: number;
     acknowledged: boolean;
-    returnCode: number;
+    returnCode?: number;
     retryTimeout?: NodeJS.Timeout;
     timeout?: NodeJS.Timeout;
     customData?: CustomData;

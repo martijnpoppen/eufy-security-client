@@ -624,6 +624,29 @@ class PushNotificationService extends tiny_typed_emitter_1.TypedEmitter {
                         if (cusPushData.file_path && cusPushData.file_path !== null && cusPushData.file_path !== undefined) {
                             normalizedMessage.file_path = cusPushData.file_path;
                         }
+                        normalizedMessage.msg_type = cusPushData.msg_type;
+                    }
+                    else if (device_1.Device.isSmartDrop(normalizedMessage.type)) {
+                        try {
+                            normalizedMessage.open = cusPushData.e !== undefined ? Number.parseInt(cusPushData.e) : 0;
+                        }
+                        catch (err) {
+                            const error = (0, error_2.ensureError)(err);
+                            logging_1.rootPushLogger.error(`Normalize push message - Type ${types_1.DeviceType[normalizedMessage.type]} CusPushData - open - Error`, { error: (0, utils_3.getError)(error), message: message });
+                        }
+                        try {
+                            normalizedMessage.openType = cusPushData.r !== undefined ? Number.parseInt(cusPushData.r) : 0;
+                        }
+                        catch (err) {
+                            const error = (0, error_2.ensureError)(err);
+                            logging_1.rootPushLogger.error(`Normalize push message - Type ${types_1.DeviceType[normalizedMessage.type]} CusPushData - openType - Error`, { error: (0, utils_3.getError)(error), message: message });
+                        }
+                        normalizedMessage.person_name = cusPushData.p;
+                        normalizedMessage.pin = cusPushData.u;
+                        normalizedMessage.channel = cusPushData.channel !== undefined ? cusPushData.channel : 0;
+                        normalizedMessage.cipher = cusPushData.cipher !== undefined ? cusPushData.cipher : 0;
+                        normalizedMessage.event_session = cusPushData.session_id !== undefined ? cusPushData.session_id : "";
+                        normalizedMessage.file_path = cusPushData.file_path !== undefined ? cusPushData.file_path : "";
                     }
                 }
             }

@@ -596,6 +596,14 @@ var CommandType;
     CommandType[CommandType["CMD_SMARTLOCK_GET_DOOR_STATUS"] = 1972] = "CMD_SMARTLOCK_GET_DOOR_STATUS";
     CommandType[CommandType["CMD_TRANSFER_PAYLOAD"] = 1940] = "CMD_TRANSFER_PAYLOAD";
     CommandType[CommandType["CMD_WIFILOCK_KEYPAD_ENTER_OTA"] = 1933] = "CMD_WIFILOCK_KEYPAD_ENTER_OTA";
+    CommandType[CommandType["CMD_SMART_DROP_DELIVERY_MODE"] = 2103] = "CMD_SMART_DROP_DELIVERY_MODE";
+    CommandType[CommandType["CMD_SMART_DROP_OPEN"] = 2105] = "CMD_SMART_DROP_OPEN";
+    CommandType[CommandType["CMD_SMART_DROP_OPEN_LID"] = 2100] = "CMD_SMART_DROP_OPEN_LID";
+    CommandType[CommandType["CMD_SMART_DROP_IS_DENIED_DELIVERY"] = 2106] = "CMD_SMART_DROP_IS_DENIED_DELIVERY";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
+    CommandType[CommandType["CMD_SMART_DROP_HAS_MASTER_PIN"] = 2109] = "CMD_SMART_DROP_HAS_MASTER_PIN";
+    // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
+    CommandType[CommandType["CMD_SMART_DROP_IS_PIN_REQUIRED"] = 2107] = "CMD_SMART_DROP_IS_PIN_REQUIRED";
 })(CommandType || (exports.CommandType = CommandType = {}));
 var MessageType;
 (function (MessageType) {
@@ -1086,6 +1094,7 @@ var FilterDetectType;
     // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
     FilterDetectType[FilterDetectType["PACKAGE_PICK_UP"] = 512] = "PACKAGE_PICK_UP";
     FilterDetectType[FilterDetectType["PACKAGE_DELIVERED"] = 1024] = "PACKAGE_DELIVERED";
+    FilterDetectType[FilterDetectType["CROSS_DELIVERED"] = 2048] = "CROSS_DELIVERED";
 })(FilterDetectType || (exports.FilterDetectType = FilterDetectType = {}));
 var CalibrateGarageType;
 (function (CalibrateGarageType) {

@@ -17,3 +17,4 @@ export declare const validValue: (metadata: PropertyMetadataAny, value: unknown)
 export declare const mergeDeep: (target: Record<string, any> | undefined, source: Record<string, any>) => Record<string, any>;
 export declare function waitForEvent<T>(emitter: EventEmitter, event: string): Promise<T>;
 export declare function getShortUrl(url: URL, prefixUrl?: string): string;
+export declare function isValidUrl(value: string, protocols?: Array<string>): boolean;

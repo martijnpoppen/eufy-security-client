@@ -284,7 +284,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     addUser(device: Device, username: string, shortUserId: string, passcode: string, schedule?: Schedule): void;
     deleteUser(device: Device, username: string, shortUserId: string): void;
     updateUserSchedule(device: Device, username: string, shortUserId: string, schedule: Schedule): void;
-    updateUserPasscode(device: Device, username: string, shortUserId: string, passcode: string): void;
+    updateUserPasscode(device: Device, username: string, passwordId: string, passcode: string): void;
     setLockV12Params(device: Device, property: PropertyName, value: PropertyValue): void;
     setSmartLockParams(device: Device, property: PropertyName, value: PropertyValue): void;
     setAutoLock(device: Device, value: boolean): void;
@@ -303,7 +303,7 @@ export declare class Station extends TypedEmitter<StationEvents> {
     private onImageDownload;
     downloadImage(cover_path: string): void;
     private onTFCardStatus;
-    databaseQueryLatestInfo(): void;
+    databaseQueryLatestInfo(failureCallback?: () => void): void;
     databaseQueryLocal(serialNumbers: Array<string>, startDate: Date, endDate: Date, eventType?: FilterEventType, detectionType?: FilterDetectType, storageType?: FilterStorageType): void;
     databaseDelete(ids: Array<number>): void;
     databaseCountByDate(startDate: Date, endDate: Date): void;
@@ -356,4 +356,9 @@ export declare class Station extends TypedEmitter<StationEvents> {
     setNightvisionOptimizationSide(device: Device, value: number): void;
     getLockParameters(): void;
     getLockStatus(): void;
+    private onSequenceError;
+    updateUsername(device: Device, username: string, passwordId: string): void;
+    setOpenMethod(device: Device, value: number): void;
+    setMotionActivatedPrompt(device: Device, value: boolean): void;
+    open(device: Device): void;
 }

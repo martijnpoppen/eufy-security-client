@@ -39,7 +39,7 @@ export declare const decryptLockAESData: (key: string, iv: string, data: Buffer)
 export declare const encryptLockAESData: (key: string, iv: string, data: Buffer) => Buffer;
 export declare const generateBasicLockAESKey: (adminID: string, stationSN: string) => string;
 export declare const getCurrentTimeInSeconds: () => number;
-export declare const generateLockSequence: (deviceType: DeviceType) => number;
+export declare const generateLockSequence: (deviceType: DeviceType, serialnumber: string) => number;
 export declare const encodeLockPayload: (data: string) => Buffer;
 export declare const getLockVectorBytes: (data: string) => string;
 export declare const decodeLockPayload: (data: Buffer) => string;

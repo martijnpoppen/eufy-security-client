@@ -280,6 +280,14 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             });
         });
     }
+    updateLogging(category, level) {
+        if (typeof level === "number" &&
+            Object.values(typescript_logging_1.LogLevel).includes(level) &&
+            typeof category === "string" &&
+            ["main", "http", "p2p", "push", "mqtt"].includes(category.toLowerCase())) {
+            (0, logging_1.setLoggingLevel)(category, level);
+        }
+    }
     getPushService() {
         return this.pushService;
     }
@@ -547,6 +555,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         }
         else if (device_1.Device.isLock(station.getDeviceType())) {
             station.getLockParameters();
+            station.getLockStatus();
             if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
                 clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
                 delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
@@ -611,6 +620,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 else if (device_1.Device.isGarageCamera(device.device_type)) {
                     new_device = device_1.GarageCamera.getInstance(this.api, device);
                 }
+                else if (device_1.Device.isSmartDrop(device.device_type)) {
+                    new_device = device_1.SmartDrop.getInstance(this.api, device);
+                }
                 else if (device_1.Device.isCamera(device.device_type)) {
                     new_device = device_1.Camera.getInstance(this.api, device);
                 }
@@ -631,6 +643,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 else if (device_1.Device.isSmartTrack(device.device_type)) {
                     new_device = device_1.Tracker.getInstance(this.api, device);
+                }
+                else if (device_1.Device.isLockKeypad(device.device_type)) {
+                    new_device = device_1.LockKeypad.getInstance(this.api, device);
                 }
                 else {
                     new_device = device_1.UnknownDevice.getInstance(this.api, device);
@@ -664,6 +679,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                         device.on("dog detected", (device, state) => this.onDeviceDogDetected(device, state));
                         device.on("dog lick detected", (device, state) => this.onDeviceDogLickDetected(device, state));
                         device.on("dog poop detected", (device, state) => this.onDeviceDogPoopDetected(device, state));
+                        device.on("tampering", (device, state) => this.onDeviceTampering(device, state));
+                        device.on("low temperature", (device, state) => this.onDeviceLowTemperature(device, state));
+                        device.on("high temperature", (device, state) => this.onDeviceHighTemperature(device, state));
+                        device.on("pin incorrect", (device, state) => this.onDevicePinIncorrect(device, state));
+                        device.on("lid stuck", (device, state) => this.onDeviceLidStuck(device, state));
+                        device.on("battery fully charged", (device, state) => this.onDeviceBatteryFullyCharged(device, state));
                         this.addDevice(device);
                         device.initialize();
                     }
@@ -1002,13 +1023,18 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             });
             this.getDevices().then((devices) => {
                 devices.forEach(device => {
-                    try {
-                        device.processPushNotification(message, this.config.eventDurationSeconds);
-                    }
-                    catch (err) {
+                    this.getStation(device.getStationSerial()).then((station) => {
+                        try {
+                            device.processPushNotification(station, message, this.config.eventDurationSeconds);
+                        }
+                        catch (err) {
+                            const error = (0, error_1.ensureError)(err);
+                            logging_1.rootMainLogger.error(`Error processing push notification for device`, { error: (0, utils_1.getError)(error), deviceSN: device.getSerial(), message: message });
+                        }
+                    }).catch((err) => {
                         const error = (0, error_1.ensureError)(err);
-                        logging_1.rootMainLogger.error(`Error processing push notification for device`, { error: (0, utils_1.getError)(error), deviceSN: device.getSerial(), message: message });
-                    }
+                        logging_1.rootMainLogger.error("Process push notification for devices loading station", { error: (0, utils_1.getError)(error), message: message });
+                    });
                 });
             }).catch((err) => {
                 const error = (0, error_1.ensureError)(err);
@@ -1641,6 +1667,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             case types_1.PropertyName.DeviceNightvisionOptimizationSide:
                 station.setNightvisionOptimizationSide(device, value);
                 break;
+            case types_1.PropertyName.DeviceOpenMethod:
+                station.setOpenMethod(device, value);
+                break;
+            case types_1.PropertyName.DeviceMotionActivatedPrompt:
+                station.setMotionActivatedPrompt(device, value);
+                break;
             default:
                 if (!Object.values(types_1.PropertyName).includes(name))
                     throw new error_1.ReadOnlyPropertyError("Property is read only", { context: { device: deviceSN, propertyName: name, propertyValue: value } });
@@ -1781,9 +1813,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
             }
             this.getStationDevice(station.getSerial(), result.channel).then((device) => {
-                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe() && !device.isLockWifiT8506()) ||
+                if ((result.customData !== undefined && result.customData.property !== undefined && !device.isLockWifiR10() && !device.isLockWifiR20() && !device.isSmartSafe() && !device.isLockWifiT8506() && !device.isLockWifiT8502() && !device.isLockWifiT8510P() && !device.isLockWifiT8520P()) ||
                     (result.customData !== undefined && result.customData.property !== undefined && device.isSmartSafe() && result.command_type !== types_2.CommandType.CMD_SMARTSAFE_SETTINGS) ||
-                    (result.customData !== undefined && result.customData.property !== undefined && device.isLockWifiT8506() && result.command_type !== types_2.CommandType.CMD_DOORLOCK_SET_PUSH_MODE)) {
+                    (result.customData !== undefined && result.customData.property !== undefined && (device.isLockWifiT8506() || device.isLockWifiT8502() || device.isLockWifiT8510P() || device.isLockWifiT8520P()) && result.command_type !== types_2.CommandType.CMD_DOORLOCK_SET_PUSH_MODE)) {
                     if (device.hasProperty(result.customData.property.name)) {
                         const metadata = device.getPropertyMetadata(result.customData.property.name);
                         if (typeof result.customData.property.value !== "object" || metadata.type === "object") {
@@ -1881,7 +1913,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                     this.getStationDevice(station.getSerial(), result.channel).then((device) => {
                         switch (result.return_code) {
                             case 0:
-                                this.api.deleteUser(device.getSerial(), customValue.short_user_id, device.getStationSerial()).then((result) => {
+                                this.api.deleteUser(device.getSerial(), customValue.shortUserId, device.getStationSerial()).then((result) => {
                                     if (result) {
                                         this.emit("user deleted", device, customValue.username);
                                     }
@@ -1998,14 +2030,16 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 device.setCustomPropertyValue(types_1.PropertyName.DeviceRTSPStreamUrl, "");
             }
             else if (name === types_1.PropertyName.DevicePictureUrl && value !== "") {
-                this.getStation(device.getStationSerial()).then((station) => {
-                    if (station.hasCommand(types_1.CommandName.StationDownloadImage)) {
-                        station.downloadImage(value);
-                    }
-                }).catch((err) => {
-                    const error = (0, error_1.ensureError)(err);
-                    logging_1.rootMainLogger.error(`Device property changed error - station download image`, { error: (0, utils_1.getError)(error), deviceSN: device.getSerial(), stationSN: device.getStationSerial(), propertyName: name, propertyValue: value, ready: ready });
-                });
+                if (!(0, utils_1.isValidUrl)(value)) {
+                    this.getStation(device.getStationSerial()).then((station) => {
+                        if (station.hasCommand(types_1.CommandName.StationDownloadImage)) {
+                            station.downloadImage(value);
+                        }
+                    }).catch((err) => {
+                        const error = (0, error_1.ensureError)(err);
+                        logging_1.rootMainLogger.error(`Device property changed error - station download image`, { error: (0, utils_1.getError)(error), deviceSN: device.getSerial(), stationSN: device.getStationSerial(), propertyName: name, propertyValue: value, ready: ready });
+                    });
+                }
             }
         }
         catch (err) {
@@ -2332,7 +2366,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        if (device.isLockWifiT8506() && user.password_list.length > 0) {
+                        if ((device.isLockWifiT8506() || device.isLockWifiT8502() || device.isLockWifiT8510P() || device.isLockWifiT8520P()) && user.password_list.length > 0) {
                             for (const entry of user.password_list) {
                                 if (entry.password_type === types_1.UserPasswordType.PIN) {
                                     let schedule = entry.schedule;
@@ -2342,6 +2376,13 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                                     if (schedule !== undefined && schedule.endDay !== undefined && schedule.endTime !== undefined && schedule.startDay !== undefined && schedule.startTime !== undefined && schedule.week !== undefined) {
                                         station.updateUserSchedule(device, newUsername, user.short_user_id, (0, utils_2.hexStringScheduleToSchedule)(schedule.startDay, schedule.startTime, schedule.endDay, schedule.endTime, schedule.week));
                                     }
+                                }
+                            }
+                        }
+                        else if (device.isLockWifiR10() || device.isLockWifiR20()) {
+                            for (const entry of user.password_list) {
+                                if (entry.password_type === types_1.UserPasswordType.PIN) {
+                                    station.updateUsername(device, newUsername, entry.password_id);
                                 }
                             }
                         }
@@ -2381,8 +2422,12 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 let found = false;
                 for (const user of users) {
                     if (user.user_name === username) {
-                        station.updateUserPasscode(device, user.user_name, user.short_user_id, passcode);
-                        found = true;
+                        for (const entry of user.password_list) {
+                            if (entry.password_type === types_1.UserPasswordType.PIN) {
+                                station.updateUserPasscode(device, user.user_name, entry.password_id, passcode);
+                                found = true;
+                            }
+                        }
                     }
                 }
                 if (!found) {
@@ -2542,6 +2587,24 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         if (station.hasProperty(types_1.PropertyName.StationStorageInfoHdd)) {
             station.updateProperty(types_1.PropertyName.StationStorageInfoHdd, storageInfo.hdd_info);
         }
+    }
+    onDeviceTampering(device, state) {
+        this.emit("device tampering", device, state);
+    }
+    onDeviceLowTemperature(device, state) {
+        this.emit("device low temperature", device, state);
+    }
+    onDeviceHighTemperature(device, state) {
+        this.emit("device high temperature", device, state);
+    }
+    onDevicePinIncorrect(device, state) {
+        this.emit("device pin incorrect", device, state);
+    }
+    onDeviceLidStuck(device, state) {
+        this.emit("device lid stuck", device, state);
+    }
+    onDeviceBatteryFullyCharged(device, state) {
+        this.emit("device battery fully charged", device, state);
     }
 }
 exports.EufySecurity = EufySecurity;

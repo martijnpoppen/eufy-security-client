@@ -8,8 +8,11 @@ import { HTTPApi } from "../http/api";
 export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     private readonly MAX_RETRIES;
     private readonly MAX_COMMAND_RESULT_WAIT;
+    private readonly MAX_GATEWAY_COMMAND_RESULT_WAIT;
+    private readonly MAX_CONNECTION_TIMEOUT;
     private readonly MAX_AKNOWLEDGE_TIMEOUT;
     private readonly MAX_LOOKUP_TIMEOUT;
+    private readonly LOCAL_LOOKUP_RETRY_TIMEOUT;
     private readonly LOOKUP_RETRY_TIMEOUT;
     private readonly LOOKUP2_TIMEOUT;
     private readonly LOOKUP2_RETRY_TIMEOUT;
@@ -51,6 +54,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private sendQueue;
     private connectTimeout?;
     private lookupTimeout?;
+    private localLookupRetryTimeout?;
     private lookupRetryTimeout?;
     private lookup2Timeout?;
     private lookup2RetryTimeout?;
@@ -93,6 +97,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private _clearKeepaliveTimeout;
     private _clearConnectTimeout;
     private _clearLookupTimeout;
+    private _clearLocalLookupRetryTimeout;
     private _clearLookupRetryTimeout;
     private _clearLookup2RetryTimeout;
     private _clearLookup2Timeout;

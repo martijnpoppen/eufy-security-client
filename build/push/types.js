@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AlarmAction = exports.NotificationStyle = exports.IndoorPushMessageType = exports.HB3HDDType = exports.HB3PairedDeviceMessageType = exports.HB3PairedDevicePushEvent = exports.SmartSafeEvent = exports.GarageDoorPushEvent = exports.IndoorPushEvent = exports.LockPushEvent = exports.DoorbellPushEvent = exports.ServerPushEvent = exports.CusPushMode = exports.CusPushAlarmType = exports.CusPushEvent = void 0;
+exports.SmartDropOpenedBy = exports.SmartDropOpen = exports.SmartDropPushEvent = exports.AlarmAction = exports.NotificationStyle = exports.IndoorPushMessageType = exports.HB3HDDType = exports.HB3PairedDeviceMessageType = exports.HB3PairedDevicePushEvent = exports.SmartSafeEvent = exports.GarageDoorPushEvent = exports.IndoorPushEvent = exports.LockPushEvent = exports.DoorbellPushEvent = exports.ServerPushEvent = exports.CusPushMode = exports.CusPushAlarmType = exports.CusPushEvent = void 0;
 var CusPushEvent;
 (function (CusPushEvent) {
     CusPushEvent[CusPushEvent["SECURITY"] = 1] = "SECURITY";
@@ -20,6 +20,7 @@ var CusPushEvent;
     CusPushEvent[CusPushEvent["ALARM_DELAY"] = 16] = "ALARM_DELAY";
     CusPushEvent[CusPushEvent["HUB_BATT_POWERED"] = 17] = "HUB_BATT_POWERED";
     CusPushEvent[CusPushEvent["SENSOR_NO_OPEN"] = 18] = "SENSOR_NO_OPEN";
+    CusPushEvent[CusPushEvent["SMART_DROP"] = 20] = "SMART_DROP";
 })(CusPushEvent || (exports.CusPushEvent = CusPushEvent = {}));
 var CusPushAlarmType;
 (function (CusPushAlarmType) {
@@ -212,4 +213,29 @@ var AlarmAction;
     AlarmAction[AlarmAction["CANCEL_APP"] = 0] = "CANCEL_APP";
     AlarmAction[AlarmAction["CANCEL_NOLIGHT"] = 1] = "CANCEL_NOLIGHT";
 })(AlarmAction || (exports.AlarmAction = AlarmAction = {}));
+var SmartDropPushEvent;
+(function (SmartDropPushEvent) {
+    SmartDropPushEvent[SmartDropPushEvent["LOW_BATTERY"] = 6] = "LOW_BATTERY";
+    SmartDropPushEvent[SmartDropPushEvent["OVERHEATING_WARNING"] = 7] = "OVERHEATING_WARNING";
+    SmartDropPushEvent[SmartDropPushEvent["TAMPERED_WARNING"] = 10] = "TAMPERED_WARNING";
+    SmartDropPushEvent[SmartDropPushEvent["BATTERY_FULLY_CHARGED"] = 11] = "BATTERY_FULLY_CHARGED";
+    SmartDropPushEvent[SmartDropPushEvent["PERSON_DETECTED"] = 3102] = "PERSON_DETECTED";
+})(SmartDropPushEvent || (exports.SmartDropPushEvent = SmartDropPushEvent = {}));
+var SmartDropOpen;
+(function (SmartDropOpen) {
+    SmartDropOpen[SmartDropOpen["OPEN"] = 1] = "OPEN";
+    SmartDropOpen[SmartDropOpen["CLOSED"] = 2] = "CLOSED";
+    SmartDropOpen[SmartDropOpen["LID_STUCK"] = 3] = "LID_STUCK";
+    SmartDropOpen[SmartDropOpen["PIN_INCORRECT"] = 4] = "PIN_INCORRECT";
+    SmartDropOpen[SmartDropOpen["LEFT_OPENED"] = 10] = "LEFT_OPENED";
+    SmartDropOpen[SmartDropOpen["LOW_TEMPERATURE_WARNING"] = 11] = "LOW_TEMPERATURE_WARNING";
+})(SmartDropOpen || (exports.SmartDropOpen = SmartDropOpen = {}));
+var SmartDropOpenedBy;
+(function (SmartDropOpenedBy) {
+    SmartDropOpenedBy[SmartDropOpenedBy["APP"] = 1] = "APP";
+    SmartDropOpenedBy[SmartDropOpenedBy["PIN"] = 2] = "PIN";
+    SmartDropOpenedBy[SmartDropOpenedBy["WITHOUT_KEY"] = 3] = "WITHOUT_KEY";
+    SmartDropOpenedBy[SmartDropOpenedBy["EMERGENCY_RELEASE_BUTTON"] = 4] = "EMERGENCY_RELEASE_BUTTON";
+    SmartDropOpenedBy[SmartDropOpenedBy["KEY"] = 5] = "KEY";
+})(SmartDropOpenedBy || (exports.SmartDropOpenedBy = SmartDropOpenedBy = {}));
 //# sourceMappingURL=types.js.map
