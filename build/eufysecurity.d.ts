@@ -36,7 +36,10 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     static initialize(config: EufySecurityConfig, log?: Logger): Promise<EufySecurity>;
     protected _initializeInternals(): Promise<void>;
     private initMQTT;
-    updateLogging(category: LoggingCategories, level: LogLevel): void;
+    setLoggingLevel(category: LoggingCategories, level: LogLevel): void;
+    getLoggingLevel(category: LoggingCategories): number;
+    setInternalLogger(logger: Logger): void;
+    getInternalLogger(): Logger | undefined;
     getPushService(): PushNotificationService;
     private addStation;
     private removeStation;

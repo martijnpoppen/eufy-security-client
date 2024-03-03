@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isSmartLockNotification = exports.switchSmartLockNotification = exports.getLockEventType = exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexStringScheduleToSchedule = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.ParsePayload = exports.WritePayload = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
+exports.loadEventImage = exports.loadImageOverP2P = exports.getWaitSeconds = exports.isSmartLockNotification = exports.switchSmartLockNotification = exports.getLockEventType = exports.getFloodLightT8425Notification = exports.isFloodlightT8425NotitficationEnabled = exports.getIndoorNotification = exports.isIndoorNotitficationEnabled = exports.getT8170DetectionMode = exports.isT8170DetectionModeEnabled = exports.decryptTrackerData = exports.isPrioritySourceType = exports.getImage = exports.getImagePath = exports.decodeImage = exports.getImageKey = exports.getImageSeed = exports.getImageBaseCode = exports.getIdSuffix = exports.randomNumber = exports.hexStringScheduleToSchedule = exports.hexWeek = exports.hexTime = exports.hexDate = exports.encodePasscode = exports.ParsePayload = exports.WritePayload = exports.getAdvancedLockTimezone = exports.getEufyTimezone = exports.getHB3DetectionMode = exports.isHB3DetectionModeEnabled = exports.getDistances = exports.getBlocklist = exports.decryptAPIData = exports.encryptAPIData = exports.calculateCellularSignalLevel = exports.calculateWifiSignalLevel = exports.switchNotificationMode = exports.isNotificationSwitchMode = exports.getImageFilePath = exports.getAbsoluteFilePath = exports.getTimezoneGMTString = exports.pad = exports.isGreaterEqualMinVersion = void 0;
 const crypto_1 = require("crypto");
 const const_1 = require("./const");
 const md5_1 = __importDefault(require("crypto-js/md5"));
@@ -13,6 +13,8 @@ const types_1 = require("./types");
 const error_1 = require("../error");
 const error_2 = require("./error");
 const types_2 = require("./../push/types");
+const logging_1 = require("../logging");
+const utils_1 = require("../utils");
 const normalizeVersionString = function (version) {
     const trimmed = version ? version.replace(/^\s*(\S*(\s+\S+)*)\s*$/, "$1") : "";
     const pieces = trimmed.split(RegExp("\\."));
@@ -712,4 +714,57 @@ const isSmartLockNotification = function (value, mode) {
     return (value & mode) !== 0;
 };
 exports.isSmartLockNotification = isSmartLockNotification;
+const getWaitSeconds = (device) => {
+    let seconds = 60;
+    const workingMode = device.getPropertyValue(types_1.PropertyName.DevicePowerWorkingMode);
+    if (workingMode !== undefined && workingMode === 2) {
+        const customValue = device.getPropertyValue(types_1.PropertyName.DeviceRecordingClipLength);
+        if (customValue !== undefined) {
+            seconds = customValue;
+        }
+    }
+    return seconds;
+};
+exports.getWaitSeconds = getWaitSeconds;
+const loadImageOverP2P = function (station, device, id, p2pTimeouts) {
+    if (station.hasCommand(types_1.CommandName.StationDatabaseQueryLatestInfo) && p2pTimeouts.get(id) === undefined) {
+        const seconds = (0, exports.getWaitSeconds)(device);
+        p2pTimeouts.set(id, setTimeout(async () => {
+            station.databaseQueryLatestInfo();
+            p2pTimeouts.delete(id);
+        }, seconds * 1000));
+    }
+};
+exports.loadImageOverP2P = loadImageOverP2P;
+const loadEventImage = function (station, api, device, message, p2pTimeouts) {
+    if (message.notification_style === types_1.NotificationType.MOST_EFFICIENT) {
+        (0, exports.loadImageOverP2P)(station, device, device.getSerial(), p2pTimeouts);
+    }
+    else {
+        if (!(0, utils_1.isEmpty)(message.pic_url)) {
+            (0, exports.getImage)(api, device.getSerial(), message.pic_url).then((image) => {
+                if (image.data.length > 0) {
+                    if (p2pTimeouts.get(device.getSerial()) !== undefined) {
+                        clearTimeout(p2pTimeouts.get(device.getSerial()));
+                        p2pTimeouts.delete(device.getSerial());
+                    }
+                    device.updateProperty(types_1.PropertyName.DevicePicture, image, true);
+                }
+                else {
+                    //fallback
+                    (0, exports.loadImageOverP2P)(station, device, device.getSerial(), p2pTimeouts);
+                }
+            }).catch((err) => {
+                const error = (0, error_1.ensureError)(err);
+                logging_1.rootHTTPLogger.debug(`Device load event image - Fallback Error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), deviceSN: device.getSerial(), message: JSON.stringify(message) });
+                (0, exports.loadImageOverP2P)(station, device, device.getSerial(), p2pTimeouts);
+            });
+        }
+        else {
+            //fallback
+            (0, exports.loadImageOverP2P)(station, device, device.getSerial(), p2pTimeouts);
+        }
+    }
+};
+exports.loadEventImage = loadEventImage;
 //# sourceMappingURL=utils.js.map

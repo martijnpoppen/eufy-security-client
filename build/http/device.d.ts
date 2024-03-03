@@ -12,6 +12,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     protected api: HTTPApi;
     protected rawDevice: DeviceListResponse;
     protected eventTimeouts: Map<DeviceEvent, NodeJS.Timeout>;
+    protected pictureEventTimeouts: Map<string, NodeJS.Timeout>;
     protected properties: PropertyValues;
     private rawProperties;
     private ready;

@@ -1,9 +1,15 @@
 /// <reference types="node" />
+/// <reference types="node" />
+/// <reference types="node" />
+/// <reference types="node" />
+/// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
 import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes, SmartLockNotification } from "./types";
 import { HTTPApi } from "./api";
 import { LockPushEvent } from "./../push/types";
+import { Station } from "./station";
+import { PushMessage } from "../push/models";
 export declare const isGreaterEqualMinVersion: (minimal_version: string, current_version: string) => boolean;
 export declare const pad: (num: number) => string;
 export declare const getTimezoneGMTString: () => string;
@@ -71,3 +77,6 @@ export declare const getFloodLightT8425Notification: (value: number, type: Flood
 export declare const getLockEventType: (event: LockPushEvent) => number;
 export declare const switchSmartLockNotification: (currentValue: number, mode: SmartLockNotification, enable: boolean) => number;
 export declare const isSmartLockNotification: (value: number, mode: SmartLockNotification) => boolean;
+export declare const getWaitSeconds: (device: Device) => number;
+export declare const loadImageOverP2P: (station: Station, device: Device, id: string, p2pTimeouts: Map<string, NodeJS.Timeout>) => void;
+export declare const loadEventImage: (station: Station, api: HTTPApi, device: Device, message: PushMessage, p2pTimeouts: Map<string, NodeJS.Timeout>) => void;

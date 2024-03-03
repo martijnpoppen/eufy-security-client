@@ -125,7 +125,6 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const metadata = this.getPropertiesMetadata(true);
         for (const property of Object.values(metadata)) {
             if (this.rawStation[property.key] !== undefined && typeof property.key === "string") {
-                //this.updateProperty(property.name, this.rawStation[property.key] as PropertyValue);
                 this.updateProperty(property.name, this.convertRawPropertyValue(property, this.rawStation[property.key]));
             }
             else if (this.properties[property.name] === undefined && property.default !== undefined && !this.ready) {

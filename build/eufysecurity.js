@@ -280,13 +280,26 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             });
         });
     }
-    updateLogging(category, level) {
+    setLoggingLevel(category, level) {
         if (typeof level === "number" &&
             Object.values(typescript_logging_1.LogLevel).includes(level) &&
             typeof category === "string" &&
-            ["main", "http", "p2p", "push", "mqtt"].includes(category.toLowerCase())) {
+            ["all", "main", "http", "p2p", "push", "mqtt"].includes(category.toLowerCase())) {
             (0, logging_1.setLoggingLevel)(category, level);
         }
+    }
+    getLoggingLevel(category) {
+        if (typeof category === "string" &&
+            ["all", "main", "http", "p2p", "push", "mqtt"].includes(category.toLowerCase())) {
+            return (0, logging_1.getLoggingLevel)(category);
+        }
+        return -1;
+    }
+    setInternalLogger(logger) {
+        logging_1.InternalLogger.logger = logger;
+    }
+    getInternalLogger() {
+        return logging_1.InternalLogger.logger;
     }
     getPushService() {
         return this.pushService;
@@ -2497,14 +2510,14 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         this.getDevicesFromStation(station.getSerial()).then((devices) => {
             for (const device of devices) {
                 if (device.getPropertyValue(types_1.PropertyName.DevicePictureUrl) === file) {
-                    logging_1.rootMainLogger.debug(`onStationImageDownload - Set first picture for device ${device.getSerial()} file: ${file} picture_ext: ${picture.type.ext} picture_mime: ${picture.type.mime}`);
+                    logging_1.rootMainLogger.debug(`onStationImageDownload - Set picture for device ${device.getSerial()} file: ${file} picture_ext: ${picture.type.ext} picture_mime: ${picture.type.mime}`);
                     device.updateProperty(types_1.PropertyName.DevicePicture, picture);
                     break;
                 }
             }
         }).catch((err) => {
             const error = (0, error_1.ensureError)(err);
-            logging_1.rootMainLogger.error(`onStationImageDownload - Set first picture error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), file: file });
+            logging_1.rootMainLogger.error(`onStationImageDownload - Set picture error`, { error: (0, utils_1.getError)(error), stationSN: station.getSerial(), file: file });
         });
     }
     onStationImageDownload(station, file, image) {

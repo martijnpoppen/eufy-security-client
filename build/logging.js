@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setLoggingLevel = exports.rootP2PLogger = exports.rootPushLogger = exports.rootMQTTLogger = exports.rootHTTPLogger = exports.rootMainLogger = exports.InternalLogger = exports.LogLevel = void 0;
+exports.getLoggingLevel = exports.setLoggingLevel = exports.rootP2PLogger = exports.rootPushLogger = exports.rootMQTTLogger = exports.rootHTTPLogger = exports.rootMainLogger = exports.InternalLogger = exports.LogLevel = void 0;
 const typescript_logging_1 = require("typescript-logging");
+Object.defineProperty(exports, "LogLevel", { enumerable: true, get: function () { return typescript_logging_1.LogLevel; } });
 const typescript_logging_category_style_1 = require("typescript-logging-category-style");
-exports.LogLevel = typescript_logging_1.LogLevel;
 class InternalLogger {
     static logger;
 }
@@ -16,44 +16,44 @@ const getMethodName = function () {
     return undefined;
 };
 const provider = typescript_logging_category_style_1.CategoryProvider.createProvider("EufySecurityClientProvider", {
-    level: exports.LogLevel.Off,
+    level: typescript_logging_1.LogLevel.Off,
     channel: {
         type: "RawLogChannel",
         write: (msg, _formatArg) => {
             const methodName = getMethodName();
             const method = methodName ? `[${methodName}] ` : "";
             switch (msg.level) {
-                case exports.LogLevel.Trace:
+                case typescript_logging_1.LogLevel.Trace:
                     if (msg.args)
                         InternalLogger.logger?.trace(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
                     else
                         InternalLogger.logger?.trace(`[${msg.logNames}] ${method}${msg.message}`);
                     break;
-                case exports.LogLevel.Debug:
+                case typescript_logging_1.LogLevel.Debug:
                     if (msg.args)
                         InternalLogger.logger?.debug(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
                     else
                         InternalLogger.logger?.debug(`[${msg.logNames}] ${method}${msg.message}`);
                     break;
-                case exports.LogLevel.Info:
+                case typescript_logging_1.LogLevel.Info:
                     if (msg.args)
                         InternalLogger.logger?.info(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
                     else
                         InternalLogger.logger?.info(`[${msg.logNames}] ${method}${msg.message}`);
                     break;
-                case exports.LogLevel.Warn:
+                case typescript_logging_1.LogLevel.Warn:
                     if (msg.args)
                         InternalLogger.logger?.warn(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
                     else
                         InternalLogger.logger?.warn(`[${msg.logNames}] ${method}${msg.message}`);
                     break;
-                case exports.LogLevel.Error:
+                case typescript_logging_1.LogLevel.Error:
                     if (msg.args)
                         InternalLogger.logger?.error(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
                     else
                         InternalLogger.logger?.error(`[${msg.logNames}] ${method}${msg.message}`);
                     break;
-                case exports.LogLevel.Fatal:
+                case typescript_logging_1.LogLevel.Fatal:
                     if (InternalLogger.logger && InternalLogger.logger.fatal)
                         if (msg.args)
                             InternalLogger.logger.fatal(`[${msg.logNames}] ${method}${msg.message}`, ...msg.args);
@@ -69,7 +69,7 @@ exports.rootHTTPLogger = provider.getCategory("http");
 exports.rootMQTTLogger = provider.getCategory("mqtt");
 exports.rootPushLogger = provider.getCategory("push");
 exports.rootP2PLogger = provider.getCategory("p2p");
-const setLoggingLevel = function (category = "all", level = exports.LogLevel.Off) {
+const setLoggingLevel = function (category = "all", level = typescript_logging_1.LogLevel.Off) {
     switch (category) {
         case "all":
             provider.updateRuntimeSettings({
@@ -104,4 +104,13 @@ const setLoggingLevel = function (category = "all", level = exports.LogLevel.Off
     }
 };
 exports.setLoggingLevel = setLoggingLevel;
+const getLoggingLevel = function (category = "all") {
+    switch (category) {
+        case "all":
+            return provider.runtimeConfig.level;
+        default:
+            return provider.getCategory(category).logLevel;
+    }
+};
+exports.getLoggingLevel = getLoggingLevel;
 //# sourceMappingURL=logging.js.map
