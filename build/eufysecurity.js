@@ -856,13 +856,13 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
     onAPIConnectionError(error) {
         this.emit("connection error", error);
     }
-    async startStationLivestream(deviceSN) {
+    async startStationLivestream(deviceSN, skipLiveStreamingCheck = true) {
         const device = await this.getDevice(deviceSN);
         const station = await this.getStation(device.getStationSerial());
         if (!device.hasCommand(types_1.CommandName.DeviceStartLivestream))
             throw new error_1.NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: types_1.CommandName.DeviceStartLivestream } });
         const camera = device;
-        if (!station.isLiveStreaming(camera)) {
+        if (skipLiveStreamingCheck || !station.isLiveStreaming(camera)) {
             station.startLivestream(camera);
             if (this.cameraMaxLivestreamSeconds > 0) {
                 this.cameraStationLivestreamTimeout.set(deviceSN, setTimeout(() => {

@@ -889,7 +889,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
         this.emit("connection error", error);
     }
 
-    public async startStationLivestream(deviceSN: string): Promise<void> {
+    public async startStationLivestream(deviceSN: string, skipLiveStreamingCheck = true): Promise<void> {
         const device = await this.getDevice(deviceSN);
         const station = await this.getStation(device.getStationSerial());
 
@@ -897,7 +897,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             throw new NotSupportedError("This functionality is not implemented or supported by this device", { context: { device: deviceSN, commandName: CommandName.DeviceStartLivestream } });
 
         const camera = device as Camera;
-        if (!station.isLiveStreaming(camera)) {
+        if (skipLiveStreamingCheck || !station.isLiveStreaming(camera)) {
             station.startLivestream(camera);
 
             if (this.cameraMaxLivestreamSeconds > 0) {

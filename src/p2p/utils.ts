@@ -322,6 +322,12 @@ export const getRSAPrivateKey = (pem: string): NodeRSA => {
     key.setOptions({
         encryptionScheme: "pkcs1"
     });
+
+    if(process.env.REVERT_CVE_2023_46809) {
+        rootP2PLogger.warn(`getRSAPrivateKey setting `, { environment: "browser" });
+        key.setOptions({ environment: "browser" });
+    }
+
     return key;
 }
 
@@ -330,6 +336,12 @@ export const getNewRSAPrivateKey = (): NodeRSA => {
     key.setOptions({
         encryptionScheme: "pkcs1"
     });
+
+    if(process.env.REVERT_CVE_2023_46809) {
+        rootP2PLogger.warn(`getNewRSAPrivateKey setting `, { environment: "browser" });
+        key.setOptions({ environment: "browser" });
+    }
+    
     return key;
 }
 

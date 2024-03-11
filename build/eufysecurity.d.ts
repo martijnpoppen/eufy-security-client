@@ -75,7 +75,7 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private onAPIClose;
     private onAPIConnect;
     private onAPIConnectionError;
-    startStationLivestream(deviceSN: string): Promise<void>;
+    startStationLivestream(deviceSN: string, skipLiveStreamingCheck?: boolean): Promise<void>;
     stopStationLivestream(deviceSN: string): Promise<void>;
     private writePersistentData;
     private saveCloudToken;
