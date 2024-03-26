@@ -132,6 +132,11 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         if (this.config.acceptInvitations === undefined) {
             this.config.acceptInvitations = false;
         }
+        if (this.config.deviceConfig === undefined) {
+            this.config.deviceConfig = {
+                simultaneousDetections: true
+            };
+        }
         if (this.config.persistentDir === undefined) {
             this.config.persistentDir = path.resolve(__dirname, "../../..");
         }
@@ -601,6 +606,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         const deviceSNs = Object.keys(this.devices);
         const newDeviceSNs = Object.keys(devices);
         const promises = [];
+        const deviceConfig = this.config.deviceConfig;
         for (const device of Object.values(devices)) {
             if (deviceSNs.includes(device.device_sn)) {
                 this.updateDevice(device);
@@ -610,58 +616,58 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                     this.devicesLoaded = (0, utils_1.waitForEvent)(this.loadingEmitter, "devices loaded");
                 let new_device;
                 if (device_1.Device.isIndoorCamera(device.device_type)) {
-                    new_device = device_1.IndoorCamera.getInstance(this.api, device);
+                    new_device = device_1.IndoorCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isSoloCameras(device.device_type)) {
-                    new_device = device_1.SoloCamera.getInstance(this.api, device);
+                    new_device = device_1.SoloCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isLockWifiVideo(device.device_type)) {
-                    new_device = device_1.DoorbellLock.getInstance(this.api, device);
+                    new_device = device_1.DoorbellLock.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isBatteryDoorbell(device.device_type)) {
-                    new_device = device_1.BatteryDoorbellCamera.getInstance(this.api, device);
+                    new_device = device_1.BatteryDoorbellCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isWiredDoorbell(device.device_type) || device_1.Device.isWiredDoorbellDual(device.device_type)) {
-                    new_device = device_1.WiredDoorbellCamera.getInstance(this.api, device);
+                    new_device = device_1.WiredDoorbellCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isFloodLight(device.device_type)) {
-                    new_device = device_1.FloodlightCamera.getInstance(this.api, device);
+                    new_device = device_1.FloodlightCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isWallLightCam(device.device_type)) {
-                    new_device = device_1.WallLightCam.getInstance(this.api, device);
+                    new_device = device_1.WallLightCam.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isGarageCamera(device.device_type)) {
-                    new_device = device_1.GarageCamera.getInstance(this.api, device);
+                    new_device = device_1.GarageCamera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isSmartDrop(device.device_type)) {
-                    new_device = device_1.SmartDrop.getInstance(this.api, device);
+                    new_device = device_1.SmartDrop.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isCamera(device.device_type)) {
-                    new_device = device_1.Camera.getInstance(this.api, device);
+                    new_device = device_1.Camera.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isLock(device.device_type)) {
-                    new_device = device_1.Lock.getInstance(this.api, device);
+                    new_device = device_1.Lock.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isMotionSensor(device.device_type)) {
-                    new_device = device_1.MotionSensor.getInstance(this.api, device);
+                    new_device = device_1.MotionSensor.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isEntrySensor(device.device_type)) {
-                    new_device = device_1.EntrySensor.getInstance(this.api, device);
+                    new_device = device_1.EntrySensor.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isKeyPad(device.device_type)) {
-                    new_device = device_1.Keypad.getInstance(this.api, device);
+                    new_device = device_1.Keypad.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isSmartSafe(device.device_type)) {
-                    new_device = device_1.SmartSafe.getInstance(this.api, device);
+                    new_device = device_1.SmartSafe.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isSmartTrack(device.device_type)) {
-                    new_device = device_1.Tracker.getInstance(this.api, device);
+                    new_device = device_1.Tracker.getInstance(this.api, device, deviceConfig);
                 }
                 else if (device_1.Device.isLockKeypad(device.device_type)) {
-                    new_device = device_1.LockKeypad.getInstance(this.api, device);
+                    new_device = device_1.LockKeypad.getInstance(this.api, device, deviceConfig);
                 }
                 else {
-                    new_device = device_1.UnknownDevice.getInstance(this.api, device);
+                    new_device = device_1.UnknownDevice.getInstance(this.api, device, deviceConfig);
                 }
                 promises.push(new_device.then((device) => {
                     try {

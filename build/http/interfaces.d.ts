@@ -19,6 +19,9 @@ export type PropertyValue = number | boolean | string | object;
 export interface PropertyValues {
     [index: string]: PropertyValue;
 }
+export interface DeviceConfig {
+    simultaneousDetections?: boolean;
+}
 export interface RawValue {
     value: string;
     source: SourceType;

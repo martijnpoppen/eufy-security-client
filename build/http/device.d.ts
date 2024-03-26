@@ -4,7 +4,7 @@ import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
 import { CommandName, DeviceEvent, SourceType, TrackerType } from "./types";
 import { DeviceListResponse } from "./models";
-import { DeviceEvents, PropertyValue, PropertyValues, PropertyMetadataAny, IndexedProperty, RawValues, Schedule, Voices } from "./interfaces";
+import { DeviceEvents, PropertyValue, PropertyValues, PropertyMetadataAny, IndexedProperty, RawValues, Schedule, Voices, DeviceConfig } from "./interfaces";
 import { PushMessage } from "../push/models";
 import { DeviceSmartLockNotifyData } from "../mqtt/model";
 import { Station } from "./station";
@@ -14,9 +14,10 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     protected eventTimeouts: Map<DeviceEvent, NodeJS.Timeout>;
     protected pictureEventTimeouts: Map<string, NodeJS.Timeout>;
     protected properties: PropertyValues;
+    protected config: DeviceConfig;
     private rawProperties;
     private ready;
-    protected constructor(api: HTTPApi, device: DeviceListResponse);
+    protected constructor(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig);
     protected initializeState(): void;
     initialize(): void;
     getRawDevice(): DeviceListResponse;
@@ -208,8 +209,8 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isEnabled(): PropertyValue;
 }
 export declare class Camera extends Device {
-    protected constructor(api: HTTPApi, device: DeviceListResponse);
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Camera>;
+    protected constructor(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig);
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<Camera>;
     getStateChannel(): string;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     getLastCameraImageURL(): PropertyValue;
@@ -237,15 +238,15 @@ export declare class Camera extends Device {
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class SoloCamera extends Camera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<SoloCamera>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<SoloCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class IndoorCamera extends Camera {
-    protected constructor(api: HTTPApi, device: DeviceListResponse);
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<IndoorCamera>;
+    protected constructor(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig);
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<IndoorCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     isPetDetectionEnabled(): PropertyValue;
@@ -258,8 +259,8 @@ export declare class IndoorCamera extends Camera {
 }
 export declare class DoorbellCamera extends Camera {
     protected voices: Voices;
-    protected constructor(api: HTTPApi, device: DeviceListResponse, voices: Voices);
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<DoorbellCamera>;
+    protected constructor(api: HTTPApi, device: DeviceListResponse, voices: Voices, deviceConfig: DeviceConfig);
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<DoorbellCamera>;
     private loadMetadataVoiceStates;
     getVoiceName(id: number): string;
     getVoices(): Voices;
@@ -269,24 +270,24 @@ export declare class DoorbellCamera extends Camera {
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class WiredDoorbellCamera extends DoorbellCamera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<WiredDoorbellCamera>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<WiredDoorbellCamera>;
     isLedEnabled(): PropertyValue;
     isAutoNightVisionEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
 }
 export declare class BatteryDoorbellCamera extends DoorbellCamera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<BatteryDoorbellCamera>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<BatteryDoorbellCamera>;
     isLedEnabled(): PropertyValue;
 }
 export declare class FloodlightCamera extends Camera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<FloodlightCamera>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<FloodlightCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class WallLightCam extends Camera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<WallLightCam>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<WallLightCam>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
@@ -294,19 +295,19 @@ export declare class WallLightCam extends Camera {
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class GarageCamera extends Camera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<GarageCamera>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<GarageCamera>;
     isLedEnabled(): PropertyValue;
     isMotionDetectionEnabled(): PropertyValue;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class Sensor extends Device {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Sensor>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<Sensor>;
     getStateChannel(): string;
     getState(): PropertyValue;
 }
 export declare class EntrySensor extends Sensor {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<EntrySensor>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<EntrySensor>;
     isSensorOpen(): PropertyValue;
     getSensorChangeTime(): PropertyValue;
     isBatteryLow(): PropertyValue;
@@ -315,8 +316,8 @@ export declare class EntrySensor extends Sensor {
 }
 export declare class MotionSensor extends Sensor {
     static readonly MOTION_COOLDOWN_MS = 120000;
-    protected constructor(api: HTTPApi, device: DeviceListResponse);
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<MotionSensor>;
+    protected constructor(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig);
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<MotionSensor>;
     isMotionDetected(): boolean;
     getMotionSensorPIREvent(): PropertyValue;
     isBatteryLow(): PropertyValue;
@@ -326,7 +327,7 @@ export declare class MotionSensor extends Sensor {
 export declare class Lock extends Device {
     static readonly VERSION_CODE_SMART_LOCK = 3;
     static readonly VERSION_CODE_LOCKV12 = 18;
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Lock>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<Lock>;
     getStateChannel(): string;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
     getState(): PropertyValue;
@@ -383,11 +384,11 @@ export declare class Lock extends Device {
     static encodeCmdSmartLockGetParams(adminUserId: string): Buffer;
 }
 export declare class LockKeypad extends Device {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<LockKeypad>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<LockKeypad>;
     getStateChannel(): string;
 }
 export declare class Keypad extends Device {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Keypad>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<Keypad>;
     getStateChannel(): string;
     getState(): PropertyValue;
     isBatteryLow(): PropertyValue;
@@ -401,7 +402,7 @@ export declare class SmartSafe extends Device {
     static readonly PUSH_NOTIFICATION_POSITION: {
         [index: string]: number;
     };
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<SmartSafe>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<SmartSafe>;
     getStateChannel(): string;
     private static getCurrentTimeInSeconds;
     private static getUInt8Buffer;
@@ -434,7 +435,7 @@ export declare class SmartSafe extends Device {
     isLocked(): boolean;
 }
 export declare class Tracker extends Device {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<Tracker>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<Tracker>;
     getStateChannel(): string;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
     setFindPhone(value: boolean): Promise<boolean>;
@@ -442,7 +443,7 @@ export declare class Tracker extends Device {
     setTrackerType(value: TrackerType): Promise<boolean>;
 }
 export declare class DoorbellLock extends DoorbellCamera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<DoorbellLock>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<DoorbellLock>;
     getStateChannel(): string;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
     protected convertRawPropertyValue(property: PropertyMetadataAny, value: string): PropertyValue;
@@ -454,12 +455,12 @@ export declare class DoorbellLock extends DoorbellCamera {
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
 }
 export declare class SmartDrop extends Camera {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<SmartDrop>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<SmartDrop>;
     getStateChannel(): string;
     processPushNotification(station: Station, message: PushMessage, eventDurationSeconds: number): void;
     protected handlePropertyChange(metadata: PropertyMetadataAny, oldValue: PropertyValue, newValue: PropertyValue): void;
 }
 export declare class UnknownDevice extends Device {
-    static getInstance(api: HTTPApi, device: DeviceListResponse): Promise<UnknownDevice>;
+    static getInstance(api: HTTPApi, device: DeviceListResponse, deviceConfig: DeviceConfig): Promise<UnknownDevice>;
     getStateChannel(): string;
 }

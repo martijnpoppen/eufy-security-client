@@ -27,6 +27,9 @@ export interface EufySecurityConfig {
     eventDurationSeconds: number;
     acceptInvitations?: boolean;
     stationIPAddresses?: StationIPAddresses;
+    deviceConfig?: {
+        simultaneousDetections?: boolean;
+    };
     logging?: {
         level?: LogLevel;
         categories?: Array<{
