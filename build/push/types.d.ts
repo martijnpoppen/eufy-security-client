@@ -132,6 +132,7 @@ export declare enum SmartSafeEvent {
 export declare enum HB3PairedDevicePushEvent {
     MOTION_DETECTION = 3101,
     FACE_DETECTION = 3102,
+    PRESS_DOORBELL = 3103,
     CRYING_DETECTION = 3104,
     SOUND_DETECTION = 3105,
     PET_DETECTION = 3106,
