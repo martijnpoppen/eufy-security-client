@@ -5745,6 +5745,7 @@ exports.DeviceProperties = {
         [PropertyName.DeviceWatermark]: exports.DeviceWatermarkProperty,
         [PropertyName.DeviceMotionDetected]: exports.DeviceMotionDetectedProperty,
         [PropertyName.DevicePersonDetected]: exports.DevicePersonDetectedProperty,
+        [PropertyName.DeviceVehicleDetected]: exports.DeviceVehicleDetectedProperty,
         [PropertyName.DeviceStatusLed]: exports.DeviceStatusLedIndoorS350Property,
         [PropertyName.DevicePicture]: exports.DevicePictureProperty,
         [PropertyName.DevicePictureUrl]: exports.DevicePictureUrlProperty,
