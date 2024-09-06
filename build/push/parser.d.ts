@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { TypedEmitter } from "tiny-typed-emitter";
 import { PushClientParserEvents } from "./interfaces";
 export declare class PushClientParser extends TypedEmitter<PushClientParserEvents> {

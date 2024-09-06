@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { CheckinResponse } from "./models";
 export declare const VALID_FID_PATTERN: RegExp;
 export declare function generateFid(): string;

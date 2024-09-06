@@ -105,10 +105,10 @@ export interface BatteryDoorbellPushData {
     event_type: number;
     file_path: string;
     pic_url: string;
-    nick_name: string;
     push_count: number;
     notification_style: number;
     objects?: DoorbellPeopleNames;
+    nick_name?: string;
 }
 export interface DoorbellPeopleNames {
     names: string[];

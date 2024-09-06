@@ -1,8 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
-/// <reference types="node" />
-/// <reference types="node" />
-/// <reference types="node" />
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
 import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes, SmartLockNotification } from "./types";

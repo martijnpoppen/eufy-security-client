@@ -1,4 +1,3 @@
-/// <reference types="node" />
 export declare enum BleParameterIndex {
     ZERO = -96,
     ONE = -95,

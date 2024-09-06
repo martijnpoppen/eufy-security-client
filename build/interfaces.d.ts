@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Readable } from "stream";
 import { Device } from "./http/device";
 import { HTTPApiPersistentData, Picture, PropertyValue, Schedule } from "./http/interfaces";
@@ -27,6 +26,7 @@ export interface EufySecurityConfig {
     eventDurationSeconds: number;
     acceptInvitations?: boolean;
     stationIPAddresses?: StationIPAddresses;
+    enableEmbeddedPKCS1Support?: boolean;
     deviceConfig?: {
         simultaneousDetections?: boolean;
     };

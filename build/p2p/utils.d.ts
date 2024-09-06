@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { Socket } from "dgram";
 import NodeRSA from "node-rsa";
 import { P2PMessageParts, P2PMessageState, P2PQueueMessage, RGBColor } from "./interfaces";
@@ -30,8 +28,8 @@ export declare const hasHeader: (msg: Buffer, searchedType: Buffer) => boolean;
 export declare const buildCommandHeader: (seqNumber: number, commandType: CommandType, p2pDataTypeHeader?: Buffer | null) => Buffer;
 export declare const buildCommandWithStringTypePayload: (encryptionType: EncryptionType, encryptionKey: Buffer | undefined, serialNumber: string, p2pDid: string, commandType: CommandType, value: string, channel?: number) => Buffer;
 export declare const sortP2PMessageParts: (messages: P2PMessageParts) => Buffer;
-export declare const getRSAPrivateKey: (pem: string) => NodeRSA;
-export declare const getNewRSAPrivateKey: () => NodeRSA;
+export declare const getRSAPrivateKey: (pem: string, enableEmbeddedPKCS1Support?: boolean) => NodeRSA;
+export declare const getNewRSAPrivateKey: (enableEmbeddedPKCS1Support?: boolean) => NodeRSA;
 export declare const decryptAESData: (hexkey: string, data: Buffer) => Buffer;
 export declare const findStartCode: (data: Buffer) => boolean;
 export declare const isIFrame: (data: Buffer) => boolean;
@@ -39,7 +37,7 @@ export declare const decryptLockAESData: (key: string, iv: string, data: Buffer)
 export declare const encryptLockAESData: (key: string, iv: string, data: Buffer) => Buffer;
 export declare const generateBasicLockAESKey: (adminID: string, stationSN: string) => string;
 export declare const getCurrentTimeInSeconds: () => number;
-export declare const generateLockSequence: (deviceType: DeviceType, serialnumber: string) => number;
+export declare const generateLockSequence: (deviceType?: DeviceType, serialnumber?: string) => number;
 export declare const encodeLockPayload: (data: string) => Buffer;
 export declare const getLockVectorBytes: (data: string) => string;
 export declare const decodeLockPayload: (data: Buffer) => string;

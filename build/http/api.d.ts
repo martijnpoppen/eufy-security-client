@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { TypedEmitter } from "tiny-typed-emitter";
 import { TrustDevice, Cipher, EventRecordResponse, ConfirmInvite, SensorHistoryEntry, ApiResponse, HouseDetail, DeviceListResponse, StationListResponse, HouseInviteListResponse, HouseListResponse, PassportProfileResponse, User, AddUserResponse } from "./models";
 import { HTTPApiEvents, Ciphers, FullDevices, Hubs, Voices, Invites, HTTPApiRequest, HTTPApiPersistentData, LoginOptions, Schedule } from "./interfaces";

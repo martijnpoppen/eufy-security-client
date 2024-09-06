@@ -30,6 +30,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private readonly MAX_VIDEO_PACKET_BYTES;
     private readonly P2P_DATA_HEADER_BYTES;
     private readonly MAX_SEQUENCE_NUMBER;
+    private readonly LOOP_RUNAWAY_LIMIT;
     private readonly SEQUENCE_PROCESSING_BOUNDARY;
     private socket;
     private binded;
@@ -72,6 +73,7 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private connectAddress;
     private localIPAddress;
     private preferredIPAddress;
+    private listeningPort;
     private dskKey;
     private dskExpiration;
     private deviceSNs;
@@ -83,7 +85,8 @@ export declare class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEve
     private channel;
     private encryption;
     private p2pKey?;
-    constructor(rawStation: StationListResponse, api: HTTPApi, ipAddress?: string, publicKey?: string);
+    private enableEmbeddedPKCS1Support;
+    constructor(rawStation: StationListResponse, api: HTTPApi, ipAddress?: string, listeningPort?: number, publicKey?: string, enableEmbeddedPKCS1Support?: boolean);
     private _incrementSequence;
     private _isBetween;
     private _wasSequenceNumberAlreadyProcessed;

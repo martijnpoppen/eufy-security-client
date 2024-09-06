@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Category } from "typescript-logging-category-style";
 import EventEmitter from "events";
 import { ErrorObject, EufySecurityPersistentData } from "./interfaces";

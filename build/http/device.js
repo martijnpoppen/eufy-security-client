@@ -311,7 +311,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponseTimeFrom: {
                         const stringProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].start_hour !== undefined && value.setting[0].start_min !== undefined) ? `${value.setting[0].start_hour.padStart(2, "0")}:${value.setting[0].start_min.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.start_hour !== undefined && value?.setting[0]?.start_min !== undefined) ? `${value?.setting[0]?.start_hour?.padStart(2, "0")}:${value?.setting[0]?.start_min?.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -322,7 +322,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponseTimeTo: {
                         const stringProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].end_hour !== undefined && value.setting[0].end_min !== undefined) ? `${value.setting[0].end_hour.padStart(2, "0")}:${value.setting[0].end_min.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.end_hour !== undefined && value?.setting[0]?.end_min !== undefined) ? `${value?.setting[0]?.end_hour?.padStart(2, "0")}:${value?.setting[0]?.end_min?.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -333,7 +333,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponsePhoneNotification: {
                         const booleanProperty = property;
                         try {
-                            return value.setting[0].push_notify === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
+                            return value?.setting[0]?.push_notify === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -344,7 +344,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponseHomeBaseNotification: {
                         const booleanProperty = property;
                         try {
-                            return value.setting[0].homebase_alert === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
+                            return value?.setting[0]?.homebase_alert === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -355,7 +355,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponseAutoVoiceResponse: {
                         const booleanProperty = property;
                         try {
-                            return value.setting[0].auto_voice_resp === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
+                            return value?.setting[0]?.auto_voice_resp === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -366,7 +366,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceLoiteringCustomResponseAutoVoiceResponseVoice: {
                         const numericProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].auto_voice_id !== undefined) ? value.setting[0].auto_voice_id : numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.auto_voice_id !== undefined) ? value?.setting[0]?.auto_voice_id : numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -390,7 +390,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             else if (property.key === types_2.CommandType.CMD_DOORBELL_DUAL_PACKAGE_STRAND_TIME) {
                 const stringProperty = property;
                 try {
-                    return (value.start_h !== undefined && value.start_m !== undefined) ? `${value.start_h.toString().padStart(2, "0")}:${value.start_m.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                    return (value?.start_h !== undefined && value?.start_m !== undefined) ? `${value?.start_h?.toString().padStart(2, "0")}:${value?.start_m?.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                 }
                 catch (err) {
                     const error = (0, error_2.ensureError)(err);
@@ -403,7 +403,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceRingAutoResponse: {
                         const booleanProperty = property;
                         try {
-                            return value.setting[0].active === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
+                            return value?.setting[0]?.active === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -414,7 +414,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceRingAutoResponseVoiceResponse: {
                         const booleanProperty = property;
                         try {
-                            return value.setting[0].active === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
+                            return value?.setting[0]?.active === 1 ? true : booleanProperty.default !== undefined ? booleanProperty.default : false;
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -425,7 +425,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceRingAutoResponseTimeFrom: {
                         const stringProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].start_hour !== undefined && value.setting[0].start_min !== undefined) ? `${value.setting[0].start_hour.padStart(2, "0")}:${value.setting[0].start_min.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.start_hour !== undefined && value?.setting[0]?.start_min !== undefined) ? `${value?.setting[0]?.start_hour?.padStart(2, "0")}:${value?.setting[0]?.start_min?.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -436,7 +436,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceRingAutoResponseTimeTo: {
                         const stringProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].end_hour !== undefined && value.setting[0].end_min !== undefined) ? `${value.setting[0].end_hour.padStart(2, "0")}:${value.setting[0].end_min.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.end_hour !== undefined && value?.setting[0]?.end_min !== undefined) ? `${value?.setting[0]?.end_hour?.padStart(2, "0")}:${value?.setting[0]?.end_min?.padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -447,7 +447,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceRingAutoResponseVoiceResponseVoice: {
                         const numericProperty = property;
                         try {
-                            return (value.setting !== undefined && value.setting.length !== undefined && value.setting.length > 0 && value.setting[0].auto_voice_id !== undefined) ? value.setting[0].auto_voice_id : numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
+                            return (value?.setting?.length !== undefined && value?.setting?.length > 0 && value?.setting[0]?.auto_voice_id !== undefined) ? value?.setting[0]?.auto_voice_id : numericProperty.default !== undefined ? numericProperty.default : (numericProperty.min !== undefined ? numericProperty.min : 0);
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -462,7 +462,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceDeliveryGuardPackageGuardingActivatedTimeFrom: {
                         const stringProperty = property;
                         try {
-                            return (value.start_h !== undefined && value.start_m !== undefined) ? `${value.start_h.toString().padStart(2, "0")}:${value.start_m.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.start_h !== undefined && value?.start_m !== undefined) ? `${value?.start_h?.toString().padStart(2, "0")}:${value?.start_m?.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -473,7 +473,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
                     case types_1.PropertyName.DeviceDeliveryGuardPackageGuardingActivatedTimeTo: {
                         const stringProperty = property;
                         try {
-                            return (value.end_h !== undefined && value.end_m !== undefined) ? `${value.end_h.toString().padStart(2, "0")}:${value.end_m.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
+                            return (value?.end_h !== undefined && value?.end_m !== undefined) ? `${value?.end_h?.toString().padStart(2, "0")}:${value?.end_m?.toString().padStart(2, "0")}` : stringProperty.default !== undefined ? stringProperty.default : "";
                         }
                         catch (err) {
                             const error = (0, error_2.ensureError)(err);
@@ -827,7 +827,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             else if (property.type === "boolean") {
                 const booleanProperty = property;
                 try {
-                    return value !== undefined ? (value === "1" || value.toLowerCase() === "true" ? true : false) : (booleanProperty.default !== undefined ? booleanProperty.default : false);
+                    return value !== undefined ? (typeof value === "number" ? !!value : (value === "1" || value.toLowerCase() === "true" ? true : false)) : (booleanProperty.default !== undefined ? booleanProperty.default : false);
                 }
                 catch (err) {
                     const error = (0, error_2.ensureError)(err);
@@ -910,6 +910,13 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             newMetadata[types_1.PropertyName.DeviceMotionDetectionSensitivity] = types_1.DeviceMotionDetectionSensitivityCamera2Property;
             newMetadata[types_1.PropertyName.DeviceVideoRecordingQuality] = types_1.DeviceVideoRecordingQualitySoloCamerasHB3Property;
             newMetadata[types_1.PropertyName.DeviceNotificationType] = types_1.DeviceNotificationTypeProperty;
+            newMetadata[types_1.PropertyName.DeviceMotionDetection] = types_1.DeviceMotionDetectionProperty;
+            metadata = newMetadata;
+        }
+        else if (this.isIndoorPanAndTiltCameraS350() && station_1.Station.isStationHomeBase3BySn(this.getStationSerial())) {
+            const newMetadata = {
+                ...metadata
+            };
             newMetadata[types_1.PropertyName.DeviceMotionDetection] = types_1.DeviceMotionDetectionProperty;
             metadata = newMetadata;
         }

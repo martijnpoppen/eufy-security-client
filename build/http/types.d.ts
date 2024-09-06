@@ -773,6 +773,7 @@ export declare enum PropertyName {
     StationGuardMode = "guardMode",
     StationCurrentMode = "currentMode",
     StationTimeFormat = "timeFormat",
+    StationTimeZone = "timeZone",
     StationAlarmVolume = "alarmVolume",
     StationAlarmTone = "alarmTone",
     StationPromptVolume = "promptVolume",
@@ -955,6 +956,7 @@ export declare const DeviceRecordingClipLengthProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthFloodlightProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthWalllightProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingClipLengthWalllightS120Property: PropertyMetadataNumeric;
+export declare const DeviceRecordingClipLengthOutdoorPTProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalBatteryDoorbellProperty: PropertyMetadataNumeric;
 export declare const DeviceRecordingRetriggerIntervalFloodlightProperty: PropertyMetadataNumeric;
@@ -1254,6 +1256,7 @@ export declare const StationNotificationSwitchModeAppProperty: PropertyMetadataB
 export declare const StationNotificationSwitchModeKeypadProperty: PropertyMetadataBoolean;
 export declare const StationNotificationStartAlarmDelayProperty: PropertyMetadataBoolean;
 export declare const StationTimeFormatProperty: PropertyMetadataNumeric;
+export declare const StationTimeZoneProperty: PropertyMetadataString;
 export declare const StationSwitchModeWithAccessCodeProperty: PropertyMetadataBoolean;
 export declare const StationAutoEndAlarmProperty: PropertyMetadataBoolean;
 export declare const StationTurnOffAlarmWithButtonProperty: PropertyMetadataBoolean;

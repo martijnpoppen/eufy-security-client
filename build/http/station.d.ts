@@ -22,10 +22,10 @@ export declare class Station extends TypedEmitter<StationEvents> {
     static readonly CHANNEL: number;
     static readonly CHANNEL_INDOOR: number;
     private pinVerified;
-    protected constructor(api: HTTPApi, station: StationListResponse, ipAddress?: string, publicKey?: string);
+    protected constructor(api: HTTPApi, station: StationListResponse, ipAddress?: string, listeningPort?: number, publicKey?: string, enableEmbeddedPKCS1Support?: boolean);
     protected initializeState(): void;
     initialize(): void;
-    static getInstance(api: HTTPApi, stationData: StationListResponse, ipAddress?: string): Promise<Station>;
+    static getInstance(api: HTTPApi, stationData: StationListResponse, ipAddress?: string, listeningPort?: number, enableEmbeddedPKCS1Support?: boolean): Promise<Station>;
     getStateID(state: string, level?: number): string;
     getStateChannel(): string;
     getRawStation(): StationListResponse;

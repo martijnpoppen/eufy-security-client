@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { LockV12P2PCommandType, SmartLockP2PCommandType } from "./models";
 export declare const RequestMessageType: {
     STUN: Buffer;

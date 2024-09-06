@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { PropertyValue } from "../http";
 import { CommandName, PropertyName } from "../http/types";
 import { SmartSafeEventValueDetail } from "../push/models";

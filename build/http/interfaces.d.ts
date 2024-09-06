@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { Readable } from "stream";
 import type { Method } from "got" with {
     "resolution-mode": "import"

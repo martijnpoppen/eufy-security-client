@@ -1,5 +1,3 @@
-/// <reference types="node" />
-/// <reference types="node" />
 import { TypedEmitter } from "tiny-typed-emitter";
 import { HTTPApi } from "./api";
 import { CommandName, DeviceEvent, SourceType, TrackerType } from "./types";
