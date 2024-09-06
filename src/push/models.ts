@@ -116,6 +116,7 @@ export interface BatteryDoorbellPushData {
     push_count: number;
     notification_style: number;
     objects?: DoorbellPeopleNames;
+    nick_name?: string;
 }
 
 export interface DoorbellPeopleNames {

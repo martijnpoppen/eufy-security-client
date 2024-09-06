@@ -489,10 +489,10 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
                         normalizedMessage.person_name = batteryDoorbellPushData.objects.names !== undefined ? batteryDoorbellPushData.objects.names.join(",") : "";
                     }
 
-                    if(normalizedMessage.person_name === "") {
+                    if (normalizedMessage.person_name === "") {
                         normalizedMessage.person_name = batteryDoorbellPushData.nick_name;
                     }
-                    
+
 
                     normalizedMessage.channel = batteryDoorbellPushData.channel !== undefined ? batteryDoorbellPushData.channel : 0;
                     normalizedMessage.cipher = batteryDoorbellPushData.cipher !== undefined ? batteryDoorbellPushData.cipher : 0;
