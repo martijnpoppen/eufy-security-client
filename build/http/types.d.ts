@@ -313,6 +313,11 @@ export declare enum SoloCameraDetectionTypes {
     HUMAN_DETECTION = 3,
     ALL_OTHER_MOTION = 32771
 }
+export declare enum IndoorS350DetectionTypes {
+    HUMAN_DETECTION = 3,
+    PET_DETECTION = 8,
+    ALL_OTHER_MOTION = 32768
+}
 export declare enum IndoorDetectionTypes {
     PERSON_DETECTION = 1,
     PET_DETECTION = 2,
@@ -900,6 +905,7 @@ export declare const DeviceMotionDetectionCamera1Property: PropertyMetadataNumer
 export declare const DeviceMotionDetectionTypeFloodlightT8423Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionTypeFloodlightProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionTypeIndoorProperty: PropertyMetadataNumeric;
+export declare const DeviceMotionDetectionTypeIndoorS350Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionTypeIndoorMiniProperty: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityCamera2Property: PropertyMetadataNumeric;
 export declare const DeviceMotionDetectionSensitivityCamera1Property: PropertyMetadataNumeric;

@@ -316,7 +316,6 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
         const serial = station.getSerial();
         if (serial && !Object.keys(this.stations).includes(serial)) {
             this.stations[serial] = station;
-            this.getStorageInfo(serial);
             this.emit("station added", station);
         }
         else {
@@ -346,22 +345,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 logging_1.rootMainLogger.debug(`Updating station cloud data - initiate station connection to get local data over p2p`, { stationSN: hub.station_sn });
                 this.stations[hub.station_sn].connect();
             }
-            this.getStorageInfo(hub.station_sn);
         }
         else {
             logging_1.rootMainLogger.debug(`Station with this serial ${hub.station_sn} doesn't exists and couldn't be updated!`);
-        }
-    }
-    async getStorageInfo(stationSerial) {
-        try {
-            const station = await this.getStation(stationSerial);
-            if (station.isStation() || (station.hasProperty(types_1.PropertyName.StationSdStatus) && station.getPropertyValue(types_1.PropertyName.StationSdStatus) !== undefined && station.getPropertyValue(types_1.PropertyName.StationSdStatus) !== types_2.TFCardStatus.REMOVE)) {
-                station.getStorageInfoEx();
-            }
-        }
-        catch (err) {
-            const error = (0, error_1.ensureError)(err);
-            logging_1.rootMainLogger.error("getStorageInfo Error", { error: (0, utils_1.getError)(error), stationSN: stationSerial });
         }
     }
     addDevice(device) {
@@ -564,30 +550,28 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
             }
         }
     }
-    onStationConnect(station) {
-        this.emit("station connect", station);
-        if (station_1.Station.isStation(station.getDeviceType()) || (device_1.Device.isCamera(station.getDeviceType()) && !device_1.Device.isWiredDoorbell(station.getDeviceType()) || device_1.Device.isSmartSafe(station.getDeviceType()))) {
+    refreshP2PData(station) {
+        if (station.isStation() || (device_1.Device.isCamera(station.getDeviceType()) && !device_1.Device.isWiredDoorbell(station.getDeviceType()) || device_1.Device.isSmartSafe(station.getDeviceType()))) {
             station.getCameraInfo();
-            if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
-                clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
-                delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
-            }
-            this.refreshEufySecurityP2PTimeout[station.getSerial()] = setTimeout(() => {
-                station.getCameraInfo();
-            }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
         }
-        else if (device_1.Device.isLock(station.getDeviceType())) {
+        if (device_1.Device.isLock(station.getDeviceType())) {
             station.getLockParameters();
             station.getLockStatus();
-            if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
-                clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
-                delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
-            }
-            this.refreshEufySecurityP2PTimeout[station.getSerial()] = setTimeout(() => {
-                station.getLockParameters();
-                station.getLockStatus();
-            }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
         }
+        if (station.isStation() || (station.hasProperty(types_1.PropertyName.StationSdStatus) && station.getPropertyValue(types_1.PropertyName.StationSdStatus) !== types_2.TFCardStatus.REMOVE)) {
+            station.getStorageInfoEx();
+        }
+    }
+    onStationConnect(station) {
+        this.emit("station connect", station);
+        this.refreshP2PData(station);
+        if (this.refreshEufySecurityP2PTimeout[station.getSerial()] !== undefined) {
+            clearTimeout(this.refreshEufySecurityP2PTimeout[station.getSerial()]);
+            delete this.refreshEufySecurityP2PTimeout[station.getSerial()];
+        }
+        this.refreshEufySecurityP2PTimeout[station.getSerial()] = setTimeout(() => {
+            this.refreshP2PData(station);
+        }, this.P2P_REFRESH_INTERVAL_MIN * 60 * 1000);
     }
     onStationConnectionError(station, error) {
         this.emit("station connection error", station, error);
@@ -1561,12 +1545,20 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 else if (device.isSoloCameras()) {
                     station.setMotionDetectionTypeHB3(device, types_1.SoloCameraDetectionTypes.HUMAN_DETECTION, value);
                 }
+                else if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.IndoorS350DetectionTypes.HUMAN_DETECTION, value);
+                }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.HUMAN_DETECTION, value);
                 }
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypePet:
-                station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
+                if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.IndoorS350DetectionTypes.PET_DETECTION, value);
+                }
+                else {
+                    station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.PET_DETECTION, value);
+                }
                 break;
             case types_1.PropertyName.DeviceMotionDetectionTypeVehicle:
                 if (device.isOutdoorPanAndTiltCamera()) {
@@ -1585,6 +1577,9 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 }
                 else if (device.isSoloCameras()) {
                     station.setMotionDetectionTypeHB3(device, types_1.SoloCameraDetectionTypes.ALL_OTHER_MOTION, value);
+                }
+                else if (device.isIndoorPanAndTiltCameraS350()) {
+                    station.setMotionDetectionTypeHB3(device, types_1.IndoorS350DetectionTypes.ALL_OTHER_MOTION, value);
                 }
                 else {
                     station.setMotionDetectionTypeHB3(device, types_1.HB3DetectionTypes.ALL_OTHER_MOTION, value);

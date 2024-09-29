@@ -1,6 +1,6 @@
 import { Device } from "./device";
 import { Picture, Schedule } from "./interfaces";
-import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes, SmartLockNotification } from "./types";
+import { NotificationSwitchMode, SignalLevel, HB3DetectionTypes, SourceType, T8170DetectionTypes, IndoorS350NotificationTypes, FloodlightT8425NotificationTypes, SmartLockNotification, IndoorS350DetectionTypes } from "./types";
 import { HTTPApi } from "./api";
 import { LockPushEvent } from "./../push/types";
 import { Station } from "./station";
@@ -65,6 +65,8 @@ export declare const isPrioritySourceType: (current: SourceType | undefined, upd
 export declare const decryptTrackerData: (data: Buffer, key: Buffer) => Buffer;
 export declare const isT8170DetectionModeEnabled: (value: number, type: T8170DetectionTypes) => boolean;
 export declare const getT8170DetectionMode: (value: number, type: T8170DetectionTypes, enable: boolean) => number;
+export declare const isIndoorS350DetectionModeEnabled: (value: number, type: IndoorS350DetectionTypes) => boolean;
+export declare const getIndoorS350DetectionMode: (value: number, type: IndoorS350DetectionTypes, enable: boolean) => number;
 export declare const isIndoorNotitficationEnabled: (value: number, type: IndoorS350NotificationTypes) => boolean;
 export declare const getIndoorNotification: (value: number, type: IndoorS350NotificationTypes, enable: boolean) => number;
 export declare const isFloodlightT8425NotitficationEnabled: (value: number, type: FloodlightT8425NotificationTypes) => boolean;

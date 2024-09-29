@@ -44,7 +44,6 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     private addStation;
     private removeStation;
     private updateStation;
-    private getStorageInfo;
     private addDevice;
     private removeDevice;
     private updateDevice;
@@ -60,6 +59,7 @@ export declare class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     isStationEnergySavingDevice(stationSN: string): Promise<boolean>;
     private handleHouses;
     private handleHubs;
+    private refreshP2PData;
     private onStationConnect;
     private onStationConnectionError;
     private onStationClose;

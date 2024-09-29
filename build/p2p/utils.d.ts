@@ -69,3 +69,4 @@ export declare const isCharging: (value: number) => boolean;
 export declare const getSmartLockCurrentTimeInSeconds: () => number;
 export declare const generateSmartLockAESKey: (adminUserId: string, time: number) => Buffer;
 export declare const getSmartLockP2PCommand: (deviceSN: string, user_id: string, command: CommandType | SmartLockCommand, channel: number, sequence: number, data: Buffer, functionType?: SmartLockFunctionType) => SmartLockP2PCommand;
+export declare const readNullTerminatedBuffer: (input: Buffer) => Buffer;
