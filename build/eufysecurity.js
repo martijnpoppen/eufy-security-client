@@ -473,7 +473,7 @@ class EufySecurity extends tiny_typed_emitter_1.TypedEmitter {
                 if (this.config.stationIPAddresses !== undefined) {
                     ipAddress = this.config.stationIPAddresses[hub.station_sn];
                 }
-                const station = station_1.Station.getInstance(this.api, hub, ipAddress);
+                const station = station_1.Station.getInstance(this.api, hub, ipAddress, 0, this.config.enableEmbeddedPKCS1Support);
                 promises.push(station.then((station) => {
                     try {
                         station.on("connect", (station) => this.onStationConnect(station));
