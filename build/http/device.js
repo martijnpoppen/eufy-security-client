@@ -1055,6 +1055,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR ||
             type == types_1.DeviceType.SOLO_CAMERA_SOLAR ||
             type == types_1.DeviceType.SOLO_CAMERA_C210 ||
+            type == types_1.DeviceType.SOLO_CAMERA_E30 ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT ||
             type == types_1.DeviceType.INDOOR_OUTDOOR_CAMERA_2K ||
@@ -1097,6 +1098,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR ||
             type == types_1.DeviceType.SOLO_CAMERA_SOLAR ||
             type == types_1.DeviceType.SOLO_CAMERA_C210 ||
+            type == types_1.DeviceType.SOLO_CAMERA_E30 ||
             type == types_1.DeviceType.LOCK_WIFI ||
             type == types_1.DeviceType.LOCK_WIFI_NO_FINGER ||
             type == types_1.DeviceType.LOCK_8503 ||
@@ -1192,7 +1194,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return false;
     }
     static isOutdoorPanAndTiltCamera(type) {
-        if (type == types_1.DeviceType.OUTDOOR_PT_CAMERA)
+        if (type == types_1.DeviceType.OUTDOOR_PT_CAMERA ||
+            type == types_1.DeviceType.SOLO_CAMERA_E30)
             return true;
         return false;
     }
@@ -1326,6 +1329,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     static isSoloCameraC210(type) {
         return types_1.DeviceType.SOLO_CAMERA_C210 == type;
     }
+    static isSoloCameraE30(type) {
+        return types_1.DeviceType.SOLO_CAMERA_E30 == type;
+    }
     static isSoloCameras(type) {
         return Device.isSoloCamera(type) ||
             Device.isSoloCameraPro(type) ||
@@ -1334,7 +1340,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             Device.isSoloCameraSpotlightSolar(type) ||
             Device.isOutdoorPanAndTiltCamera(type) ||
             Device.isSoloCameraSolar(type) ||
-            Device.isSoloCameraC210(type);
+            Device.isSoloCameraC210(type) ||
+            Device.isSoloCameraE30(type);
     }
     static isStarlight4GLTE(type) {
         return types_1.DeviceType.CAMERA_FG == type;
@@ -1425,9 +1432,11 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             sn.startsWith("T8414") ||
             sn.startsWith("T8130") ||
             sn.startsWith("T8131") ||
+            sn.startsWith("T8171") ||
             sn.startsWith("T8422") ||
             sn.startsWith("T8423") ||
             sn.startsWith("T8424") ||
+            sn.startsWith("T8426") ||
             sn.startsWith("T8440") ||
             sn.startsWith("T8441") ||
             sn.startsWith("T8442");
@@ -1438,6 +1447,7 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             sn.startsWith("T8122") ||
             sn.startsWith("T8123") ||
             sn.startsWith("T8124") ||
+            sn.startsWith("T8171") ||
             sn.startsWith("T8134");
     }
     static isSmartDropBySn(sn) {
@@ -1462,7 +1472,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return sn.startsWith("T8420") ||
             sn.startsWith("T8422") ||
             sn.startsWith("T8423") ||
-            sn.startsWith("T8424");
+            sn.startsWith("T8424") ||
+            sn.startsWith("T8426");
         //(sn.startsWith("T8420") && sn.length > 7 && sn[6] == "6");
     }
     static isIndoorCameraBySn(sn) {
@@ -1612,6 +1623,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isSoloCameraC210() {
         return Device.isSoloCameraC210(this.rawDevice.device_type);
+    }
+    isSoloCameraE30() {
+        return Device.isSoloCameraE30(this.rawDevice.device_type);
     }
     isStarlight4GLTE() {
         return Device.isStarlight4GLTE(this.rawDevice.device_type);
