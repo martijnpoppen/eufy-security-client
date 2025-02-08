@@ -1011,6 +1011,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             type == DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR ||
             type == DeviceType.SOLO_CAMERA_SOLAR ||
             type == DeviceType.SOLO_CAMERA_C210 ||
+            type == DeviceType.SOLO_CAMERA_E30 ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_1080P ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT ||
             type == DeviceType.INDOOR_OUTDOOR_CAMERA_2K ||
@@ -1054,6 +1055,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             type == DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR ||
             type == DeviceType.SOLO_CAMERA_SOLAR ||
             type == DeviceType.SOLO_CAMERA_C210 ||
+            type == DeviceType.SOLO_CAMERA_E30 ||
             type == DeviceType.LOCK_WIFI ||
             type == DeviceType.LOCK_WIFI_NO_FINGER ||
             type == DeviceType.LOCK_8503 ||
@@ -1162,7 +1164,8 @@ export class Device extends TypedEmitter<DeviceEvents> {
     }
 
     static isOutdoorPanAndTiltCamera(type: number): boolean {
-        if (type == DeviceType.OUTDOOR_PT_CAMERA)
+        if (type == DeviceType.OUTDOOR_PT_CAMERA ||
+	    type == DeviceType.DeviceType.SOLO_CAMERA_E30)
             return true;
         return false;
     }
@@ -1330,6 +1333,10 @@ export class Device extends TypedEmitter<DeviceEvents> {
         return DeviceType.SOLO_CAMERA_C210 == type;
     }
 
+    static isSoloCameraE30(type: number): boolean {
+        return DeviceType.SOLO_CAMERA_E30 == type;
+    }
+
     static isSoloCameras(type: number): boolean {
         return Device.isSoloCamera(type) ||
             Device.isSoloCameraPro(type) ||
@@ -1338,7 +1345,8 @@ export class Device extends TypedEmitter<DeviceEvents> {
             Device.isSoloCameraSpotlightSolar(type) ||
             Device.isOutdoorPanAndTiltCamera(type) ||
             Device.isSoloCameraSolar(type) ||
-            Device.isSoloCameraC210(type);
+            Device.isSoloCameraC210(type) ||
+            Device.isSoloCameraE30(type);
     }
 
     static isStarlight4GLTE(type: number): boolean {
@@ -1451,9 +1459,11 @@ export class Device extends TypedEmitter<DeviceEvents> {
             sn.startsWith("T8414") ||
             sn.startsWith("T8130") ||
             sn.startsWith("T8131") ||
+            sn.startsWith("T8171") ||
             sn.startsWith("T8422") ||
             sn.startsWith("T8423") ||
             sn.startsWith("T8424") ||
+            sn.startsWith("T8426") ||
             sn.startsWith("T8440") ||
             sn.startsWith("T8441") ||
             sn.startsWith("T8442");
@@ -1465,6 +1475,7 @@ export class Device extends TypedEmitter<DeviceEvents> {
             sn.startsWith("T8122") ||
             sn.startsWith("T8123") ||
             sn.startsWith("T8124") ||
+            sn.startsWith("T8171") ||
             sn.startsWith("T8134");
     }
 
@@ -1493,7 +1504,8 @@ export class Device extends TypedEmitter<DeviceEvents> {
         return sn.startsWith("T8420") ||
             sn.startsWith("T8422") ||
             sn.startsWith("T8423") ||
-            sn.startsWith("T8424");
+            sn.startsWith("T8424") ||
+            sn.startsWith("T8426");
         //(sn.startsWith("T8420") && sn.length > 7 && sn[6] == "6");
     }
 
@@ -1686,6 +1698,10 @@ export class Device extends TypedEmitter<DeviceEvents> {
 
     public isSoloCameraC210(): boolean {
         return Device.isSoloCameraC210(this.rawDevice.device_type);
+    }
+
+    public isSoloCameraE30(): boolean {
+        return Device.isSoloCameraE30(this.rawDevice.device_type);
     }
 
     public isStarlight4GLTE(): boolean {
