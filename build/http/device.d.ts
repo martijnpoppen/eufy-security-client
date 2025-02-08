@@ -101,6 +101,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isCamera2Product(type: number): boolean;
     static isCamera3(type: number): boolean;
     static isCamera3C(type: number): boolean;
+    static isCamera3Pro(type: number): boolean;
     static isCameraProfessional247(type: number): boolean;
     static isCamera3Product(type: number): boolean;
     static isEntrySensor(type: number): boolean;
@@ -171,6 +172,7 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isCamera3(): boolean;
     isCamera3C(): boolean;
     isCameraProfessional247(): boolean;
+    isCamera3Pro(): boolean;
     isCamera3Product(): boolean;
     isEntrySensor(): boolean;
     isKeyPad(): boolean;

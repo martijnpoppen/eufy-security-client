@@ -20,6 +20,7 @@ export declare enum DeviceType {
     CAMERA3C = 23,
     PROFESSIONAL_247 = 24,// T8600
     MINIBASE_CHIME = 25,
+    CAMERA3_PRO = 26,
     INDOOR_CAMERA = 30,
     INDOOR_PT_CAMERA = 31,
     SOLO_CAMERA = 32,
@@ -69,7 +70,9 @@ export declare enum DeviceType {
     SMART_TRACK_CARD = 159,//T87B2
     LOCK_8502 = 180,
     LOCK_8506 = 184,
-    WALL_LIGHT_CAM_81A0 = 10005
+    WALL_LIGHT_CAM_81A0 = 10005,
+    INDOOR_PT_CAMERA_C220 = 10008,// T8W11C
+    INDOOR_PT_CAMERA_C210 = 10009
 }
 export declare enum ParamType {
     CHIME_STATE = 2015,
