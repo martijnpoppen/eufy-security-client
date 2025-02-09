@@ -1200,7 +1200,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         return false;
     }
     static isIndoorPanAndTiltCameraS350(type) {
-        if (type == types_1.DeviceType.INDOOR_PT_CAMERA_S350)
+        if (type == types_1.DeviceType.INDOOR_PT_CAMERA_S350 ||
+            type == types_1.DeviceType.INDOOR_PT_CAMERA_C210 ||
+            type == types_1.DeviceType.INDOOR_PT_CAMERA_C220)
             return true;
         return false;
     }
