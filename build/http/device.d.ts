@@ -78,6 +78,8 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     static isBatteryDoorbell2(type: number): boolean;
     static isBatteryDoorbellDual(type: number): boolean;
     static isBatteryDoorbellDualE340(type: number): boolean;
+    static isBatteryDoorbellC30(type: number): boolean;
+    static isBatteryDoorbellC31(type: number): boolean;
     static isDoorbellDual(type: number): boolean;
     static isBatteryDoorbell(type: number): boolean;
     static isSoloCamera(type: number): boolean;
@@ -150,6 +152,8 @@ export declare class Device extends TypedEmitter<DeviceEvents> {
     isBatteryDoorbell2(): boolean;
     isBatteryDoorbellDual(): boolean;
     isBatteryDoorbellDualE340(): boolean;
+    isBatteryDoorbellC30(): boolean;
+    isBatteryDoorbellC31(): boolean;
     isDoorbellDual(): boolean;
     isBatteryDoorbell(): boolean;
     isSoloCamera(): boolean;

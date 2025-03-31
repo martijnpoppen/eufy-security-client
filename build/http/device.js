@@ -1038,6 +1038,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C30 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C31 ||
             type == types_1.DeviceType.DOORBELL_SOLO ||
             type == types_1.DeviceType.CAMERA2C_PRO ||
             type == types_1.DeviceType.CAMERA2_PRO ||
@@ -1086,6 +1088,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C30 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C31 ||
             type == types_1.DeviceType.CAMERA2C_PRO ||
             type == types_1.DeviceType.CAMERA2_PRO ||
             type == types_1.DeviceType.CAMERA3 ||
@@ -1146,6 +1150,8 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C30 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C31 ||
             type == types_1.DeviceType.DOORBELL_SOLO)
             return true;
         return false;
@@ -1299,6 +1305,12 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     static isBatteryDoorbellDualE340(type) {
         return types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 == type;
     }
+    static isBatteryDoorbellC30(type) {
+        return types_1.DeviceType.BATTERY_DOORBELL_C30 == type;
+    }
+    static isBatteryDoorbellC31(type) {
+        return types_1.DeviceType.BATTERY_DOORBELL_C31 == type;
+    }
     static isDoorbellDual(type) {
         return types_1.DeviceType.DOORBELL_SOLO == type;
     }
@@ -1306,7 +1318,9 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
         if (type == types_1.DeviceType.BATTERY_DOORBELL ||
             type == types_1.DeviceType.BATTERY_DOORBELL_2 ||
             type == types_1.DeviceType.BATTERY_DOORBELL_PLUS ||
-            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340)
+            type == types_1.DeviceType.BATTERY_DOORBELL_PLUS_E340 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C30 ||
+            type == types_1.DeviceType.BATTERY_DOORBELL_C31)
             return true;
         return false;
     }
@@ -1598,6 +1612,12 @@ class Device extends tiny_typed_emitter_1.TypedEmitter {
     }
     isBatteryDoorbellDualE340() {
         return Device.isBatteryDoorbellDualE340(this.rawDevice.device_type);
+    }
+    isBatteryDoorbellC30() {
+        return Device.isBatteryDoorbellC30(this.rawDevice.device_type);
+    }
+    isBatteryDoorbellC31() {
+        return Device.isBatteryDoorbellC31(this.rawDevice.device_type);
     }
     isDoorbellDual() {
         return Device.isDoorbellDual(this.rawDevice.device_type);
