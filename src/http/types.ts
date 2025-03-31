@@ -9253,6 +9253,7 @@ export const DeviceCommands: Commands = {
     [DeviceType.BATTERY_DOORBELL_C30]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -9263,6 +9264,7 @@ export const DeviceCommands: Commands = {
     [DeviceType.BATTERY_DOORBELL_C31]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -9273,6 +9275,7 @@ export const DeviceCommands: Commands = {
     [DeviceType.BATTERY_DOORBELL_PLUS_E340]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
