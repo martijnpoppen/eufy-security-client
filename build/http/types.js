@@ -7390,6 +7390,7 @@ exports.DeviceProperties = {
         [PropertyName.DeviceNotification]: exports.DeviceNotificationWalllightProperty,
         [PropertyName.DeviceNotificationType]: exports.DeviceNotificationTypeWalllightProperty,
         [PropertyName.DevicePowerWorkingMode]: exports.DevicePowerWorkingModeProperty,
+        [PropertyName.DeviceBattery]: exports.DeviceBatteryProperty,
     },
     [DeviceType.CAMERA_GARAGE_T8453]: {
         ...exports.GenericDeviceProperties,
@@ -8743,6 +8744,7 @@ exports.DeviceCommands = {
     [DeviceType.BATTERY_DOORBELL_2]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8753,6 +8755,7 @@ exports.DeviceCommands = {
     [DeviceType.BATTERY_DOORBELL_PLUS]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8796,6 +8799,7 @@ exports.DeviceCommands = {
     [DeviceType.DOORBELL_SOLO]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceQuickResponse,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8806,6 +8810,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_CAMERA]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8815,6 +8820,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_CAMERA_1080]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8824,6 +8830,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_OUTDOOR_CAMERA_1080P]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8833,6 +8840,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_OUTDOOR_CAMERA_1080P_NO_LIGHT]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8842,6 +8850,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_OUTDOOR_CAMERA_2K]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8851,6 +8860,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_PT_CAMERA]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DevicePanAndTilt,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8862,6 +8872,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_PT_CAMERA_1080]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DevicePanAndTilt,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8873,6 +8884,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_COST_DOWN_CAMERA]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DevicePanAndTilt,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8886,6 +8898,7 @@ exports.DeviceCommands = {
     [DeviceType.INDOOR_PT_CAMERA_S350]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DevicePanAndTilt,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8922,6 +8935,7 @@ exports.DeviceCommands = {
     [DeviceType.OUTDOOR_PT_CAMERA]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DevicePanAndTilt,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
@@ -8936,6 +8950,7 @@ exports.DeviceCommands = {
     [DeviceType.CAMERA_FG]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8945,6 +8960,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8954,6 +8970,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_PRO]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8963,6 +8980,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_SPOTLIGHT_1080]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8972,6 +8990,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_SPOTLIGHT_2K]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8981,6 +9000,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_SPOTLIGHT_SOLAR]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8990,6 +9010,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_SOLAR]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -8999,6 +9020,7 @@ exports.DeviceCommands = {
     [DeviceType.SOLO_CAMERA_C210]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -9083,6 +9105,7 @@ exports.DeviceCommands = {
     [DeviceType.WALL_LIGHT_CAM]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,
@@ -9092,6 +9115,7 @@ exports.DeviceCommands = {
     [DeviceType.WALL_LIGHT_CAM_81A0]: [
         CommandName.DeviceStartLivestream,
         CommandName.DeviceStopLivestream,
+        CommandName.DeviceTriggerAlarmSound,
         CommandName.DeviceStartDownload,
         CommandName.DeviceCancelDownload,
         CommandName.DeviceStartTalkback,

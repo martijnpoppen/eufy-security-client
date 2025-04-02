@@ -4592,7 +4592,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
         const property = device.getPropertyMetadata(propertyData.name);
         (0, utils_3.validValue)(property, value);
         let param_value = value === true ? 0 : 1;
-        if ((device.isIndoorCamera() && !device.isIndoorCamMini() && !device.isIndoorPanAndTiltCameraS350()) || (device.isWiredDoorbell() && !device.isWiredDoorbellT8200X()) || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || device.isFloodLightT8420X())
+        if ((device.isIndoorCamera() && !(0, utils_1.isGreaterEqualMinVersion)("2.3.1.2", device.getSoftwareVersion()) && !device.isIndoorCamMini() && !device.isIndoorPanAndTiltCameraS350()) || (device.isWiredDoorbell() && !device.isWiredDoorbellT8200X()) || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8422 || device.getDeviceType() === types_1.DeviceType.FLOODLIGHT_CAMERA_8424 || device.isFloodLightT8420X())
             param_value = value === true ? 1 : 0;
         logging_1.rootHTTPLogger.debug(`Station enable device - sending command`, { stationSN: this.getSerial(), deviceSN: device.getSerial(), value: value });
         if (device.isIndoorCamMini()) {
@@ -4609,7 +4609,7 @@ class Station extends tiny_typed_emitter_1.TypedEmitter {
                 property: propertyData
             });
         }
-        else if (device.isIndoorPanAndTiltCameraS350()) {
+        else if (device.isIndoorPanAndTiltCameraS350() || (device.isIndoorCamera() && (0, utils_1.isGreaterEqualMinVersion)("2.3.1.2", device.getSoftwareVersion()))) {
             this.p2pSession.sendCommandWithStringPayload({
                 commandType: types_2.CommandType.CMD_SET_PAYLOAD,
                 value: JSON.stringify({
