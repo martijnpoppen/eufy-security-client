@@ -3,7 +3,7 @@
  *
  */
 
-import { Readable } from "stream";
+import { PassThrough } from "stream";
 
 import { Device } from "./http/device";
 import { HTTPApiPersistentData, Picture, PropertyValue, Schedule } from "./http/interfaces";
@@ -111,16 +111,16 @@ export interface EufySecurityEvents {
     station: Station,
     device: Device,
     metadata: StreamMetadata,
-    videostream: Readable,
-    audiostream: Readable
+    videostream: PassThrough,
+    audiostream: PassThrough
   ) => void;
   "station livestream stop": (station: Station, device: Device) => void;
   "station download start": (
     station: Station,
     device: Device,
     metadata: StreamMetadata,
-    videoStream: Readable,
-    audioStream: Readable
+    videoStream: PassThrough,
+    audioStream: PassThrough
   ) => void;
   "station download finish": (station: Station, device: Device) => void;
   "station command result": (station: Station, result: CommandResult) => void;

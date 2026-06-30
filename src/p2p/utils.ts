@@ -1,6 +1,7 @@
 import { Socket } from "dgram";
-import NodeRSA, { Options as NodeRSAOptions } from "node-rsa";
-import * as CryptoJS from "crypto-js";
+import { ForgeRSA } from "./forge";
+import forge from 'node-forge'
+import * as CryptoJS from "crypto-js"
 import { randomBytes, createCipheriv, createECDH, ECDH, createHmac, createDecipheriv } from "crypto";
 import * as os from "os";
 
@@ -383,35 +384,24 @@ export const sortP2PMessageParts = (messages: P2PMessageParts): Buffer => {
   return completeMessage;
 };
 
-export const getRSAPrivateKey = (pem: string, enableEmbeddedPKCS1Support = false): NodeRSA => {
-  const key = new NodeRSA();
-  if (pem.indexOf("\n") !== -1) {
-    pem = pem.replaceAll("\n", "");
-  }
-  if (pem.startsWith("-----BEGIN RSA PRIVATE KEY-----")) {
-    pem = pem.replace("-----BEGIN RSA PRIVATE KEY-----", "").replace("-----END RSA PRIVATE KEY-----", "");
-  }
-  key.importKey(pem, "pkcs8");
-  const options: NodeRSAOptions = {
-    encryptionScheme: "pkcs1",
-  };
-  if (enableEmbeddedPKCS1Support) {
-    options.environment = "browser";
-  }
-  key.setOptions(options);
-  return key;
+/**
+ * Load an existing RSA private key (PKCS#1 or PKCS#8).
+ */
+export const getRSAPrivateKey = (pem: string, enableEmbeddedPKCS1Support?: boolean, encryptionScheme: "pkcs1" | "pkcs1_oaep" = "pkcs1"): ForgeRSA => {
+    const key = new ForgeRSA();
+    key.importKey(pem);
+    key.setOptions({ encryptionScheme });
+    return key;
 };
 
-export const getNewRSAPrivateKey = (enableEmbeddedPKCS1Support = false): NodeRSA => {
-  const key = new NodeRSA({ b: 1024 });
-  const options: NodeRSAOptions = {
-    encryptionScheme: "pkcs1",
-  };
-  if (enableEmbeddedPKCS1Support) {
-    options.environment = "browser";
-  }
-  key.setOptions(options);
-  return key;
+/**
+ * Generate a new RSA private key.
+ */
+export const getNewRSAPrivateKey = (enableEmbeddedPKCS1Support?: boolean): ForgeRSA => {
+    const bits = 1024;
+    const key = new ForgeRSA(bits);
+    key.setOptions({ encryptionScheme: 'pkcs1' });
+    return key;
 };
 
 export const decryptAESData = (hexkey: string, data: Buffer): Buffer => {

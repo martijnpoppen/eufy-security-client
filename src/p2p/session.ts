@@ -1,7 +1,6 @@
 import { createSocket, Socket, RemoteInfo } from "dgram";
 import { TypedEmitter } from "tiny-typed-emitter";
-import * as NodeRSA from "node-rsa";
-import { Readable } from "stream";
+import { PassThrough } from "stream";
 import { SortedMap } from "sweet-collections";
 const { parse } = require("date-and-time");
 
@@ -134,6 +133,7 @@ import { CommandName, ParamType, Station } from "../http";
 import { getError, parseJSON } from "../utils";
 import { rootP2PLogger } from "../logging";
 import { normalizeAdtsFrames } from "./adts";
+import { ForgeRSA } from "./forge";
 
 export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
   private readonly MAX_RETRIES = 10;
@@ -313,8 +313,8 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     }
   }
 
-  private _initialize(): void {
-    let rsaKey: NodeRSA | null;
+    private _initialize(): void {
+        let rsaKey: ForgeRSA | null;
 
     this.connected = false;
     this.p2pTurnHandshaking = {};
@@ -365,7 +365,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     };
   }
 
-  private initializeMessageState(datatype: P2PDataType, rsaKey: NodeRSA | null = null): void {
+    private initializeMessageState(datatype: P2PDataType, rsaKey: ForgeRSA | null = null): void {
     this.currentMessageState[datatype] = {
       leftoverData: Buffer.from([]),
       queuedData: new SortedMap<number, P2PMessage>((a: number, b: number) => a - b),
@@ -4319,20 +4319,20 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     }
   }
 
-  public getDownloadRSAPrivateKey(): NodeRSA {
-    if (this.currentMessageState[P2PDataType.BINARY].rsaKey === null) {
-      this.currentMessageState[P2PDataType.BINARY].rsaKey = getNewRSAPrivateKey(this.enableEmbeddedPKCS1Support);
+    public getDownloadRSAPrivateKey(): ForgeRSA {
+        if (this.currentMessageState[P2PDataType.BINARY].rsaKey === null) {
+            this.currentMessageState[P2PDataType.BINARY].rsaKey = getNewRSAPrivateKey(this.enableEmbeddedPKCS1Support);
+        }
+        return this.currentMessageState[P2PDataType.BINARY].rsaKey!;
     }
-    return this.currentMessageState[P2PDataType.BINARY].rsaKey!;
-  }
 
   public setDownloadRSAPrivateKeyPem(pem: string): void {
     this.currentMessageState[P2PDataType.BINARY].rsaKey = getRSAPrivateKey(pem, this.enableEmbeddedPKCS1Support);
   }
 
-  public getRSAPrivateKey(): NodeRSA | null {
-    return this.currentMessageState[P2PDataType.VIDEO].rsaKey;
-  }
+    public getRSAPrivateKey(): ForgeRSA | null {
+        return this.currentMessageState[P2PDataType.VIDEO].rsaKey;
+    }
 
   private initializeStream(datatype: P2PDataType): void {
     this.currentMessageState[datatype].videoStream?.destroy();
@@ -4340,7 +4340,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     this.currentMessageState[datatype].videoStream = null;
     this.currentMessageState[datatype].audioStream = null;
 
-    this.currentMessageState[datatype].videoStream = new Readable({
+    this.currentMessageState[datatype].videoStream = new PassThrough({
       autoDestroy: true,
 
       read() {} /*,
@@ -4353,7 +4353,7 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
                 this.emit("close");
             }*/,
     });
-    this.currentMessageState[datatype].audioStream = new Readable({
+    this.currentMessageState[datatype].audioStream = new PassThrough({
       autoDestroy: true,
 
       read() {} /*,

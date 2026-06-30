@@ -1,5 +1,5 @@
-import * as NodeRSA from "node-rsa";
-import { Readable } from "stream";
+import { ForgeRSA } from "./forge";
+import { PassThrough } from "stream";
 import { SortedMap } from "sweet-collections";
 
 import { AlarmMode, DeviceType, MicStatus, ParamType, TriggerType, VideoType } from "../http/types";
@@ -27,13 +27,13 @@ export interface P2PClientProtocolEvents {
   connect: (address: Address) => void;
   close: () => void;
   command: (result: CommandResult) => void;
-  "download started": (channel: number, metadata: StreamMetadata, videoStream: Readable, audioStream: Readable) => void;
+  "download started": (channel: number, metadata: StreamMetadata, videoStream: PassThrough, audioStream: PassThrough) => void;
   "download finished": (channel: number) => void;
   "livestream started": (
     channel: number,
     metadata: StreamMetadata,
-    videoStream: Readable,
-    audioStream: Readable
+    videoStream: PassThrough,
+    audioStream: PassThrough
   ) => void;
   "livestream stopped": (channel: number) => void;
   "livestream error": (channel: number, error: Error) => void;
@@ -130,27 +130,27 @@ export interface P2PDataMessageBuilder {
 }
 
 export interface P2PDataMessageState {
-  leftoverData: Buffer;
-  queuedData: SortedMap<number, P2PMessage>;
-  rsaKey: NodeRSA | null;
-  videoStream: Readable | null;
-  audioStream: Readable | null;
-  invalidStream: boolean;
-  p2pStreaming: boolean;
-  p2pStreamNotStarted: boolean;
-  p2pStreamChannel: number;
-  p2pStreamFirstAudioDataReceived: boolean;
-  p2pStreamFirstVideoDataReceived: boolean;
-  p2pStreamMetadata: StreamMetadata;
-  p2pStreamingTimeout?: NodeJS.Timeout;
-  rtspStream: { [index: number]: boolean };
-  rtspStreaming: { [index: number]: boolean };
-  waitForSeqNoTimeout?: NodeJS.Timeout;
-  waitForAudioData?: NodeJS.Timeout;
-  receivedFirstIFrame: boolean;
-  preFrameVideoData: Buffer;
-  p2pTalkback: boolean;
-  p2pTalkbackChannel: number;
+    leftoverData: Buffer;
+    queuedData: SortedMap<number, P2PMessage>;
+    rsaKey: ForgeRSA | null;
+    videoStream: PassThrough | null;
+    audioStream: PassThrough | null;
+    invalidStream: boolean;
+    p2pStreaming: boolean;
+    p2pStreamNotStarted: boolean;
+    p2pStreamChannel: number;
+    p2pStreamFirstAudioDataReceived: boolean;
+    p2pStreamFirstVideoDataReceived: boolean;
+    p2pStreamMetadata: StreamMetadata;
+    p2pStreamingTimeout?: NodeJS.Timeout;
+    rtspStream: { [index: number]: boolean };
+    rtspStreaming: { [index: number]: boolean };
+    waitForSeqNoTimeout?: NodeJS.Timeout;
+    waitForAudioData?: NodeJS.Timeout;
+    receivedFirstIFrame: boolean;
+    preFrameVideoData: Buffer;
+    p2pTalkback: boolean;
+    p2pTalkbackChannel: number;
 }
 
 export interface P2PDataMessageVideo {

@@ -2,7 +2,7 @@ import { TypedEmitter } from "tiny-typed-emitter";
 import { existsSync, readFileSync, statSync, writeFileSync } from "fs";
 import * as path from "path";
 import * as util from "util";
-import { Readable } from "stream";
+import { PassThrough } from "stream";
 import EventEmitter from "events";
 
 import { EufySecurityEvents, EufySecurityConfig, EufySecurityPersistentData } from "./interfaces";
@@ -665,8 +665,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                   station: Station,
                   channel: number,
                   metadata: StreamMetadata,
-                  videostream: Readable,
-                  audiostream: Readable
+                  videostream: PassThrough,
+                  audiostream: PassThrough
                 ) => this.onStartStationLivestream(station, channel, metadata, videostream, audiostream)
               );
               station.on("livestream stop", (station: Station, channel: number) =>
@@ -681,8 +681,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
                   station: Station,
                   channel: number,
                   metadata: StreamMetadata,
-                  videoStream: Readable,
-                  audioStream: Readable
+                  videoStream: PassThrough,
+                  audioStream: PassThrough
                 ) => this.onStationStartDownload(station, channel, metadata, videoStream, audioStream)
               );
               station.on("download finish", (station: Station, channel: number) =>
@@ -1511,7 +1511,7 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
         .then((stations: Station[]) => {
           stations.forEach((station) => {
             try {
-              station.processPushNotification(message);
+              station.processPushNotification(message, this.config.eventDurationSeconds);
             } catch (err) {
               const error = ensureError(err);
               rootMainLogger.error(`Error processing push notification for station`, {
@@ -2289,8 +2289,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     station: Station,
     channel: number,
     metadata: StreamMetadata,
-    videostream: Readable,
-    audiostream: Readable
+    videostream: PassThrough,
+    audiostream: PassThrough
   ): void {
     this.getStationDevice(station.getSerial(), channel)
       .then((device: Device) => {
@@ -2372,8 +2372,8 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
     station: Station,
     channel: number,
     metadata: StreamMetadata,
-    videoStream: Readable,
-    audioStream: Readable
+    videoStream: PassThrough,
+    audioStream: PassThrough
   ): void {
     this.getStationDevice(station.getSerial(), channel)
       .then((device: Device) => {

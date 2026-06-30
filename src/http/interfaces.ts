@@ -1,4 +1,4 @@
-import { Readable } from "stream";
+import { PassThrough } from "stream";
 import type { Method } from "got" with {
   "resolution-mode": "import",
 };
@@ -215,16 +215,16 @@ export interface StationEvents {
     station: Station,
     channel: number,
     metadata: StreamMetadata,
-    videostream: Readable,
-    audiostream: Readable
+    videostream: PassThrough,
+    audiostream: PassThrough
   ) => void;
   "download finish": (station: Station, channel: number) => void;
   "livestream start": (
     station: Station,
     channel: number,
     metadata: StreamMetadata,
-    videostream: Readable,
-    audiostream: Readable
+    videostream: PassThrough,
+    audiostream: PassThrough
   ) => void;
   "livestream stop": (station: Station, channel: number) => void;
   "livestream error": (station: Station, channel: number, error: Error) => void;
