@@ -256,8 +256,15 @@ export class MegaTransition {
           : ({ ...options, verifyCode: undefined, captcha: undefined } as LoginOptions);
       this.pendingChallenge = undefined;
       await this.host.legacyConnect(legacyOptions);
-      // legacyConnect may have recorded pendingChallenge="legacy" via the host's api-event hooks.
-      if (this.pendingChallenge === "legacy" && !this.host.api.isConnected()) return;
+      // legacyConnect may have recorded pendingChallenge="legacy" via the host's api-event hooks. The
+      // prompt has already been emitted to the consumer (emitTfaRequest/emitCaptchaRequest ran inside
+      // legacyConnect) regardless of what we do next, so it stays visible either way. But if v6 already
+      // has a working session, don't let a stalled legacy challenge hold up Phase 3 forever: fall through
+      // and signal the app as connected now, on v6 alone. Stations/devices still need the legacy session,
+      // so the challenge stays outstanding (pendingChallenge="legacy") and is retried on the next
+      // connect() once the user answers it — this only stops legacy's own challenge from masking a v6
+      // login that already succeeded.
+      if (this.pendingChallenge === "legacy" && !this.host.api.isConnected() && !this.megaLoggedIn) return;
     }
 
     // PHASE 3 — both backends settled. Signal the app ONCE, only if a login actually succeeded.
