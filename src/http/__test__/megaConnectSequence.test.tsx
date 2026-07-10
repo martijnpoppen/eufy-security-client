@@ -15,6 +15,9 @@ import { MegaTransition, MegaTransitionHost, MegaLoginResult } from "../megaTran
  *    outstanding (pendingChallenge is preserved) so it is still visible and gets retried on the next
  *    connect(), but it doesn't stall the app-ready signal
  *  - the next code/captcha is routed to the backend that asked for it
+ *  - a connect() call with no verifyCode/captcha while a challenge is outstanding is a no-op — it
+ *    must NOT re-run the backend's login and draw (and re-emit) a brand new challenge, silently
+ *    replacing the one the user is currently looking at
  *  - onAPIConnect fires exactly once, at the end, only if at least one login succeeded
  *  - concurrent connect() calls are serialised
  */
@@ -97,6 +100,43 @@ describe("connect() v6-first state machine", () => {
     expect((h.transition as any).pendingChallenge).toBe("mega");
     expect(h.legacyConnect).not.toHaveBeenCalled();
     expect(h.onAPIConnect).not.toHaveBeenCalled();
+  });
+
+  it("mega needs captcha; a blind reconnect with no answer does NOT redraw/overwrite it", async () => {
+    const h = makeHarness({ megaResults: ["captcha_required", "captcha_required"], legacy: async () => {} });
+    await connect(h); // draws the captcha, pendingChallenge=mega
+    expect(h.loginMega).toHaveBeenCalledTimes(1);
+
+    await connect(h); // e.g. a consumer's periodic "are we connected yet?" retry, no captcha supplied
+    expect(h.loginMega).toHaveBeenCalledTimes(1); // NOT called again — the shown captcha stays valid
+    expect(h.legacyConnect).not.toHaveBeenCalled();
+    expect(h.onAPIConnect).not.toHaveBeenCalled();
+    expect((h.transition as any).pendingChallenge).toBe("mega");
+  });
+
+  it("mega needs captcha; a retry that supplies the answer proceeds normally", async () => {
+    const h = makeHarness({ megaResults: ["captcha_required", "ok"], legacy: async () => {} });
+    await connect(h);
+    expect(h.loginMega).toHaveBeenCalledTimes(1);
+
+    await connect(h, { captcha: { captchaId: "cid", captchaCode: "ANSWER" } });
+    expect(h.loginMega).toHaveBeenCalledTimes(2);
+    expect((h.transition as any).pendingChallenge).toBeUndefined();
+  });
+
+  it("legacy needs a challenge; a blind reconnect with no answer does NOT redraw/overwrite it", async () => {
+    const h = makeHarness({
+      megaResults: ["failed"],
+      legacy: async (t) => {
+        t.recordLegacyChallenge();
+      },
+    });
+    await connect(h); // legacy draws its challenge, pendingChallenge=legacy
+    expect(h.legacyConnect).toHaveBeenCalledTimes(1);
+
+    await connect(h); // blind retry, no code/captcha supplied
+    expect(h.legacyConnect).toHaveBeenCalledTimes(1); // NOT called again
+    expect((h.transition as any).pendingChallenge).toBe("legacy");
   });
 
   it("legacy emits a challenge before mega has ever logged in → returns WITHOUT onAPIConnect", async () => {

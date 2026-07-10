@@ -234,6 +234,15 @@ export class MegaTransition {
       ? { captchaId: options.captcha.captchaId, answer: options.captcha.captchaCode }
       : undefined;
 
+    // A challenge is already outstanding and this call carries no answer for it — e.g. a caller-side
+    // blind/automatic reconnect attempt fired while the consumer is still showing the prompt. Do
+    // nothing: in particular, don't re-run loginMega()/legacyConnect() with no code/captcha, since
+    // both backends respond to that by drawing a BRAND NEW challenge and re-emitting it, silently
+    // replacing the one currently on screen before the user can answer it (the "captcha keeps getting
+    // overwritten" symptom). Only a connect() call that actually supplies verifyCode/captcha may
+    // proceed while a challenge is pending.
+    if (this.pendingChallenge && !options?.verifyCode && !options?.captcha) return;
+
     // PHASE 1 — v6 first. Run it unless a challenge is currently outstanding for the LEGACY side.
     if (this.pendingChallenge !== "legacy") {
       const megaResult = await this.loginMega(options?.verifyCode, megaCaptcha);
