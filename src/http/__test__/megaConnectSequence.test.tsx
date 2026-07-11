@@ -94,6 +94,39 @@ describe("connect() v6-first state machine", () => {
     expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
   });
 
+  it("connect() resolves before onAPIConnect() finishes (pre-v6 fire-and-forget contract)", async () => {
+    // Consumers commonly do `await eufyClient.connect(); eufyClient.on("connect", handler)` — i.e.
+    // they attach the "connect" listener only AFTER connect() resolves. That only works if connect()
+    // resolves before onAPIConnect() (which emits "connect") has finished — exactly like the upstream
+    // pre-v6 connect(), which only ever awaited api.login() and drove onAPIConnect() off a plain,
+    // un-awaited api.on("connect", ...) listener. If connect() awaited onAPIConnect() to completion,
+    // "connect" would already have fired by the time such a listener is attached, and it would be
+    // missed forever.
+    const h = makeHarness({
+      megaResults: ["ok"],
+      legacy: async () => {
+        h.state.connected = true;
+      },
+    });
+    let onAPIConnectFinished = false;
+    let resolveOnAPIConnect: () => void = () => {};
+    (h.onAPIConnect as jest.Mock).mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveOnAPIConnect = () => {
+            onAPIConnectFinished = true;
+            resolve();
+          };
+        })
+    );
+
+    await connect(h);
+    expect(h.onAPIConnect).toHaveBeenCalledTimes(1); // it was started...
+    expect(onAPIConnectFinished).toBe(false); // ...but connect() didn't wait for it to finish
+
+    resolveOnAPIConnect();
+  });
+
   it("mega needs 2FA → returns without legacy or onAPIConnect, pendingChallenge=mega", async () => {
     const h = makeHarness({ megaResults: ["tfa_required"], legacy: async () => {} });
     await connect(h);

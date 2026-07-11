@@ -278,7 +278,16 @@ export class MegaTransition {
 
     // PHASE 3 — both backends settled. Signal the app ONCE, only if a login actually succeeded.
     if (this.megaLoggedIn || this.host.api.isConnected()) {
-      await this.host.onAPIConnect();
+      // Deliberately NOT awaited. Upstream's pre-v6 connect() only ever awaited api.login(); the
+      // "connect" event itself was driven by a plain, un-awaited api.on("connect", ...) listener, so
+      // connect() always resolved to the caller before "connect" was emitted. Consumers rely on that
+      // ordering — they commonly do `await eufyClient.connect(); eufyClient.on("connect", ...)`, i.e.
+      // register the listener only after connect() resolves. If we awaited onAPIConnect() here (it
+      // itself awaits refreshCloudData(), a network round-trip), connect() would resolve only AFTER
+      // "connect" had already fired, and such a listener would permanently miss it.
+      this.host.onAPIConnect().catch((err) => {
+        rootMainLogger.error("connect: onAPIConnect failed", { error: getError(ensureError(err)) });
+      });
     } else {
       rootMainLogger.warn("connect: neither v6 nor legacy login succeeded — not signalling connected");
       this.host.onConnectionError(new Error("Login failed on both backends"));
