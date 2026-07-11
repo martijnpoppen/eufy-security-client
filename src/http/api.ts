@@ -370,7 +370,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     password: string,
     persistentData?: HTTPApiPersistentData
   ): Promise<HTTPApi> {
-    if (isValidCountry(country) && country.length === 2) {
+    if (country.length === 2) {
       const apiBase = await this.getApiBaseFromCloud(country);
       const api = new HTTPApi(apiBase, country, username, password, persistentData);
       await api.loadLibraries();
