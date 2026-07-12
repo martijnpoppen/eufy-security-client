@@ -53,12 +53,15 @@ export interface MegaTransitionHost {
 }
 
 /**
- * Coordinates the v6-first login sequence. The v6 "eufy_mega" backend is the primary login (it
- * carries push and is where the account is heading); the legacy login runs afterwards as
- * best-effort and never blocks. Each backend has its OWN 2FA email + captcha; whichever asks
- * records itself in {@link pendingChallenge} so the code/captcha from the next connect() is routed
- * to the backend that asked for it. The app-ready signal fires ONCE, at the very end, and only if a
- * login succeeded.
+ * Coordinates the v6-first login sequence. The v6 "eufy_mega" backend logs in first (it carries push
+ * and is where the account is heading, but — for now — only push: it has no station/device fetching
+ * of its own). The legacy backend remains the one that actually matters for the app: stations and
+ * devices are fetched exclusively through it, so the app-ready signal still requires LEGACY to be
+ * authenticated, even if v6 already succeeded — signalling "connected" off v6 alone would fire
+ * refreshCloudData() against a still-unauthenticated legacy session and yield an empty device list.
+ * Each backend has its OWN 2FA email + captcha; whichever asks records itself in
+ * {@link pendingChallenge} so the code/captcha from the next connect() is routed to the backend that
+ * asked for it. The app-ready signal fires ONCE per successful legacy login.
  */
 export class MegaTransition {
   private readonly host: MegaTransitionHost;
@@ -265,15 +268,13 @@ export class MegaTransition {
           : ({ ...options, verifyCode: undefined, captcha: undefined } as LoginOptions);
       this.pendingChallenge = undefined;
       await this.host.legacyConnect(legacyOptions);
-      // legacyConnect may have recorded pendingChallenge="legacy" via the host's api-event hooks. The
-      // prompt has already been emitted to the consumer (emitTfaRequest/emitCaptchaRequest ran inside
-      // legacyConnect) regardless of what we do next, so it stays visible either way. But if v6 already
-      // has a working session, don't let a stalled legacy challenge hold up Phase 3 forever: fall through
-      // and signal the app as connected now, on v6 alone. Stations/devices still need the legacy session,
-      // so the challenge stays outstanding (pendingChallenge="legacy") and is retried on the next
-      // connect() once the user answers it — this only stops legacy's own challenge from masking a v6
-      // login that already succeeded.
-      if (this.pendingChallenge === "legacy" && !this.host.api.isConnected() && !this.megaLoggedIn) return;
+      // legacyConnect may have recorded pendingChallenge="legacy" via the host's api-event hooks — keep
+      // blocking Phase 3 until it's resolved, EVEN IF v6 already logged in: stations/devices are fetched
+      // exclusively through the legacy backend today (v6 only carries login + push), so signalling
+      // "connected" off v6 alone would fire onAPIConnect()/refreshCloudData() against a still-unauthenticated
+      // legacy session and yield an empty device list. The prompt has already been emitted to the consumer
+      // (emitTfaRequest/emitCaptchaRequest ran inside legacyConnect), so it stays visible while we wait.
+      if (this.pendingChallenge === "legacy" && !this.host.api.isConnected()) return;
     }
 
     // PHASE 3 — both backends settled. Signal the app ONCE, only if a login actually succeeded.
