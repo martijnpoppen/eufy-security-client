@@ -95,6 +95,26 @@ describe("connect() v6-first state machine", () => {
     expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
   });
 
+  it("a redundant connect() call after already fully connected is a no-op (doesn't re-fire onAPIConnect)", async () => {
+    // Mirrors a consumer that calls connect() from more than one place (e.g. once per device driver
+    // on startup) "just to be sure". Upstream's api.login() was idempotent once the token was already
+    // valid — it returned without re-emitting "connect". Re-firing onAPIConnect() (and therefore
+    // refreshCloudData()) on every such redundant call is wasteful and, if callers overlap, a way to
+    // get spurious empty device lists from concurrent/racing refreshes.
+    const h = makeHarness({
+      megaResults: ["ok", "ok"],
+      legacy: async () => {
+        h.state.connected = true;
+      },
+    });
+    await connect(h);
+    expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
+
+    await connect(h); // redundant — legacy (and mega) are already connected, nothing changed
+    expect(h.legacyConnect).toHaveBeenCalledTimes(1); // Phase 2 is skipped too (already connected)
+    expect(h.onAPIConnect).toHaveBeenCalledTimes(1); // NOT called again
+  });
+
   it("connect() resolves before onAPIConnect() finishes (pre-v6 fire-and-forget contract)", async () => {
     // Consumers commonly do `await eufyClient.connect(); eufyClient.on("connect", handler)` — i.e.
     // they attach the "connect" listener only AFTER connect() resolves. That only works if connect()

@@ -776,7 +776,6 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   public async getStationList(): Promise<Array<StationListResponse>> {
     const data = {
       device_sn: "",
-      house_id: "HOUSEID_ALL_DEVICE",
       num: 1000,
       orderby: "",
       page: 0,
@@ -817,7 +816,6 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   public async getDeviceList(): Promise<Array<DeviceListResponse>> {
     const data = {
       device_sn: "",
-      house_id: "HOUSEID_ALL_DEVICE",
       num: 1000,
       orderby: "",
       page: 0,
