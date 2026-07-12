@@ -8,12 +8,13 @@ import { MegaTransition, MegaTransitionHost, MegaLoginResult } from "../megaTran
 /**
  * Validates the v6-first connect() state machine (MegaTransition) without any network, by stubbing
  * its mega client (loginMega) and host (legacyConnect / onAPIConnect). Covers the invariants:
- *  - v6 first; legacy is best-effort and runs only after mega is settled
- *  - a backend that needs a 2FA/captcha records pendingChallenge and, as long as NEITHER backend has
- *    logged in yet, connect() returns WITHOUT signalling the app (no onAPIConnect)
- *  - once v6 has logged in, a legacy 2FA/captcha challenge no longer blocks onAPIConnect — it stays
- *    outstanding (pendingChallenge is preserved) so it is still visible and gets retried on the next
- *    connect(), but it doesn't stall the app-ready signal
+ *  - v6 first; legacy is best-effort and runs afterwards, but is the one that decides the app-ready
+ *    signal: stations/devices are fetched exclusively through legacy today, so a legacy 2FA/captcha
+ *    challenge blocks onAPIConnect EVEN IF v6 already logged in — firing "connected" off v6 alone
+ *    would yield an empty device list. The challenge stays outstanding (pendingChallenge is
+ *    preserved) so it is still visible and gets retried on the next connect()
+ *  - a legacy login that fails OUTRIGHT (no challenge — e.g. decommissioned) does not block: there is
+ *    nothing left to wait for, so v6 alone may still signal connected
  *  - the next code/captcha is routed to the backend that asked for it
  *  - a connect() call with no verifyCode/captcha while a challenge is outstanding is a no-op — it
  *    must NOT re-run the backend's login and draw (and re-emit) a brand new challenge, silently
@@ -185,7 +186,7 @@ describe("connect() v6-first state machine", () => {
     expect((h.transition as any).pendingChallenge).toBe("legacy");
   });
 
-  it("legacy emits a challenge but mega already logged in → onAPIConnect still fires (challenge stays visible)", async () => {
+  it("legacy emits a challenge even though mega already logged in → still blocks onAPIConnect (devices need legacy)", async () => {
     const h = makeHarness({
       megaResults: ["ok"],
       legacy: async (t) => {
@@ -194,12 +195,11 @@ describe("connect() v6-first state machine", () => {
       },
     });
     await connect(h);
-    expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
-    // the challenge is still outstanding — it wasn't silently dropped, just no longer blocking
+    expect(h.onAPIConnect).not.toHaveBeenCalled();
     expect((h.transition as any).pendingChallenge).toBe("legacy");
   });
 
-  it("routes the mega code to mega, then legacy code to legacy; onAPIConnect fires once mega is in, again once legacy catches up", async () => {
+  it("routes the mega code to mega, then legacy code to legacy, onAPIConnect only once legacy is actually in", async () => {
     const h = makeHarness({
       megaResults: ["tfa_required", "ok"],
       legacy: async (t) => {
@@ -212,16 +212,16 @@ describe("connect() v6-first state machine", () => {
     expect((h.transition as any).pendingChallenge).toBe("mega");
     expect(h.onAPIConnect).not.toHaveBeenCalled();
 
-    await connect(h, { verifyCode: "MEGACODE" }); // mega ok -> legacy asks, but mega already got us in
+    await connect(h, { verifyCode: "MEGACODE" }); // mega ok -> legacy asks -> still not connected
     expect(h.loginMega).toHaveBeenLastCalledWith("MEGACODE", undefined);
     expect((h.transition as any).pendingChallenge).toBe("legacy");
-    expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
+    expect(h.onAPIConnect).not.toHaveBeenCalled();
 
     await connect(h, { verifyCode: "LEGACYCODE" }); // legacy ok -> done
-    expect(h.onAPIConnect).toHaveBeenCalledTimes(2);
+    expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
   });
 
-  it("legacy captcha then 2FA in one login(), mega already logged in → onAPIConnect fires, new challenge stays visible", async () => {
+  it("legacy captcha then 2FA in one login(), mega already logged in → still blocked until legacy's new challenge is answered", async () => {
     const h = makeHarness({
       megaResults: ["ok"],
       legacy: async (t) => {
@@ -232,7 +232,7 @@ describe("connect() v6-first state machine", () => {
     (h.transition as any).pendingChallenge = "legacy"; // we arrived here because legacy had asked the captcha
     (h.transition as any).megaLoggedIn = true; // mega already done in a previous call
     await connect(h, { captcha: { captchaId: "cid", captchaCode: "DdYE" } });
-    expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
+    expect(h.onAPIConnect).not.toHaveBeenCalled();
     // legacy's new 2FA challenge is recorded (and was already emitted to the consumer), not dropped
     expect((h.transition as any).pendingChallenge).toBe("legacy");
   });
