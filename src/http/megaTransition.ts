@@ -236,6 +236,11 @@ export class MegaTransition {
     const megaCaptcha = options?.captcha
       ? { captchaId: options.captcha.captchaId, answer: options.captcha.captchaCode }
       : undefined;
+    // Captured before Phase 1/2 touch anything, so Phase 3 can tell "legacy just connected during
+    // this call" apart from "legacy was already connected coming in". Upstream's api.login() was
+    // naturally idempotent this way — once the token was already valid it returned without
+    // re-emitting "connect" — but nothing here reproduced that once login moved into runConnect().
+    const wasLegacyConnected = this.host.api.isConnected();
 
     // A challenge is already outstanding and this call carries no answer for it — e.g. a caller-side
     // blind/automatic reconnect attempt fired while the consumer is still showing the prompt. Do
@@ -277,8 +282,18 @@ export class MegaTransition {
       if (this.pendingChallenge === "legacy" && !this.host.api.isConnected()) return;
     }
 
-    // PHASE 3 — both backends settled. Signal the app ONCE, only if a login actually succeeded.
+    // PHASE 3 — both backends settled. Signal the app ONCE PER TRANSITION into the connected state.
     if (this.megaLoggedIn || this.host.api.isConnected()) {
+      if (this.host.api.isConnected() && wasLegacyConnected) {
+        // Legacy was ALREADY connected before this call started — this connect() call did nothing
+        // new (a redundant/repeated call, e.g. a consumer calling connect() from more than one place
+        // "just to be sure"). Re-running onAPIConnect() here would re-fire refreshCloudData()/push/mqtt
+        // for no reason on every single such call — wasteful, and multiple of these racing against
+        // the same throttled legacy transport is a real way to end up with spurious empty
+        // station/device lists. Mirrors upstream api.login()'s early-return-without-re-emitting
+        // "connect" once the token was already valid.
+        return;
+      }
       // Deliberately NOT awaited. Upstream's pre-v6 connect() only ever awaited api.login(); the
       // "connect" event itself was driven by a plain, un-awaited api.on("connect", ...) listener, so
       // connect() always resolved to the caller before "connect" was emitted. Consumers rely on that
