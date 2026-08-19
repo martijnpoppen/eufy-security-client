@@ -76,9 +76,30 @@ export class MegaTransition {
   private megaLoggedIn = false;
   /** Serialises connect(): concurrent calls await the in-flight one instead of racing the sequence. */
   private connectInProgress?: Promise<void>;
+  /**
+   * Set after a v6 login failure (e.g. account not yet migrated). Prevents further attempts within
+   * this session — and on the next startup if persisted — so we never import `got`/`p-throttle`
+   * for accounts that can't reach v6, which saves significant memory on Homey.
+   */
+  private megaLoginFailed = false;
 
   constructor(host: MegaTransitionHost) {
     this.host = host;
+    // If a prior startup saved a login_failed marker with matching credentials, skip v6 this
+    // session entirely. This avoids importing got/p-throttle (memory-heavy ESM packages) on every
+    // restart when the account hasn't been migrated to the v6 backend yet.
+    const saved = host.persistentData.megaApi;
+    if (saved?.login_failed) {
+      const currentHash = megaLoginHash(
+        host.config.username,
+        host.config.password,
+        host.persistentData.openudid ?? ""
+      );
+      if (!saved.login_hash || saved.login_hash === currentHash) {
+        this.megaLoginFailed = true;
+        rootMainLogger.debug("v6: skipping mega login this session (prior failure persisted, credentials unchanged)");
+      }
+    }
   }
 
   /** Record that the LEGACY login asked for a code/captcha (called from the host's api-event hooks). */
@@ -135,6 +156,7 @@ export class MegaTransition {
    * v6 session yet (not-yet-migrated account); a v6 failure is swallowed so legacy push is unaffected.
    */
   public async registerMegaPushToken(token: string): Promise<boolean> {
+    if (this.megaLoginFailed) return false;
     try {
       const mega = await this.getMegaApi();
       if (!mega.hasValidSession()) {
@@ -171,6 +193,9 @@ export class MegaTransition {
     verifyCode?: string,
     captcha?: { captchaId: string; answer: string }
   ): Promise<MegaLoginResult> {
+    // Skip v6 if a previous login failed — avoids importing got/p-throttle on non-migrated accounts.
+    // A fresh verifyCode/captcha bypasses this so a user can explicitly retry after fixing their account.
+    if (this.megaLoginFailed && !verifyCode && !captcha) return "failed";
     try {
       const mega = await this.getMegaApi();
       if (mega.hasValidSession() && !verifyCode && !captcha) return "ok";
@@ -209,6 +234,8 @@ export class MegaTransition {
       }
       if (result.code !== 0) {
         rootMainLogger.warn("v6 login failed", { code: result.code, msg: result.msg });
+        this.megaLoginFailed = true;
+        this.persistLoginFailure();
         return "failed";
       }
       this.host.persistentData.megaApi = mega.exportSession(
@@ -220,6 +247,26 @@ export class MegaTransition {
     } catch (err) {
       rootMainLogger.error("v6 login error", { error: getError(ensureError(err)) });
       return "failed";
+    }
+  }
+
+  /** Persist a login failure marker so the next startup skips v6 without importing got/p-throttle. */
+  private persistLoginFailure(): void {
+    try {
+      const loginHash = megaLoginHash(
+        this.host.config.username,
+        this.host.config.password,
+        this.host.persistentData.openudid ?? ""
+      );
+      this.host.persistentData.megaApi = {
+        ab: (this.host.config.country ?? "us").toLowerCase(),
+        openudid: this.host.persistentData.openudid ?? "",
+        login_failed: true,
+        login_hash: loginHash,
+      };
+      this.host.writePersistentData();
+    } catch {
+      // best-effort, non-critical
     }
   }
 
