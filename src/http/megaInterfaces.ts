@@ -83,4 +83,10 @@ export interface MegaSession {
   megaDomain?: string;
   /** Per-cluster ECDH identities (keyIdent + sharedKey + clientPublicKey). */
   identities?: Record<string, MegaIdentity>;
+  /**
+   * Set when the v6 login repeatedly fails (e.g. account not yet migrated). Signals the next
+   * startup to skip the mega login entirely — avoiding the `got`/`p-throttle` dynamic imports
+   * and the 3 HTTP round-trips — until the credentials change (detected via login_hash).
+   */
+  login_failed?: boolean;
 }
