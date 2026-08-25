@@ -13,13 +13,13 @@ import { MegaTransition, MegaTransitionHost, MegaLoginResult } from "../megaTran
  *    challenge blocks onAPIConnect EVEN IF v6 already logged in — firing "connected" off v6 alone
  *    would yield an empty device list. The challenge stays outstanding (pendingChallenge is
  *    preserved) so it is still visible and gets retried on the next connect()
- *  - a legacy login that fails OUTRIGHT (no challenge — e.g. decommissioned) does not block: there is
- *    nothing left to wait for, so v6 alone may still signal connected
+ *  - a legacy login that fails OUTRIGHT (no challenge) is reported as a connection error rather than
+ *    hidden behind a healthy v6 session — v6 carries login + push only and cannot serve devices
  *  - the next code/captcha is routed to the backend that asked for it
  *  - a connect() call with no verifyCode/captcha while a challenge is outstanding is a no-op — it
  *    must NOT re-run the backend's login and draw (and re-emit) a brand new challenge, silently
  *    replacing the one the user is currently looking at
- *  - onAPIConnect fires exactly once, at the end, only if at least one login succeeded
+ *  - onAPIConnect fires exactly once, at the end, and only if the legacy login succeeded
  *  - concurrent connect() calls are serialised
  */
 
@@ -264,7 +264,11 @@ describe("connect() v6-first state machine", () => {
     expect(h.onConnectionError).toHaveBeenCalledWith(expect.any(Error));
   });
 
-  it("legacy decommissioned (mega ok, legacy throws) → onAPIConnect still fires", async () => {
+  it("mega ok but legacy failed → no onAPIConnect, fails loudly instead", async () => {
+    // v6 carries login + push only; stations and devices are fetched exclusively through the legacy
+    // backend. Signalling "connected" off v6 alone runs refreshCloudData() against an
+    // unauthenticated legacy session and yields an empty device list while the consumer is told it
+    // is connected — so report the failure rather than hide it.
     const h = makeHarness({
       megaResults: ["ok"],
       legacy: async () => {
@@ -272,7 +276,20 @@ describe("connect() v6-first state machine", () => {
       },
     });
     await connect(h);
+    expect(h.onAPIConnect).not.toHaveBeenCalled();
+    expect(h.onConnectionError).toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  it("mega failed but legacy ok → onAPIConnect still fires (v6 is the optional half)", async () => {
+    const h = makeHarness({
+      megaResults: ["failed"],
+      legacy: async () => {
+        h.state.connected = true;
+      },
+    });
+    await connect(h);
     expect(h.onAPIConnect).toHaveBeenCalledTimes(1);
+    expect(h.onConnectionError).not.toHaveBeenCalled();
   });
 
   it("serialises concurrent connect() calls", async () => {

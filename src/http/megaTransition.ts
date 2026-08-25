@@ -327,10 +327,10 @@ export class MegaTransition {
       this.pendingChallenge = undefined;
     }
 
-    // PHASE 2 — legacy afterwards, best-effort. A code/captcha just used by mega is not valid here;
-    // the legacy login emits its OWN tfa/captcha event (which records pendingChallenge="legacy" via
-    // the host) and we wait for the next connect(). If legacy has been decommissioned, its login
-    // simply fails and we carry on with v6 only.
+    // PHASE 2 — legacy afterwards, and NOT optional: stations and devices are fetched exclusively
+    // through the legacy backend today. A code/captcha just used by mega is not valid here; the
+    // legacy login emits its OWN tfa/captcha event (which records pendingChallenge="legacy" via the
+    // host) and we wait for the next connect().
     if (!this.host.api.isConnected()) {
       const legacyOptions =
         this.pendingChallenge === "legacy"
@@ -348,8 +348,17 @@ export class MegaTransition {
     }
 
     // PHASE 3 — both backends settled. Signal the app ONCE PER TRANSITION into the connected state.
-    if (this.megaLoggedIn || this.host.api.isConnected()) {
-      if (this.host.api.isConnected() && wasLegacyConnected) {
+    //
+    // The legacy login is what gates this, NOT v6. v6 carries login + push registration only —
+    // getStations()/getDevices() and every P2P path run off the legacy HTTPApi — so signalling
+    // "connected" off a v6 session alone fires onAPIConnect()/refreshCloudData() against an
+    // unauthenticated legacy session: houses, stations and devices all come back empty and the
+    // consumer marks every paired device unavailable while being told it is connected. That silent
+    // shape is much worse than a loud failure, so a legacy login that did not come up is reported as
+    // a connection error even when v6 is perfectly happy. Revisit only once v6 actually serves the
+    // device list.
+    if (this.host.api.isConnected()) {
+      if (wasLegacyConnected) {
         // Legacy was ALREADY connected before this call started — this connect() call did nothing
         // new (a redundant/repeated call, e.g. a consumer calling connect() from more than one place
         // "just to be sure"). Re-running onAPIConnect() here would re-fire refreshCloudData()/push/mqtt
@@ -369,6 +378,11 @@ export class MegaTransition {
       this.host.onAPIConnect().catch((err) => {
         rootMainLogger.error("connect: onAPIConnect failed", { error: getError(ensureError(err)) });
       });
+    } else if (this.megaLoggedIn) {
+      rootMainLogger.warn(
+        "connect: v6 logged in but the legacy login did not — not signalling connected, the device list comes from legacy"
+      );
+      this.host.onConnectionError(new Error("Legacy login failed (v6 alone cannot serve stations or devices)"));
     } else {
       rootMainLogger.warn("connect: neither v6 nor legacy login succeeded — not signalling connected");
       this.host.onConnectionError(new Error("Login failed on both backends"));
