@@ -86,7 +86,14 @@ export interface MegaSession {
   /**
    * Set when the v6 login repeatedly fails (e.g. account not yet migrated). Signals the next
    * startup to skip the mega login entirely — avoiding the `got`/`p-throttle` dynamic imports
-   * and the 3 HTTP round-trips — until the credentials change (detected via login_hash).
+   * and the 3 HTTP round-trips — until the credentials change (detected via login_hash) or
+   * {@link login_failed_at} ages out.
    */
   login_failed?: boolean;
+  /**
+   * When {@link login_failed} was recorded (epoch ms). Accounts get migrated to v6 over time, so the
+   * skip must not be permanent: once the marker is older than a day the next startup retries the v6
+   * login instead of skipping it forever.
+   */
+  login_failed_at?: number;
 }

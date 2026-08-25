@@ -27,11 +27,14 @@ type MegaStub = Partial<
   >
 >;
 
-function makeTransition(mega: MegaStub, opts?: { getMegaThrows?: boolean }) {
+function makeTransition(
+  mega: MegaStub,
+  opts?: { getMegaThrows?: boolean; persistentData?: Record<string, unknown> }
+) {
   const emitTfaRequest = jest.fn();
   const emitCaptchaRequest = jest.fn();
   const writePersistentData = jest.fn();
-  const persistentData: Record<string, unknown> = {};
+  const persistentData: Record<string, unknown> = opts?.persistentData ?? {};
   const host = {
     config: { username: "a@b.c", password: "pw", country: "fr" },
     persistentData,
@@ -95,13 +98,53 @@ describe("MegaTransition.loginMega", () => {
     expect(emitCaptchaRequest).toHaveBeenCalledWith("CID", "img");
   });
 
-  it("returns failed on a non-zero/non-handled login code", async () => {
+  it("returns failed on a non-zero/non-handled login code and records a dated skip marker", async () => {
     const mega = baseMega({
       login: jest.fn().mockResolvedValue({ code: ResponseErrorCode.MULTIPLE_EMAIL_PASSWORD_ERROR }),
     });
-    const { transition, writePersistentData } = makeTransition(mega);
+    const { transition, writePersistentData, persistentData } = makeTransition(mega);
     await expect(transition.loginMega()).resolves.toBe("failed");
-    expect(writePersistentData).not.toHaveBeenCalled();
+    expect(writePersistentData).toHaveBeenCalled();
+    expect(persistentData.megaApi).toMatchObject({ login_failed: true });
+    expect(typeof (persistentData.megaApi as { login_failed_at?: number }).login_failed_at).toBe("number");
+  });
+
+  it("keeps an already exported session when recording the skip marker", async () => {
+    const mega = baseMega({
+      login: jest.fn().mockResolvedValue({ code: ResponseErrorCode.MULTIPLE_EMAIL_PASSWORD_ERROR }),
+    });
+    const { transition, persistentData } = makeTransition(mega);
+    persistentData.megaApi = { ab: "fr", openudid: "udid", megaDomain: "d", identities: { push: {} } };
+    await expect(transition.loginMega()).resolves.toBe("failed");
+    // The marker must not throw away a still usable session: an account that recovers should be able
+    // to resume instead of redoing the whole handshake (and losing v6 push until it does).
+    expect(persistentData.megaApi).toMatchObject({
+      megaDomain: "d",
+      identities: { push: {} },
+      login_failed: true,
+    });
+  });
+
+  it("skips the mega login when a fresh failure marker is persisted, retries once it ages out", async () => {
+    const login = jest.fn().mockResolvedValue({ code: 0, data: {} });
+    const fresh = makeTransition(baseMega({ login }), {
+      persistentData: { megaApi: { ab: "fr", openudid: "udid", login_failed: true, login_failed_at: Date.now() } },
+    });
+    await expect(fresh.transition.loginMega()).resolves.toBe("failed");
+    expect(login).not.toHaveBeenCalled();
+
+    const stale = makeTransition(baseMega({ login, exportSession: jest.fn().mockReturnValue({ ab: "fr" }) }), {
+      persistentData: {
+        megaApi: {
+          ab: "fr",
+          openudid: "udid",
+          login_failed: true,
+          login_failed_at: Date.now() - 25 * 60 * 60 * 1000,
+        },
+      },
+    });
+    await expect(stale.transition.loginMega()).resolves.toBe("ok");
+    expect(login).toHaveBeenCalled();
   });
 
   it("returns locked on a backend lockout code (no retry, no verify-code resend)", async () => {

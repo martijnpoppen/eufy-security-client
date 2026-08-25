@@ -231,6 +231,12 @@ export enum ResponseErrorCode {
   CODE_VERIFY_CODE_NONE_MATCH = 26054,
   CODE_VERIFY_PASSWORD_ERROR = 26055,
   CODE_OK = 0,
+  /**
+   * HTTP style success code the Eufy cloud gateway started returning in the response BODY for some
+   * endpoints instead of {@link CODE_OK}. Treated as a synonym of `CODE_OK` (see
+   * `HTTPApi.normalizeResultCode`); it is never used as an error code by the API.
+   */
+  CODE_OK_HTTP = 200,
   CODE_EMAIL_LIMIT_EXCEED = 25077,
   CODE_GIVE_AWAY_EXPIRED = 25075,
   CODE_GIVE_AWAY_INVALID = 25076,

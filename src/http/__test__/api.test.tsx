@@ -28,10 +28,10 @@ describe("HTTPApi", () => {
             expect(loadLibsSpy).toHaveBeenCalled();
         });
 
-        it("should throw InvalidCountryCodeError for invalid country code", async () => {
-            await expect(HTTPApi.initialize("XX", "test@test.com", "password123")).rejects.toThrow(
-                InvalidCountryCodeError,
-            );
+        it("should accept any two letter country code", async () => {
+            // Validation is deliberately length-only: Eufy accepts codes that are not ISO 3166-1
+            // Alpha-2 (e.g. "UK"), and rejecting those locked those accounts out entirely.
+            await expect(HTTPApi.initialize("XX", "test@test.com", "password123")).resolves.toBeInstanceOf(HTTPApi);
         });
 
         it("should throw InvalidCountryCodeError for country code longer than 2 chars", async () => {
@@ -104,6 +104,60 @@ describe("HTTPApi", () => {
             expect(errorHandler).toHaveBeenCalled();
             expect(api.isConnected()).toBe(false);
         });
+
+    describe("response code normalization", () => {
+        // The Eufy cloud gateway started answering with the HTTP style success code `200` in the
+        // response BODY instead of the historical `0`, while still returning a complete payload.
+        // Every caller compares against CODE_OK (0), so without normalization a perfectly valid
+        // response was read as a failure — which is what left `connected` false and made the
+        // house/station/device lists come back empty.
+        const respond = (api: HTTPApi, body: unknown) => {
+            (api as any).requestEufyCloud = jest.fn().mockResolvedValue({
+                statusCode: 200,
+                statusMessage: "OK",
+                headers: {},
+                body,
+            });
+        };
+
+        it("maps a body code of 200 onto CODE_OK", async () => {
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            respond(api, { code: 200, msg: "", data: "encrypted" });
+
+            const response = await api.request({ method: "get", endpoint: "v2/passport/profile" });
+
+            expect(response.data.code).toBe(0);
+        });
+
+        it("leaves any other body code untouched", async () => {
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            respond(api, { code: 26006, msg: "invalid", data: undefined });
+
+            const response = await api.request({ method: "get", endpoint: "v2/passport/profile" });
+
+            expect(response.data.code).toBe(26006);
+        });
+
+        it("leaves non-object bodies untouched", async () => {
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            const buffer = Buffer.from("binary");
+            respond(api, buffer);
+
+            const response = await api.request({ method: "get", endpoint: "v1/some/binary", responseType: "buffer" });
+
+            expect(response.data).toBe(buffer);
+        });
+
+        it("accepts a passport profile answered with code 200", async () => {
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            respond(api, { code: 200, msg: "", data: "encrypted" });
+            (api as any).decryptAPIData = jest
+                .fn()
+                .mockReturnValue({ user_id: "uid", nick_name: "nick", email: "test@test.com" });
+
+            await expect(api.getPassportProfile()).resolves.toMatchObject({ user_id: "uid" });
+        });
+    });
 
         it("should not login again if already connected with valid token", async () => {
             const api = await HTTPApi.initialize("DE", "test@test.com", "password123");

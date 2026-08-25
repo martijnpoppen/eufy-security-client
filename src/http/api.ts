@@ -12,7 +12,6 @@ import type { AnyFunction, ThrottledFunction } from "p-throttle" with {
 };
 
 import { TypedEmitter } from "tiny-typed-emitter";
-import { isValid as isValidCountry } from "i18n-iso-countries";
 import { isValid as isValidLanguage } from "@cospired/i18n-iso-languages";
 import { createECDH, ECDH } from "crypto";
 import * as schedule from "node-schedule";
@@ -251,7 +250,9 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     });
 
     const result: ResultResponse = response.body as ResultResponse;
-    if (result.code == ResponseErrorCode.CODE_OK) {
+    // Accept the HTTP style success code too — this static helper has its own `got` call and so
+    // doesn't pass through `request()`/`normalizeResultCode()`.
+    if (result.code == ResponseErrorCode.CODE_OK || result.code == ResponseErrorCode.CODE_OK_HTTP) {
       return `https://${result.data.domain}`;
     }
     throw new ApiBaseLoadError("Error identifying API base from cloud", {
@@ -947,6 +948,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
         headers: internalResponse.headers,
         data: internalResponse.body,
       };
+      this.normalizeResultCode(response);
       rootHTTPLogger.debug("Api request - Response", { token: this.token, request: request, response: response.data });
 
       return response;
@@ -972,6 +974,35 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
           data: request.data,
         },
       });
+    }
+  }
+
+  /**
+   * The Eufy cloud started answering a number of endpoints (`v2/passport/profile` first, but the
+   * gateway change is not endpoint specific) with the HTTP style success code `200` in the response
+   * BODY instead of the historical `0` (`ResponseErrorCode.CODE_OK`), while still returning a
+   * complete — and correctly encrypted — payload.
+   *
+   * Every caller in this class compares `result.code` against `CODE_OK`, so such a response was
+   * treated as a failure. For `getPassportProfile()` that meant `login()` never flipped `connected`
+   * to true, which in turn made `makePostRequest()` bail out for every subsequent call: the house,
+   * station and device lists all came back empty and every paired device ended up unavailable with
+   * a `DeviceNotFoundError`.
+   *
+   * `200` is not used as an error code anywhere in {@link ResponseErrorCode}, so normalise it to
+   * `CODE_OK` once, here, instead of at each of the ~30 call sites.
+   */
+  private normalizeResultCode(response: ApiResponse): void {
+    const result = response.data as ResultResponse | undefined;
+    if (
+      result !== undefined &&
+      result !== null &&
+      typeof result === "object" &&
+      !Buffer.isBuffer(result) &&
+      result.code === ResponseErrorCode.CODE_OK_HTTP
+    ) {
+      rootHTTPLogger.debug("Api request - Normalizing HTTP style success code 200 to CODE_OK");
+      result.code = ResponseErrorCode.CODE_OK;
     }
   }
 

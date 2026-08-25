@@ -82,10 +82,12 @@ export class MegaTransition {
    * for accounts that can't reach v6, which saves significant memory on Homey.
    */
   private megaLoginFailed = false;
+  /** How long a persisted {@link MegaSession.login_failed} marker suppresses the v6 login for. */
+  private static readonly LOGIN_FAILURE_RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
 
   constructor(host: MegaTransitionHost) {
     this.host = host;
-    // If a prior startup saved a login_failed marker with matching credentials, skip v6 this
+    // If a recent startup saved a login_failed marker with matching credentials, skip v6 this
     // session entirely. This avoids importing got/p-throttle (memory-heavy ESM packages) on every
     // restart when the account hasn't been migrated to the v6 backend yet.
     const saved = host.persistentData.megaApi;
@@ -95,9 +97,19 @@ export class MegaTransition {
         host.config.password,
         host.persistentData.openudid ?? ""
       );
-      if (!saved.login_hash || saved.login_hash === currentHash) {
+      const credentialsUnchanged = !saved.login_hash || saved.login_hash === currentHash;
+      // Eufy migrates accounts to the v6 backend over time, so a failure recorded once must not pin
+      // the account to "legacy only" forever — that would permanently cost it v6 push notifications.
+      // Re-try at most once a day; the memory saving is unaffected in practice since restarts are
+      // far more frequent than that.
+      const markerExpired =
+        saved.login_failed_at !== undefined &&
+        Date.now() - saved.login_failed_at >= MegaTransition.LOGIN_FAILURE_RETRY_AFTER_MS;
+      if (credentialsUnchanged && !markerExpired) {
         this.megaLoginFailed = true;
-        rootMainLogger.debug("v6: skipping mega login this session (prior failure persisted, credentials unchanged)");
+        rootMainLogger.debug("v6: skipping mega login this session (recent failure persisted, credentials unchanged)");
+      } else if (credentialsUnchanged) {
+        rootMainLogger.debug("v6: persisted login failure has aged out, retrying the mega login");
       }
     }
   }
@@ -258,10 +270,16 @@ export class MegaTransition {
         this.host.config.password,
         this.host.persistentData.openudid ?? ""
       );
+      // Merge — never replace. Overwriting the whole object here threw away a previously exported,
+      // still usable v6 session (token, megaDomain, per-cluster ECDH identities) on what may well be
+      // a transient failure, so an account that recovered had to redo the full handshake and, until
+      // it did, lost v6 push.
       this.host.persistentData.megaApi = {
-        ab: (this.host.config.country ?? "us").toLowerCase(),
-        openudid: this.host.persistentData.openudid ?? "",
+        ...this.host.persistentData.megaApi,
+        ab: this.host.persistentData.megaApi?.ab ?? (this.host.config.country ?? "us").toLowerCase(),
+        openudid: this.host.persistentData.openudid ?? this.host.persistentData.megaApi?.openudid ?? "",
         login_failed: true,
+        login_failed_at: Date.now(),
         login_hash: loginHash,
       };
       this.host.writePersistentData();
