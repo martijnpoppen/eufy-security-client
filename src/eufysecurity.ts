@@ -981,7 +981,10 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
             station_sn: device.station_sn,
             main_sw_version: device.main_sw_version,
             main_hw_version: device.main_hw_version,
-            params: device.params,
+            // Deliberately a count, not the array. Dumping every parameter of an unsupported device
+            // rendered a hundred-odd nested objects into a string on every single cloud refresh, and
+            // it told nobody anything the device type and model don't already say.
+            params: device.params?.length,
           });
           new_device = UnknownDevice.getInstance(this.api, device, deviceConfig);
         }
@@ -2803,7 +2806,14 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
               ready: ready,
             });
           });
-      } else if (name === PropertyName.DeviceRTSPStream && (value as boolean) === false) {
+      } else if (
+        name === PropertyName.DeviceRTSPStream &&
+        (value as boolean) === false &&
+        // Only cameras that actually expose an RTSP url have this property. Clearing it blindly threw
+        // InvalidPropertyError for every other camera that reports rtspStream, on every property
+        // refresh — each throw building a stack trace and a fat log entry for nothing.
+        device.hasProperty(PropertyName.DeviceRTSPStreamUrl)
+      ) {
         device.setCustomPropertyValue(PropertyName.DeviceRTSPStreamUrl, "");
       } else if (name === PropertyName.DevicePictureUrl && value !== "") {
         if (!isValidUrl(value as string)) {
