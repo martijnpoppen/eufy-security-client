@@ -28,7 +28,15 @@ export class PushClient extends TypedEmitter<PushClientEvents> {
   private heartbeatTimeout?: NodeJS.Timeout;
   private reconnectTimeout?: NodeJS.Timeout;
 
+  /**
+   * Ids of messages already received, sent back on login so the server does not redeliver them.
+   * Bounded: only the most recent ones can still be pending redelivery, but this used to grow with
+   * every single push message for the whole life of a connection — memory that is then handed to the
+   * consumer to persist, and echoed back in full inside every login request.
+   */
   private persistentIds: Array<string> = [];
+  /** How many recent persistent ids to keep. */
+  private static readonly MAX_PERSISTENT_IDS = 100;
 
   private static proto: Root | null = null;
 
@@ -73,7 +81,9 @@ export class PushClient extends TypedEmitter<PushClientEvents> {
   }
 
   public setPersistentIds(ids: Array<string>): void {
-    this.persistentIds = ids;
+    // A restored list from persisted data is trimmed too — otherwise an already oversized list from
+    // an older version would be carried forward for ever.
+    this.persistentIds = ids.slice(-PushClient.MAX_PERSISTENT_IDS);
   }
 
   public connect(): void {
@@ -206,7 +216,12 @@ export class PushClient extends TypedEmitter<PushClientEvents> {
     switch (message.tag) {
       case MessageTag.DataMessageStanza:
         rootPushLogger.debug(`Push client - DataMessageStanza`, { message: JSON.stringify(message) });
-        if (message.object && message.object.persistentId) this.persistentIds.push(message.object.persistentId);
+        if (message.object && message.object.persistentId) {
+          this.persistentIds.push(message.object.persistentId);
+          if (this.persistentIds.length > PushClient.MAX_PERSISTENT_IDS) {
+            this.persistentIds.splice(0, this.persistentIds.length - PushClient.MAX_PERSISTENT_IDS);
+          }
+        }
 
         this.emit("message", this.convertPayloadMessage(message));
         break;

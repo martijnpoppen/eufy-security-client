@@ -105,6 +105,41 @@ describe("HTTPApi", () => {
             expect(api.isConnected()).toBe(false);
         });
 
+    describe("close", () => {
+        // The token renewal job is a live timer holding a reference back to the HTTPApi and, through
+        // it, the whole EufySecurity graph. It used to be filed under the fixed name "renewAuthToken"
+        // in node-schedule's module level registry and was never cancelled, so every rebuilt client
+        // (re-login, repair) leaked its predecessor and left a stale job armed under the same name.
+        it("cancels the token renewal job and drops all listeners", async () => {
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            (api as any).tokenExpiration = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+            (api as any).scheduleRenewAuthToken();
+
+            const job = (api as any).renewAuthTokenJob;
+            expect(job).toBeDefined();
+            expect(job.nextInvocation()).not.toBeNull();
+
+            api.on("connect", () => undefined);
+            api.close();
+
+            expect(job.nextInvocation()).toBeNull();
+            expect((api as any).renewAuthTokenJob).toBeUndefined();
+            expect(api.listenerCount("connect")).toBe(0);
+        });
+
+        it("does not register the job under a shared name", async () => {
+            const schedule = require("node-schedule");
+            const api = await HTTPApi.initialize("DE", "test@test.com", "password123");
+            (api as any).tokenExpiration = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+            (api as any).scheduleRenewAuthToken();
+
+            // A named job stays reachable from node-schedule's global registry for the life of the
+            // process, and a second client would silently replace the first one's entry.
+            expect(schedule.scheduledJobs["renewAuthToken"]).toBeUndefined();
+            api.close();
+        });
+    });
+
     describe("response code normalization", () => {
         // The Eufy cloud gateway started answering with the HTTP style success code `200` in the
         // response BODY instead of the historical `0`, while still returning a complete payload.

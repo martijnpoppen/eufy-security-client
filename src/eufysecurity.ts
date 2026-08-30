@@ -1171,6 +1171,11 @@ export class EufySecurity extends TypedEmitter<EufySecurityEvents> {
       device.destroy();
     });
 
+    // Drop the HTTP layer's token renewal job and its listeners. It is a live timer holding a
+    // reference back to this whole graph, so leaving it armed leaks the entire client every time a
+    // consumer rebuilds one (re-login, repair, credential change).
+    this.api.close();
+
     if (this.connected) this.emit("close");
 
     this.connected = false;

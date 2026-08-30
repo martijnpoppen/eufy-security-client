@@ -12,7 +12,6 @@ import type { AnyFunction, ThrottledFunction } from "p-throttle" with {
 };
 
 import { TypedEmitter } from "tiny-typed-emitter";
-import { isValid as isValidLanguage } from "@cospired/i18n-iso-languages";
 import { createECDH, ECDH } from "crypto";
 import * as schedule from "node-schedule";
 
@@ -395,7 +394,12 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
     if (this.tokenExpiration !== null) {
       const scheduleDate = new Date(this.tokenExpiration.getTime() - 1000 * 60 * 60 * 24);
       if (this.renewAuthTokenJob === undefined) {
-        this.renewAuthTokenJob = schedule.scheduleJob("renewAuthToken", scheduleDate, async () => {
+        // Deliberately an ANONYMOUS job. A named job is filed in node-schedule's module level
+        // `scheduledJobs` registry, which kept this HTTPApi — and through it the whole EufySecurity
+        // graph — reachable for the lifetime of the process even after close(). Worse, the fixed name
+        // "renewAuthToken" meant a second EufySecurity (a re-login, a repair) replaced the registry
+        // entry while the first job stayed armed, so every re-login leaked an entire client.
+        this.renewAuthTokenJob = schedule.scheduleJob(scheduleDate, async () => {
           rootHTTPLogger.info("Authentication token is soon expiring, fetching a new one...");
           await this.login({ force: true });
         });
@@ -403,6 +407,18 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
         this.renewAuthTokenJob.schedule(scheduleDate);
       }
     }
+  }
+
+  /**
+   * Release everything this instance holds that would otherwise outlive it: the token renewal job
+   * (a live timer that keeps the instance reachable) and every listener registered on it. Called from
+   * `EufySecurity.close()` — without it a consumer that rebuilds its client (re-login, repair, a
+   * settings change) leaks the previous instance and all of its state.
+   */
+  public close(): void {
+    this.clearScheduleRenewAuthToken();
+    this.renewAuthTokenJob = undefined;
+    this.removeAllListeners();
   }
 
   private invalidateToken(): void {
@@ -455,7 +471,10 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   }
 
   public setLanguage(language: string): void {
-    if (isValidLanguage(language) && language.length === 2) {
+    // A plain two letter check rather than a full ISO 639 table: `@cospired/i18n-iso-languages` was
+    // pulled in solely for this one call and its data cost ~2 MB of resident memory for the entire
+    // life of the app — a lot to pay for validating a value the consumer hands us.
+    if (/^[A-Za-z]{2}$/.test(language)) {
       this.headers.language = language;
       this.updateApiHeader();
     } else throw new InvalidLanguageCodeError("Invalid ISO 639 language code", { context: { languageCode: language } });
