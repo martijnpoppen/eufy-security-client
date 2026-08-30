@@ -314,8 +314,6 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
   }
 
     private _initialize(): void {
-        let rsaKey: ForgeRSA | null;
-
     this.connected = false;
     this.p2pTurnHandshaking = {};
     this.p2pTurnConfirmed = false;
@@ -342,11 +340,15 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
     for (let datatype = 0; datatype < 4; datatype++) {
       this.expectedSeqNo[datatype] = 0;
 
-      if (datatype === P2PDataType.VIDEO) rsaKey = getNewRSAPrivateKey(this.enableEmbeddedPKCS1Support);
-      else rsaKey = null;
-
       this.initializeMessageBuilder(datatype);
-      this.initializeMessageState(datatype, rsaKey);
+      // No RSA key is generated here. _initialize() runs on EVERY disconnect, including each failed
+      // reconnect to an unreachable station, and a forge RSA-1024 keygen is pure JS: the heap churn
+      // it leaves behind is never returned to the OS, so a station that can't be reached walks the
+      // process' RSS up by roughly 17 KB per attempt until Homey kills the app for it. The key is
+      // only ever needed once a livestream is actually requested — the camera can only encrypt for a
+      // public key we handed it in the start command — so generate it there, exactly like the
+      // download path already does in getDownloadRSAPrivateKey().
+      this.initializeMessageState(datatype);
       this.initializeStream(datatype);
     }
   }
@@ -4331,6 +4333,9 @@ export class P2PClientProtocol extends TypedEmitter<P2PClientProtocolEvents> {
   }
 
     public getRSAPrivateKey(): ForgeRSA | null {
+        if (this.currentMessageState[P2PDataType.VIDEO].rsaKey === null) {
+            this.currentMessageState[P2PDataType.VIDEO].rsaKey = getNewRSAPrivateKey(this.enableEmbeddedPKCS1Support);
+        }
         return this.currentMessageState[P2PDataType.VIDEO].rsaKey;
     }
 

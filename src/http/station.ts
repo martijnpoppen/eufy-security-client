@@ -1033,7 +1033,13 @@ export class Station extends TypedEmitter<StationEvents> {
             clearTimeout(this.reconnectTimeout);
             this.reconnectTimeout = undefined;
         }
-        if (this.p2pSession.isConnected()) {
+        // Also stop a session that is merely CONNECTING, not just a connected one. A station that
+        // cannot be reached never reaches "connected", so this used to leave its lookup running after
+        // the consumer had explicitly closed it — and every lookup that timed out came back through
+        // onTimeout() and scheduled yet another attempt, for ever. P2PClientProtocol.close() handles
+        // both states: it clears the lookup timers and marks itself terminating so no further
+        // "timeout" is emitted.
+        if (this.p2pSession.isConnected() || this.p2pSession.isConnecting()) {
             rootHTTPLogger.info(`Disconnect from station ${this.getSerial()}`);
             this.p2pSession.close();
         }
@@ -1565,7 +1571,9 @@ export class Station extends TypedEmitter<StationEvents> {
             this,
             new StationConnectTimeoutError("Timeout connecting to station", { context: { station: this.getSerial() } })
         );
-        this.scheduleReconnect();
+        // Mirrors onDisconnect(): a station the consumer has closed must not be reconnected. Without
+        // this check a closed-but-never-connected station reconnected itself indefinitely.
+        if (!this.terminating) this.scheduleReconnect();
     }
 
     private getCurrentDelay(): number {
