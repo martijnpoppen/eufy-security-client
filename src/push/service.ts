@@ -1,6 +1,4 @@
-import type { Got } from "got" with {
-  "resolution-mode": "import",
-};
+import { HttpClient } from "../http/httpClient";
 import * as qs from "qs";
 import { TypedEmitter } from "tiny-typed-emitter";
 
@@ -29,7 +27,7 @@ import { PushNotificationServiceEvents } from "./interfaces";
 import { Device } from "../http/device";
 import { DeviceType } from "../http/types";
 import { getAbsoluteFilePath } from "../http/utils";
-import { getError, getShortUrl, isEmpty, parseJSON } from "../utils";
+import { getError, isEmpty, parseJSON } from "../utils";
 import {
   ExecuteCheckInError,
   FidRegistrationFailedError,
@@ -61,15 +59,14 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
   private connected = false;
   private connecting = false;
 
-  private got!: Got;
+  private got!: HttpClient;
 
   private constructor() {
     super();
   }
 
   private async loadLibraries(): Promise<void> {
-    const { default: got } = await import("got");
-    this.got = got;
+    this.got = new HttpClient();
   }
 
   static async initialize(): Promise<PushNotificationService> {
@@ -91,7 +88,7 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
     const url = `https://firebaseinstallations.googleapis.com/v1/projects/${this.FCM_PROJECT_ID}/installations`;
 
     try {
-      const response = await this.got(url, {
+      const response = await this.got.request(url, {
         method: "post",
         json: {
           fid: fid,
@@ -105,30 +102,10 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
           "x-goog-api-key": `${this.GOOGLE_API_KEY}`,
         },
         responseType: "json",
-        http2: false,
         throwHttpErrors: false,
         retry: {
           limit: 3,
           methods: ["POST"],
-        },
-        hooks: {
-          beforeError: [
-            (error) => {
-              const { response, options } = error;
-              const statusCode = response?.statusCode || 0;
-              const { method, url, prefixUrl } = options;
-              const shortUrl = getShortUrl(
-                typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-                typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-              );
-              const body = response?.body ? response.body : error.message;
-              if (response?.body) {
-                error.name = "RegisterFidError";
-                error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
-              }
-              return error;
-            },
-          ],
         },
       });
 
@@ -162,7 +139,7 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
     const url = `https://firebaseinstallations.googleapis.com/v1/projects/${this.FCM_PROJECT_ID}/installations/${fid}/authTokens:generate`;
 
     try {
-      const response = await this.got(url, {
+      const response = await this.got.request(url, {
         method: "post",
         json: {
           installation: {
@@ -177,30 +154,10 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
           Authorization: `${this.AUTH_VERSION} ${refreshToken}`,
         },
         responseType: "json",
-        http2: false,
         throwHttpErrors: false,
         retry: {
           limit: 3,
           methods: ["POST"],
-        },
-        hooks: {
-          beforeError: [
-            (error) => {
-              const { response, options } = error;
-              const statusCode = response?.statusCode || 0;
-              const { method, url, prefixUrl } = options;
-              const shortUrl = getShortUrl(
-                typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-                typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-              );
-              const body = response?.body ? response.body : error.message;
-              if (response?.body) {
-                error.name = "RenewFidTokenError";
-                error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
-              }
-              return error;
-            },
-          ],
         },
       });
 
@@ -294,37 +251,17 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
 
     try {
       const buffer = await buildCheckinRequest();
-      const response = await this.got(url, {
+      const response = await this.got.request(url, {
         method: "post",
         body: Buffer.from(buffer),
         headers: {
           "Content-Type": "application/x-protobuf",
         },
         responseType: "buffer",
-        http2: false,
         throwHttpErrors: false,
         retry: {
           limit: 3,
           methods: ["POST"],
-        },
-        hooks: {
-          beforeError: [
-            (error) => {
-              const { response, options } = error;
-              const statusCode = response?.statusCode || 0;
-              const { method, url, prefixUrl } = options;
-              const shortUrl = getShortUrl(
-                typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-                typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-              );
-              const body = response?.body ? response.body : error.message;
-              if (response?.body) {
-                error.name = "ExecuteCheckInError";
-                error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
-              }
-              return error;
-            },
-          ],
         },
       });
 
@@ -367,7 +304,7 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
           securityToken: securityToken,
         });
 
-        const response = await this.got(url, {
+        const response = await this.got.request(url, {
           method: "post",
           body: qs.stringify({
             "X-subtype": `${this.APP_SENDER_ID}`,
@@ -401,30 +338,10 @@ export class PushNotificationService extends TypedEmitter<PushNotificationServic
             "User-Agent": "Android-GCM/1.5",
             "content-type": "application/x-www-form-urlencoded",
           },
-          http2: false,
           throwHttpErrors: false,
           retry: {
             limit: 3,
             methods: ["POST"],
-          },
-          hooks: {
-            beforeError: [
-              (error) => {
-                const { response, options } = error;
-                const statusCode = response?.statusCode || 0;
-                const { method, url, prefixUrl } = options;
-                const shortUrl = getShortUrl(
-                  typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-                  typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-                );
-                const body = response?.body ? response.body : error.message;
-                if (response?.body) {
-                  error.name = "RegisterGcmError";
-                  error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
-                }
-                return error;
-              },
-            ],
           },
         });
 

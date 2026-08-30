@@ -6,13 +6,13 @@ jest.mock("../../logging", () => ({
 }));
 
 /**
- * Build a MegaHTTPApi whose network layer is fully mocked: a single `got` stub feeds
+ * Build a MegaHTTPApi whose network layer is fully mocked: a single request stub feeds
  * queued responses, and p-throttle is a pass-through. Returns the api + the list of
  * captured requests so tests can assert on headers/body.
  */
 async function makeApi(responseQueue: Array<{ statusCode: number; body: string }>) {
   const requests: Array<{ url: string; headers: Record<string, string>; body?: string; json?: unknown }> = [];
-  const gotStub = jest.fn(async (url: string, opts: any) => {
+  const send = jest.fn(async (url: string, opts: any) => {
     requests.push({ url, headers: opts.headers ?? {}, body: opts.body, json: opts.json });
     const resp = responseQueue.shift() ?? { statusCode: 200, body: "{}" };
     // estimate_domain uses responseType "json" → got returns parsed body.
@@ -22,9 +22,9 @@ async function makeApi(responseQueue: Array<{ statusCode: number; body: string }
 
   const api = new MegaHTTPApi({ ab: "fr", osType: "android", minRequestIntervalMs: 0 });
   // Bypass init()'s dynamic imports.
-  (api as any).got = gotStub;
+  (api as any).got = { request: send };
   (api as any).throttle = <A extends unknown[], R>(fn: (...a: A) => Promise<R>) => fn;
-  return { api, requests, gotStub };
+  return { api, requests, gotStub: send };
 }
 
 /** A deterministic fake cluster identity so we can encrypt/decrypt response bodies in tests. */

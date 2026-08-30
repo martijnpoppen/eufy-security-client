@@ -147,12 +147,14 @@ describe("HTTPApi", () => {
         // response was read as a failure — which is what left `connected` false and made the
         // house/station/device lists come back empty.
         const respond = (api: HTTPApi, body: unknown) => {
-            (api as any).requestEufyCloud = jest.fn().mockResolvedValue({
-                statusCode: 200,
-                statusMessage: "OK",
-                headers: {},
-                body,
-            });
+            (api as any).requestEufyCloud = {
+                request: jest.fn().mockResolvedValue({
+                    statusCode: 200,
+                    statusMessage: "OK",
+                    headers: {},
+                    body,
+                }),
+            };
         };
 
         it("maps a body code of 200 onto CODE_OK", async () => {

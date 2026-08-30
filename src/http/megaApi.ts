@@ -1,3 +1,4 @@
+import { HttpClient } from "./httpClient";
 import { createECDH, createHash } from "crypto";
 import md5 from "crypto-js/md5";
 
@@ -76,7 +77,7 @@ export class MegaHTTPApi {
   private readonly phoneModel: string;
   private readonly minIntervalMs: number;
 
-  private got!: any;
+  private got!: HttpClient;
   private throttle!: <A extends unknown[], R>(fn: (...a: A) => Promise<R>) => (...a: A) => Promise<R>;
 
   /** Resolved domains from estimate_domain (eufy_security, etc). */
@@ -105,8 +106,7 @@ export class MegaHTTPApi {
 
   public async init(): Promise<void> {
     const { default: pThrottle } = await import("p-throttle");
-    const { default: got } = await import("got");
-    this.got = got;
+    this.got = new HttpClient();
     this.throttle = pThrottle({ limit: 1, interval: this.minIntervalMs });
   }
 
@@ -200,7 +200,7 @@ export class MegaHTTPApi {
     rootHTTPLogger.debug("MegaApi request", { host, path, osType: this.osType, keyIdent });
 
     const send = this.throttle(async () => {
-      return await this.got(`https://${host}${path}`, {
+      return await this.got.request(`https://${host}${path}`, {
         method: "POST",
         headers,
         body,
@@ -240,7 +240,7 @@ export class MegaHTTPApi {
   public async estimateDomain(): Promise<Record<string, string>> {
     const host = `mega-${this.ab === "us" ? "us" : "eu"}-pr.eufy.com`;
     const send = this.throttle(async () =>
-      this.got(`https://${host}/passport/estimate_domain`, {
+      this.got.request(`https://${host}/passport/estimate_domain`, {
         method: "POST",
         headers: {
           "app-name": this.appName,

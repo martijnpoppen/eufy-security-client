@@ -1,7 +1,4 @@
 import { PassThrough } from "stream";
-import type { Method } from "got" with {
-  "resolution-mode": "import",
-};
 import type { ImageFileExtension } from "image-type" with {
   "resolution-mode": "import",
 };
@@ -82,6 +79,9 @@ export interface Voices {
 export interface Invites {
   [index: number]: Invite;
 }
+
+/** The HTTP verbs this library actually issues. */
+export type Method = "get" | "post" | "put" | "delete" | "GET" | "POST" | "PUT" | "DELETE";
 
 export interface HTTPApiRequest {
   method: Method;

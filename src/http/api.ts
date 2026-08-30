@@ -1,17 +1,9 @@
-import type {
-  Got,
-  OptionsOfBufferResponseBody,
-  OptionsOfJSONResponseBody,
-  OptionsOfTextResponseBody,
-  OptionsOfUnknownResponseBody,
-} from "got" with {
-  "resolution-mode": "import",
-};
 import type { AnyFunction, ThrottledFunction } from "p-throttle" with {
   "resolution-mode": "import",
 };
 
 import { TypedEmitter } from "tiny-typed-emitter";
+import { HttpClient, HttpError, HttpRequestOptions, ResponseType } from "./httpClient";
 import { createECDH, ECDH } from "crypto";
 import * as schedule from "node-schedule";
 
@@ -70,7 +62,7 @@ import {
   hexWeek,
 } from "./utils";
 import { InvalidCountryCodeError, InvalidLanguageCodeError, ensureError } from "./../error";
-import { getError, getShortUrl, md5, mergeDeep, parseJSON } from "./../utils";
+import { getError, md5, mergeDeep, parseJSON } from "./../utils";
 import {
   ApiBaseLoadError,
   ApiGenericError,
@@ -101,7 +93,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
 
   private connected = false;
 
-  private requestEufyCloud!: Got;
+  private requestEufyCloud!: HttpClient;
   private throttle!: pThrottledFunction;
 
   private devices: FullDevices = {};
@@ -237,15 +229,10 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
 
             @param country
          **/
-    const { default: got } = await import("got");
-    const response = await got(`domain/${country}`, {
-      prefixUrl: this.apiDomainBase,
+    const response = await new HttpClient({ prefixUrl: this.apiDomainBase }).request(`domain/${country}`, {
       method: "GET",
       responseType: "json",
-      retry: {
-        limit: 1,
-        methods: ["GET"],
-      },
+      retry: { limit: 1, methods: ["GET"] },
     });
 
     const result: ResultResponse = response.body as ResultResponse;
@@ -265,102 +252,50 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
      *
      */
     const { default: pThrottle } = await import("p-throttle");
-    const { default: got } = await import("got");
     this.throttle = pThrottle({
       limit: 5,
       interval: 1000,
     });
-    this.requestEufyCloud = got.extend({
+    this.requestEufyCloud = new HttpClient({
       prefixUrl: this.apiBase,
       headers: this.headers,
       responseType: "json",
-      //throwHttpErrors: false,
       retry: {
         limit: 3,
         methods: ["GET", "POST"],
         statusCodes: [404, 408, 413, 423, 429, 500, 502, 503, 504, 521, 522, 524],
-        calculateDelay: ({ computedValue }) => {
-          return computedValue * 3;
-        },
+        delayMultiplier: 3,
       },
-      hooks: {
-        afterResponse: [
-          async (response, retryWithMergedOptions) => {
-            // Unauthorized
-            if (response.statusCode === 401) {
-              const oldToken = this.token;
-
-              rootHTTPLogger.debug("Invalidate token an get a new one...", {
-                requestUrl: response.requestUrl,
-                statusCode: response.statusCode,
-                statusMessage: response.statusMessage,
-              });
-
-              this.invalidateToken();
-              await this.login({ force: true });
-
-              if (oldToken !== this.token && this.token) {
-                // Refresh the access token
-                const updatedOptions = {
-                  headers: {
-                    "X-Auth-Token": this.token,
-                  },
-                };
-
-                // Update the defaults
-                this.requestEufyCloud.defaults.options.merge(updatedOptions);
-
-                // Make a new retry
-                return retryWithMergedOptions(updatedOptions);
-              }
-            }
-
-            // No changes otherwise
-            return response;
-          },
-        ],
-        beforeRetry: [
-          (error) => {
-            // This will be called on `retryWithMergedOptions(...)`
-            const statusCode = error.response?.statusCode || 0;
-            const { method, url, prefixUrl } = error.options;
-            const shortUrl = getShortUrl(
-              typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-              typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-            );
-            const body = error.response?.body ? error.response?.body : error.message;
-            rootHTTPLogger.debug(
-              `Retrying [${error.request?.retryCount !== undefined ? error.request?.retryCount + 1 : 1}]: ${error.code} (${error.request?.requestUrl})\n${statusCode} ${method} ${shortUrl}\n${body}`
-            );
-            // Retrying [1]: ERR_NON_2XX_3XX_RESPONSE
-          },
-        ],
-        beforeError: [
-          (error) => {
-            const { response, options } = error;
-            const statusCode = response?.statusCode || 0;
-            const { method, url, prefixUrl } = options;
-            const shortUrl = getShortUrl(
-              typeof url === "string" ? new URL(url) : url === undefined ? new URL("") : url,
-              typeof prefixUrl === "string" ? prefixUrl : prefixUrl.toString()
-            );
-            const body = response?.body ? response.body : error.message;
-            if (response?.body) {
-              error.name = "EufyApiError";
-              error.message = `${statusCode} ${method} ${shortUrl}\n${body}`;
-            }
-            return error;
-          },
-        ],
-        beforeRequest: [
-          async (_options) => {
-            await this.throttle(async () => {
-              return;
-            })();
-          },
-        ],
+      beforeRequest: async () => {
+        await this.throttle(async () => {
+          return;
+        })();
       },
-      mutableDefaults: true,
+      afterResponse: async (response, retry) => {
+        // Unauthorized
+        if (response.statusCode === 401) {
+          const oldToken = this.token;
+
+          rootHTTPLogger.debug("Invalidate token an get a new one...", {
+            requestUrl: response.requestUrl,
+            statusCode: response.statusCode,
+            statusMessage: response.statusMessage,
+          });
+
+          this.invalidateToken();
+          await this.login({ force: true });
+
+          if (oldToken !== this.token && this.token) {
+            // Refresh the access token and replay the request with it
+            const updatedHeaders = { "X-Auth-Token": this.token };
+            this.requestEufyCloud.mergeHeaders(updatedHeaders);
+            return retry({ headers: updatedHeaders });
+          }
+        }
+
+        // No changes otherwise
+        return response;
+      },
     });
   }
 
@@ -424,10 +359,8 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   private invalidateToken(): void {
     this.connected = false;
     this.token = null;
-    this.requestEufyCloud.defaults.options.merge({
-      headers: {
-        "X-Auth-Token": undefined,
-      },
+    this.requestEufyCloud.mergeHeaders({
+      "X-Auth-Token": undefined,
     });
     this.tokenExpiration = null;
     this.persistentData.serverPublicKey = this.SERVER_PUBLIC_KEY;
@@ -436,9 +369,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   }
 
   private updateApiHeader(): void {
-    this.requestEufyCloud.defaults.options.merge({
-      headers: this.headers,
-    });
+    this.requestEufyCloud.setHeaders(this.headers);
   }
 
   public setPhoneModel(model: string): void {
@@ -448,9 +379,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
      *
      */
     this.headers.phone_model = model.toUpperCase();
-    this.requestEufyCloud.defaults.options.merge({
-      headers: this.headers,
-    });
+    this.requestEufyCloud.setHeaders(this.headers);
   }
 
   public getPhoneModel(): string {
@@ -934,33 +863,14 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
       data: request.data,
     });
     try {
-      let options: OptionsOfTextResponseBody | OptionsOfBufferResponseBody | OptionsOfJSONResponseBody;
-      switch (request.responseType) {
-        case undefined:
-        case "json":
-          options = {
-            method: request.method,
-            json: request.data,
-            responseType: "json",
-          } as OptionsOfJSONResponseBody;
-          break;
-        case "text":
-          options = {
-            method: request.method,
-            json: request.data,
-            responseType: request.responseType,
-          } as OptionsOfTextResponseBody;
-          break;
-        case "buffer":
-          options = {
-            method: request.method,
-            json: request.data,
-            responseType: request.responseType,
-          } as OptionsOfBufferResponseBody;
-          break;
-      }
+      const options: HttpRequestOptions = {
+        method: request.method,
+        json: request.data,
+        responseType: (request.responseType ?? "json") as ResponseType,
+      };
+      // An absolute endpoint (a signed download url, say) must not be joined onto the api base.
       if (withoutUrlPrefix) options.prefixUrl = "";
-      const internalResponse = await this.requestEufyCloud(request.endpoint, options);
+      const internalResponse = await this.requestEufyCloud.request(request.endpoint.toString(), options);
       const response: ApiResponse = {
         status: internalResponse.statusCode,
         statusText: internalResponse.statusMessage ? internalResponse.statusMessage : "",
@@ -973,7 +883,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
       return response;
     } catch (err) {
       const error = ensureError(err);
-      if (error instanceof (await import("got")).HTTPError) {
+      if (error instanceof HttpError) {
         if (error.response.statusCode === 401) {
           this.invalidateToken();
           rootHTTPLogger.error("Status return code 401, invalidate token", {
@@ -1259,10 +1169,8 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
 
   public setToken(token: string): void {
     this.token = token;
-    this.requestEufyCloud.defaults.options.merge({
-      headers: {
-        "X-Auth-Token": token,
-      },
+    this.requestEufyCloud.mergeHeaders({
+      "X-Auth-Token": token,
     });
   }
 
@@ -1271,9 +1179,7 @@ export class HTTPApi extends TypedEmitter<HTTPApiEvents> {
   }
 
   public getAPIBase(): string {
-    return typeof this.requestEufyCloud.defaults.options.prefixUrl === "string"
-      ? this.requestEufyCloud.defaults.options.prefixUrl
-      : this.requestEufyCloud.defaults.options.prefixUrl.toString();
+    return this.requestEufyCloud.getPrefixUrl();
   }
 
   public setOpenUDID(openudid: string): void {

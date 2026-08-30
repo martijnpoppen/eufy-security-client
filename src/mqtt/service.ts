@@ -1,4 +1,6 @@
-import * as mqtt from "mqtt";
+// Type-only. The module itself is loaded on first connect() below: it costs ~3.6 MB resident and is
+// only ever used by accounts that own a smart lock, but every startup was paying for it.
+import type * as mqtt from "mqtt";
 import { TypedEmitter } from "tiny-typed-emitter";
 import { readFileSync } from "fs";
 import * as path from "path";
@@ -90,7 +92,11 @@ export class MQTTService extends TypedEmitter<MQTTServiceEvents> {
       this.subscribeLocks.length > 0
     ) {
       this.connecting = true;
-      this.client = mqtt.connect(this.getMQTTBrokerUrl(apiBase), {
+      // A plain require, not `await import`: the build is CommonJS, so this resolves synchronously
+      // and connect() keeps its existing signature and timing.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mqttModule: typeof mqtt = require("mqtt");
+      this.client = mqttModule.connect(this.getMQTTBrokerUrl(apiBase), {
         keepalive: 60,
         clean: true,
         reschedulePings: true,
